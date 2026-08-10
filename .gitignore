@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+
+# Env files
+.env
+.env.local
+
+# Build output
+dist/
+build/
+
+# Uploads (ไฟล์ที่ user อัปโหลด ไม่ควร commit)
+backend/public/uploads/*
+!backend/public/uploads/.gitkeep
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
