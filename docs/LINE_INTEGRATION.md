@@ -21,43 +21,74 @@ LIFF_CHANNEL_ID=            # ใช้ตอน verify LIFF id token ฝั่�
 VITE_LIFF_ID=               # แท็บ LIFF ของ LINE Login channel เช่น 1234567890-abcdefgh
 ```
 
+## Public URL (สำคัญ ต้องอัปเดตมือทุกครั้งที่ ngrok restart)
+
+`PUBLIC_APP_URL` ใช้สร้าง URL เต็มสำหรับ:
+- รูปภาพใน Flex Message (`hero` block) — LINE ต้องดึงรูปจาก URL จริงบนอินเทอร์เน็ต ใช้ path สัมพัทธ์ไม่ได้
+- ปุ่มลิงก์ "ดูรายละเอียด" ใน Flex Message
+
+ทุกครั้งที่ restart `ngrok http 5173` แล้วได้ URL ใหม่ ต้องอัปเดต **3 จุดพร้อมกัน**:
+1. `backend/.env` → `PUBLIC_APP_URL`
+2. LINE Console → LIFF channel → Endpoint URL
+3. LINE Console → Messaging API channel → Webhook URL (ต่อท้ายด้วย `/webhook`)
+
 ## Webhook
 
 - Endpoint: `POST /webhook` (mount ก่อน `express.json()` ใน `server.js` เพราะ `@line/bot-sdk` ต้องอ่าน raw body เอง)
-- ตั้งค่า Webhook URL ใน LINE Console: `https://<your-domain>/webhook`
-- Dev local ใช้ ngrok/cloudflared tunnel ชี้เข้า backend แล้วเอา URL ไปตั้ง + กด Verify
-- ต้องเปิด toggle "Use webhook" เป็น On
+- ตั้งค่า Webhook URL ใน LINE Console: `https://<ngrok-url>/webhook`
+- Dev local ใช้ ngrok tunnel เดียว ชี้ไป **frontend (port 5173)** ไม่ใช่ backend โดยตรง — Vite proxy จะส่งต่อ `/api` และ `/uploads` ไปหา backend (`localhost:3000`) ให้เอง กันปัญหา 2 tunnel คนละ URL ชนกัน
+- [x] Verify ผ่านแล้ว, toggle "Use webhook" เปิดอยู่
 
-## Response Settings (ปิดใน manager.line.biz)
+## Response Settings (manager.line.biz)
 
-ต้องปิดเพื่อไม่ให้ชนกับ logic ที่เราเขียนเอง:
-- Greeting messages: Off
-- Auto-response messages: Off
-- Webhooks: On
-- Response mode: Chat/Bot (ไม่ใช่ auto)
+- [x] Greeting messages: Off
+- [x] Auto-response messages: Off
+- [x] Webhooks: On
+- [x] Response mode: Chat (แบบแมนนวล ผ่าน webhook เราเอง)
+- [x] "เวลาตอบข้อความ" (business hours) ปิดไว้ด้วย กันช่วงนอกเวลาแอบใช้ auto-reply
 
-## Flow คร่าวๆ
+## Flow การทำงาน
 
-### ลูกบ้าน (Villager) — LIFF
-1. กดเมนูใน LINE OA → เปิด LIFF app
-2. `liff.init()` ดึง `line_user_id` (+ profile ถ้า scope profile ถูกติ๊ก)
-3. Frontend ส่ง `line_user_id` ไป backend เช็คใน `tb_villager`
-4. ถ้าไม่พบ → แสดงฟอร์มลงทะเบียน (ชื่อ, บ้านเลขที่) → insert ใหม่
-5. ถ้าพบแล้ว → เข้าใช้งานต่อได้ทันที
+### ลูกบ้าน (Villager) — LIFF Register [ทำเสร็จแล้ว]
+1. เปิด LIFF ผ่าน LINE app → `LiffContext.jsx` เรียก `liff.init()` + `liff.getIDToken()`
+2. Frontend (`RegisterPage.jsx`) ส่ง `idToken` ไป `POST /api/villager/check`
+3. Backend (`villager.service.js`) verify token กับ LINE (`api.line.me/oauth2/v2.1/verify`) ได้ `line_user_id` ที่เชื่อถือได้
+4. เช็คใน `tb_villager` — ไม่พบ → โชว์ฟอร์มลงทะเบียน → submit ไป `POST /api/villager/register` (verify token ซ้ำอีกรอบ) → insert
+5. พบแล้ว → เข้าใช้งานทันที ไม่ต้องกรอกฟอร์มซ้ำ
 
-### Admin/Leader — Broadcast ข่าว
-1. เลือกข่าวที่สถานะ Approved + กลุ่มผู้รับ
-2. Backend เรียก LINE Messaging API (multicast/broadcast) ส่ง Flex Message พร้อมลิงก์ไป Web App
-3. บันทึกผลลง `tb_broadcast_log`
+ทดสอบผ่านจริงบนมือถือแล้ว มี villager_id: 1 อยู่ใน DB
 
-### Chatbot
+### Admin — Broadcast ข่าว [ทำเสร็จแล้ว]
+1. เลือกข่าวที่ `news_status = Approved` (บังคับเช็คใน `broadcast.service.js`)
+2. เลือกโซนผู้รับได้ (`zoneName` ใน request body) หรือปล่อยว่าง = ส่งหาลูกบ้านทั้งหมด — ดูรายชื่อโซนที่มีจริงได้จาก `GET /api/broadcast/zones`
+3. Backend สร้าง **Flex Message** (`buildNewsFlexMessage`) — การ์ดมี hero image (ถ้าข่าวมีรูป), หัวข้อ, เนื้อหาย่อ, ปุ่ม "ดูรายละเอียด"
+4. เรียก `lineClient.multicast()` ส่งครั้งเดียวหาทุกคนใน list (ไม่ loop ทีละคน)
+5. บันทึกผลลง `tb_broadcast_log` (จำนวนผู้รับ, ผู้ส่ง, เวลา)
+
+ทดสอบส่งจริงถึงมือถือแล้ว เห็นการ์ด Flex Message จริง
+
+### Chatbot [ยังไม่ทำ]
 1. Event `message` เข้า webhook → ค้นหา keyword ใน `tb_chatbot_faq`
 2. เจอ → reply อัตโนมัติ / ไม่เจอ → แจ้ง "ไม่พบข้อมูล" + notify Admin ให้ตอบ 1-on-1
 
+## TODO ที่ค้างอยู่ (สำคัญ อย่าลืม)
+
+1. **ปุ่ม "ดูรายละเอียด" ใน Flex Message ชี้ไปหน้าที่ยังไม่มีจริง** — path คือ `/liff/news/:id` แต่ยังไม่ได้สร้าง `pages/liff/NewsDetailPage.jsx` กดตอนนี้จะเจอ 404 ต้องกลับมาทำหน้านี้ก่อนใช้งานจริง
+2. **`PUBLIC_APP_URL` ต้องอัปเดตมือทุกครั้งที่ ngrok restart** (ดูหัวข้อ "Public URL" ด้านบน) — ยังไม่ได้ทำ auto-detect หรือใช้ domain คงที่ (ถ้าจะ deploy จริงต้องเปลี่ยนเป็น domain จริงถาวร ไม่ใช้ ngrok แล้ว)
+3. **ตั้งเวลาส่งข่าวล่วงหน้า** (3.7 ในเอกสารสเปกเดิม) ยังไม่ได้ทำ ต้องใช้ scheduler เพิ่ม (เช่น `node-cron`)
+4. **Chatbot** ยังไม่มี logic เลย มีแค่ webhook รับ event ทั่วไปเฉยๆ
+
 ## Progress ปัจจุบัน
-- [x] สร้าง Messaging API Channel
-- [x] สร้าง LIFF Channel + link เข้า provider เดียวกัน
-- [ ] ตั้งค่า Webhook URL + verify
-- [ ] ปิด auto-reply/greeting default
-- [ ] เขียน `liffAuth.service.js` verify id token ฝั่ง backend
-- [ ] เขียน `chatbot.service.js` ค้นหา keyword
+- [x] สร้าง Messaging API Channel + LIFF Channel + link เข้า provider เดียวกัน
+- [x] Webhook verify ผ่าน + response settings ปิด auto-reply ครบ
+- [x] LIFF register ลูกบ้าน (ทดสอบผ่านมือถือจริงแล้ว)
+- [x] Broadcast ส่งข่าวผ่าน Flex Message + filter โซนได้ (ทดสอบส่งจริงแล้ว)
+- [ ] หน้า NewsDetailPage สำหรับปุ่มลิงก์ใน Flex Message
+- [ ] Chatbot ตอบอัตโนมัติ
+- [ ] ตั้งเวลาส่งข่าวล่วงหน้า
+
+## Known Issues / วิธีแก้ที่เจอมาแล้ว
+
+- **`EADDRINUSE` ตอนรัน backend**: มี process อื่นจับ port 3000 ค้างอยู่ วิธีแก้: ปิด terminal เดิมที่รัน `npm run dev` ค้างไว้ก่อน หรือหา process ที่ใช้ port อยู่แล้ว kill ทิ้ง (`netstat -ano | findstr :3000` แล้ว `taskkill /PID <pid> /F` บน Windows)
+- **`npm run dev` ติด Windows execution policy**: ถ้าเจอปัญหา PowerShell บล็อกการรัน script ให้เปลี่ยนไปใช้ `cmd.exe` แทน PowerShell หรือปรับ execution policy ของ PowerShell (`Set-ExecutionPolicy RemoteSigned -Scope CurrentUser`)
+- **ngrok URL เปลี่ยนทุกครั้งที่ restart (free plan)**: ต้องอัปเดต Webhook URL, LIFF Endpoint URL, และ `PUBLIC_APP_URL` พร้อมกันทุกครั้ง (ดูหัวข้อ "Public URL" ด้านบน)

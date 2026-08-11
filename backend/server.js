@@ -31,6 +31,7 @@ app.use('/api/auth', require('./src/routes/auth.routes'));
 app.use('/api/news', require('./src/routes/news.routes'));
 app.use('/api/category', require('./src/routes/category.routes'));
 app.use('/api/villager', require('./src/routes/villager.routes'));
+app.use('/api/broadcast', require('./src/routes/broadcast.routes'));
 
 app.use(errorHandler);
 

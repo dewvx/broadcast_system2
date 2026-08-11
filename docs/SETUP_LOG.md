@@ -53,14 +53,31 @@
 
 ---
 
+## Phase 6: Debug flow ลงทะเบียน LIFF / ตรวจสอบ route
+
+21. สร้าง Flow ลงทะเบียนลูกบ้านผ่าน LIFF: Frontend ใช้ `LiffContext` ดึง `idToken` จาก LINE Login และแสดงหน้า RegisterPage
+22. เพิ่ม API ฝั่ง backend สำหรับลูกบ้าน:
+   - `POST /api/villager/check` ตรวจว่าลูกบ้านเคยลงทะเบียนหรือยัง
+   - `POST /api/villager/register` ลงทะเบียนใหม่ด้วยข้อมูล `firstName`, `lastName`, `houseNumber`, `zoneName`
+23. Backend ตรวจสอบ `idToken` ใหม่อีกครั้งด้วย LINE OAuth verify endpoint ก่อน insert ลง `tb_villager` เพื่อกัน spoofing
+24. ทดสอบเชื่อมต่อฐานข้อมูล MySQL ด้วย query `SELECT 1` → ได้ผลลัพธ์ `DB_OK` แปลว่า DB connection ปกติ
+25. ทดสอบการรัน backend จริง พบปัญหา: port 3000 ถูกใช้งานแล้ว (`EADDRINUSE`) จึงไม่สามารถ起 server ของ repo นี้ได้จนกว่าจะหยุด process อื่นหรือเปลี่ยน port
+26. ทดสอบ `npm run dev` บน PowerShell พบว่า script ถูกบล็อกด้วยการตั้งค่า execution policy ของ Windows (`npm.ps1 cannot be loaded because running scripts is disabled`)
+27. สรุปว่า route มีอยู่ในโค้ดจริง แต่ 404 /api/villager/register เป็นปัญหาด้าน environment/runtime มากกว่าโครงสร้าง route: request ไม่ถึง backend ที่ถูกต้อง หรือ backend ที่ใช้อยู่ไม่ใช่ project นี้
+28. สถานะข้อมูล: flow ลงทะเบียนและ route backend ถูกสร้างเรียบร้อยแล้ว แต่ยังต้องแก้ปัญหา environment (port, tunnel, startup script) ก่อนใช้งานจริง
+
 ## สถานะปัจจุบัน (ล่าสุด)
 
 - [x] วิเคราะห์ระบบ + วางโครงสร้างเอกสาร
 - [x] ออกแบบและสร้างโครง backend + frontend ครบ
 - [x] Messaging API Channel + LIFF Channel พร้อมใช้งาน (link กันแล้ว)
-- [x] Backend รันได้สำเร็จ เชื่อม `.env` ถูกต้อง
+- [x] Backend รันได้สำเร็จ เชื่อม `.env` ถูกต้อง (ตามตอนแรก)
 - [x] ngrok ติดตั้งและอัปเดตเวอร์ชันเรียบร้อย
-- [ ] **ขั้นต่อไป:** รัน `ngrok http 3000` อีกครั้งเพื่อเอา URL ไปตั้งใน LINE Console → กด Verify webhook
+- [x] สร้าง flow ลงทะเบียนลูกบ้านผ่าน LIFF + backend check/register
+- [x] ตรวจสอบฐานข้อมูล MySQL connection ปกติ (`DB_OK`)
+- [ ] ปัญหาพอร์ต 3000 ถูกใช้งานแล้ว ต้องหยุด process หรือเปลี่ยน port ก่อนทดสอบจริง
+- [ ] **ขั้นต่อไป:** ตั้งค่า backend ที่รันจริงบน port ที่ถูกต้อง → ทดสอบ `POST /api/villager/register` จริง
+- [ ] รัน `ngrok http 3000` อีกครั้งเพื่อเอา URL ไปตั้งใน LINE Console → กด Verify webhook
 - [ ] ปิด Greeting message / Auto-response ใน manager.line.biz
 - [ ] รัน `schema.sql` สร้างฐานข้อมูลจริง
 - [ ] เริ่มเขียนฟีเจอร์ตาม `docs/FEATURES.md`

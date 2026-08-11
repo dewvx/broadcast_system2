@@ -1,33 +1,10 @@
 const villagerModel = require('../models/villager.model');
+const { verifyLiffIdToken } = require('./liffAuth.service');
 
 function throwError(message, statusCode) {
   const err = new Error(message);
   err.statusCode = statusCode;
   throw err;
-}
-
-/**
- * ส่ง idToken ไปให้ LINE ตรวจสอบว่าจริงมั้ย
- * LINE จะตอบกลับมาพร้อมข้อมูลเจ้าของ token (sub = line_user_id, name = ชื่อโปรไฟล์)
- * เอกสาร: https://developers.line.biz/en/reference/line-login/#verify-id-token
- */
-async function verifyLiffIdToken(idToken) {
-  const response = await fetch('https://api.line.me/oauth2/v2.1/verify', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({
-      id_token: idToken,
-      client_id: process.env.LIFF_CHANNEL_ID,
-    }),
-  });
-
-  if (!response.ok) {
-    throwError('LINE ID Token ไม่ถูกต้องหรือหมดอายุ', 401);
-  }
-
-  const data = await response.json();
-  // data.sub = line_user_id, data.name = ชื่อโปรไฟล์ LINE
-  return { lineUserId: data.sub, displayName: data.name };
 }
 
 /**
