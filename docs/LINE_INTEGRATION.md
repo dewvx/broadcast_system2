@@ -73,9 +73,12 @@ VITE_LIFF_ID=               # แท็บ LIFF ของ LINE Login channel เ
 
 ## TODO ที่ค้างอยู่ (สำคัญ อย่าลืม)
 
-1. **ปุ่ม "ดูรายละเอียด" ใน Flex Message ชี้ไปหน้าที่ยังไม่มีจริง** — path คือ `/liff/news/:id` แต่ยังไม่ได้สร้าง `pages/liff/NewsDetailPage.jsx` กดตอนนี้จะเจอ 404 ต้องกลับมาทำหน้านี้ก่อนใช้งานจริง
-2. **`PUBLIC_APP_URL` ต้องอัปเดตมือทุกครั้งที่ ngrok restart** (ดูหัวข้อ "Public URL" ด้านบน) — ยังไม่ได้ทำ auto-detect หรือใช้ domain คงที่ (ถ้าจะ deploy จริงต้องเปลี่ยนเป็น domain จริงถาวร ไม่ใช้ ngrok แล้ว)
-3. **ตั้งเวลาส่งข่าวล่วงหน้า** (3.7 ในเอกสารสเปกเดิม) ยังไม่ได้ทำ ต้องใช้ scheduler เพิ่ม (เช่น `node-cron`)
+1. **[กำลังแก้อยู่] `liff.init()` ค้างที่ `isLiffReady: false` ตลอด บนหน้า `/liff/news/:id`**
+   — `/liff/register` ใช้งานได้ปกติ (เคย register สำเร็จแล้ว) แต่ `/liff/news/2` ค้างที่ "กำลังโหลดข่าว..." ตลอด ไม่มี error โผล่มา (`liffError: ไม่มี`)
+   — เช็คแล้วว่า: routing ถูกต้อง (curl localhost ได้ 200 ทั้งคู่), ngrok ไม่ได้รันซ้อนกัน, `LiffContext.jsx` ใช้ `redirectUri` แบบ official แล้ว
+   — ยังไม่เช็ค: `VITE_LIFF_ID` ใน `frontend/.env` มีค่าจริงมั้ย (ต้อง restart frontend หลังแก้ env ด้วย), LIFF Endpoint URL ตรงกับ ngrok domain ปัจจุบันเป๊ะมั้ย (ห้ามมี `/` เกินท้าย)
+2. **`PUBLIC_APP_URL` ต้องอัปเดตมือทุกครั้งที่ ngrok restart** — เจอปัญหานี้ซ้ำหลายรอบระหว่าง debug วันนี้ พิจารณาทำ script เช็ค/แจ้งเตือนอัตโนมัติทีหลัง
+3. **ตั้งเวลาส่งข่าวล่วงหน้า** (3.7) ยังไม่ทำ ต้องใช้ scheduler เพิ่ม (เช่น `node-cron`)
 4. **Chatbot** ยังไม่มี logic เลย มีแค่ webhook รับ event ทั่วไปเฉยๆ
 
 ## Progress ปัจจุบัน
@@ -92,3 +95,4 @@ VITE_LIFF_ID=               # แท็บ LIFF ของ LINE Login channel เ
 - **`EADDRINUSE` ตอนรัน backend**: มี process อื่นจับ port 3000 ค้างอยู่ วิธีแก้: ปิด terminal เดิมที่รัน `npm run dev` ค้างไว้ก่อน หรือหา process ที่ใช้ port อยู่แล้ว kill ทิ้ง (`netstat -ano | findstr :3000` แล้ว `taskkill /PID <pid> /F` บน Windows)
 - **`npm run dev` ติด Windows execution policy**: ถ้าเจอปัญหา PowerShell บล็อกการรัน script ให้เปลี่ยนไปใช้ `cmd.exe` แทน PowerShell หรือปรับ execution policy ของ PowerShell (`Set-ExecutionPolicy RemoteSigned -Scope CurrentUser`)
 - **ngrok URL เปลี่ยนทุกครั้งที่ restart (free plan)**: ต้องอัปเดต Webhook URL, LIFF Endpoint URL, และ `PUBLIC_APP_URL` พร้อมกันทุกครั้ง (ดูหัวข้อ "Public URL" ด้านบน)
+- **`/webhook` 404 หลังเปลี่ยนมาใช้ ngrok tunnel เดียว**: ต้องเพิ่ม `/webhook` เข้า proxy list ใน `vite.config.js` ด้วย (ไม่ใช่แค่ `/api`, `/uploads`) ไม่งั้น LINE ส่ง event เข้ามาไม่ถึง backend เลย

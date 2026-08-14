@@ -32,6 +32,10 @@ app.use('/api/news', require('./src/routes/news.routes'));
 app.use('/api/category', require('./src/routes/category.routes'));
 app.use('/api/villager', require('./src/routes/villager.routes'));
 app.use('/api/broadcast', require('./src/routes/broadcast.routes'));
+app.use('/api/chatbot-faq', require('./src/routes/chatbotFaq.routes'));
+app.use('/api/activity', require('./src/routes/activity.routes'));
+app.use('/api/document', require('./src/routes/document.routes'));
+app.use('/api/report', require('./src/routes/report.routes'));
 
 app.use(errorHandler);
 

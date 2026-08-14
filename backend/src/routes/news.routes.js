@@ -24,6 +24,9 @@ router.post(
   newsController.uploadImage
 );
 
+// ดูรายละเอียดข่าว (ฝั่งลูกบ้าน) - ไม่มี authMiddleware เพราะใช้ idToken แทน (verify ใน service)
+router.post('/:id/view', newsController.publicView);
+
 // ลบข่าว - Admin เท่านั้น
 router.delete('/:id', authMiddleware, roleMiddleware(['Admin']), newsController.remove);
 

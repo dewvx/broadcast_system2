@@ -1,4 +1,7 @@
 const newsModel = require('../models/news.model');
+const viewModel = require('../models/view.model');
+const villagerModel = require('../models/villager.model');
+const { verifyLiffIdToken } = require('./liffAuth.service');
 
 function throwError(message, statusCode) {
   const err = new Error(message);
@@ -35,10 +38,13 @@ async function updateNews(newsId, data, currentUser) {
   const news = await newsModel.findById(newsId);
   if (!news) throwError('ไม่พบข่าวนี้', 404);
 
+  // Admin แก้ได้ทุกข่าวเสมอ
   if (currentUser.roleName !== 'Admin') {
+    // Leader แก้ได้เฉพาะข่าวตัวเอง
     if (news.created_by !== currentUser.userId) {
       throwError('คุณแก้ไขได้เฉพาะข่าวที่ตัวเองสร้างเท่านั้น', 403);
     }
+    // และต้องยังไม่ถูกอนุมัติ
     if (news.news_status === 'Approved') {
       throwError('ข่าวนี้อนุมัติแล้ว ไม่สามารถแก้ไขได้', 403);
     }
@@ -49,6 +55,7 @@ async function updateNews(newsId, data, currentUser) {
 }
 
 async function deleteNews(newsId, currentUser) {
+  // ลบได้เฉพาะ Admin เท่านั้น (เช็คซ้ำในนี้ แม้ route จะมี role.middleware กันไว้ชั้นนอกแล้ว)
   if (currentUser.roleName !== 'Admin') {
     throwError('เฉพาะผู้ใหญ่บ้านเท่านั้นที่ลบข่าวได้', 403);
   }
@@ -87,6 +94,7 @@ async function setNewsImage(newsId, imagePath, currentUser) {
   const news = await newsModel.findById(newsId);
   if (!news) throwError('ไม่พบข่าวนี้', 404);
 
+  // ใช้เงื่อนไขสิทธิ์เดียวกับ updateNews: Admin แก้ได้ทุกข่าว, Leader แก้ได้เฉพาะข่าวตัวเองที่ยังไม่อนุมัติ
   if (currentUser.roleName !== 'Admin') {
     if (news.created_by !== currentUser.userId) {
       throwError('คุณอัปโหลดรูปได้เฉพาะข่าวที่ตัวเองสร้างเท่านั้น', 403);
@@ -100,6 +108,27 @@ async function setNewsImage(newsId, imagePath, currentUser) {
   return newsModel.findById(newsId);
 }
 
+async function getPublicNewsDetail(newsId, idToken) {
+  const news = await newsModel.findById(newsId);
+  if (!news) throwError('ไม่พบข่าวนี้', 404);
+
+  // ลูกบ้านดูได้เฉพาะข่าวที่อนุมัติแล้ว (กันเข้าไปเห็นข่าวร่าง/ยังไม่ผ่านตรวจ)
+  if (news.news_status !== 'Approved') {
+    throwError('ไม่พบข่าวนี้', 404); // จงใจตอบเหมือน "ไม่พบ" ไม่บอกว่า "มีแต่ยังไม่อนุมัติ" กันคนเดาสถานะข่าวได้
+  }
+
+  // verify token เพื่อรู้ว่าใครดู จะได้บันทึก view log ผูกกับ villager ได้ถูกคน
+  const { lineUserId } = await verifyLiffIdToken(idToken);
+  const villager = await villagerModel.findByLineUserId(lineUserId);
+
+  if (villager) {
+    await viewModel.createViewLog(newsId, villager.villager_id);
+  }
+  // ถ้ายังไม่เคยลงทะเบียนเป็น villager (edge case) ก็ยังให้ดูข่าวได้ปกติ แค่ไม่บันทึก log
+
+  return news;
+}
+
 module.exports = {
   getAllNews,
   getNewsById,
@@ -109,4 +138,5 @@ module.exports = {
   approveNews,
   rejectNews,
   setNewsImage,
+  getPublicNewsDetail,
 };

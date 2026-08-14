@@ -1,9 +1,8 @@
 const { lineClient } = require('../config/line');
+const chatbotService = require('../services/chatbot.service');
 
 /**
  * จัดการ event แต่ละตัวที่ LINE ส่งเข้ามา
- * ตอนนี้ทำแค่ log + reply พื้นฐาน ไว้ต่อยอด logic
- * (chatbot keyword, บันทึกลง tb_villager ตอน follow ฯลฯ) ทีหลัง
  */
 async function handleEvent(event) {
   console.log('Received LINE event:', JSON.stringify(event, null, 2));
@@ -18,10 +17,10 @@ async function handleEvent(event) {
 
     case 'message':
       if (event.message.type === 'text') {
-        // TODO: ส่งต่อให้ chatbot.service.js ค้นหา keyword ใน tb_chatbot_faq
+        const answer = await chatbotService.findAnswer(event.message.text);
         return lineClient.replyMessage({
           replyToken: event.replyToken,
-          messages: [{ type: 'text', text: `รับข้อความแล้ว: ${event.message.text}` }],
+          messages: [{ type: 'text', text: answer }],
         });
       }
       return Promise.resolve(null);
