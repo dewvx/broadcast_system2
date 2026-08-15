@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import liff from '@line/liff';
 
 const LiffContext = createContext(null);
@@ -9,7 +9,12 @@ export function LiffProvider({ children }) {
   const [idToken, setIdToken] = useState(null);
   const [profile, setProfile] = useState(null);
 
+  const hasInitialized = useRef(false);
+
   useEffect(() => {
+    if (hasInitialized.current) return;
+    hasInitialized.current = true;
+
     async function initLiff() {
       try {
         await liff.init({ liffId: import.meta.env.VITE_LIFF_ID });

@@ -119,7 +119,102 @@ curl -X POST http://localhost:3000/api/broadcast/<news_id> -H "Content-Type: app
 
 ---
 
-## 5. Villager (ฝั่งลูกบ้าน — ทดสอบผ่าน curl ตรงๆ ไม่ได้ ต้องผ่าน LIFF จริงเท่านั้น)
+## 5. Activity (ปฏิทินกิจกรรม)
+
+### ดูกิจกรรมทั้งหมด (เรียงตามวันที่ใกล้สุดก่อน)
+```bash
+curl http://localhost:3000/api/activity -H "Authorization: Bearer <TOKEN>"
+```
+
+### สร้างกิจกรรม (Admin, Leader)
+```bash
+curl -X POST http://localhost:3000/api/activity -H "Content-Type: application/json" -H "Authorization: Bearer <TOKEN>" -d "{\"actTitle\":\"ชื่อกิจกรรม\",\"actDate\":\"2026-09-01\",\"actLocation\":\"สถานที่\"}"
+```
+
+### แก้ไขกิจกรรม (Admin, Leader)
+```bash
+curl -X PUT http://localhost:3000/api/activity/<act_id> -H "Content-Type: application/json" -H "Authorization: Bearer <TOKEN>" -d "{\"actTitle\":\"ชื่อใหม่\",\"actDate\":\"2026-09-02\",\"actLocation\":\"สถานที่ใหม่\"}"
+```
+
+### ลบกิจกรรม (Admin เท่านั้น)
+```bash
+curl -X DELETE http://localhost:3000/api/activity/<act_id> -H "Authorization: Bearer <ADMIN_TOKEN>"
+```
+
+---
+
+## 6. Document (แบบฟอร์มราชการ)
+
+**หมายเหตุ:** ต้องรันคำสั่งจากโฟลเดอร์ที่มีไฟล์แนบอยู่จริง (หรือใส่ path เต็มของไฟล์) รองรับเฉพาะ `.pdf` `.doc` `.docx` เท่านั้น ขนาดไม่เกิน 10MB
+
+### ดูรายการเอกสารทั้งหมด
+```bash
+curl http://localhost:3000/api/document -H "Authorization: Bearer <TOKEN>"
+```
+
+### อัปโหลดเอกสารใหม่ (Admin, Leader)
+```bash
+curl -X POST http://localhost:3000/api/document -H "Authorization: Bearer <TOKEN>" -F "docName=ชื่อเอกสาร" -F "document=@ชื่อไฟล์.pdf"
+```
+
+### ลบเอกสาร (Admin เท่านั้น — ลบแค่ record ใน DB ไม่ลบไฟล์จริงในโฟลเดอร์)
+```bash
+curl -X DELETE http://localhost:3000/api/document/<doc_id> -H "Authorization: Bearer <ADMIN_TOKEN>"
+```
+
+---
+
+## 7. Chatbot FAQ (จัดการคำถาม-คำตอบอัตโนมัติ)
+
+### ดู FAQ ทั้งหมด (Admin เท่านั้น)
+```bash
+curl http://localhost:3000/api/chatbot-faq -H "Authorization: Bearer <ADMIN_TOKEN>"
+```
+
+### เพิ่มคำถาม-คำตอบใหม่ (Admin เท่านั้น)
+```bash
+curl -X POST http://localhost:3000/api/chatbot-faq -H "Content-Type: application/json" -H "Authorization: Bearer <ADMIN_TOKEN>" -d "{\"questionKey\":\"คำค้น\",\"answerText\":\"คำตอบที่จะส่งกลับ\"}"
+```
+
+### แก้ไข FAQ (Admin เท่านั้น)
+```bash
+curl -X PUT http://localhost:3000/api/chatbot-faq/<faq_id> -H "Content-Type: application/json" -H "Authorization: Bearer <ADMIN_TOKEN>" -d "{\"questionKey\":\"คำค้นใหม่\",\"answerText\":\"คำตอบใหม่\"}"
+```
+
+### ลบ FAQ (Admin เท่านั้น)
+```bash
+curl -X DELETE http://localhost:3000/api/chatbot-faq/<faq_id> -H "Authorization: Bearer <ADMIN_TOKEN>"
+```
+
+**ทดสอบจริง:** พิมพ์ข้อความคุยกับ LINE OA ที่มีคำว่า `questionKey` ปนอยู่ในนั้น จะได้คำตอบอัตโนมัติกลับมาทันที (ต้องปิด Greeting/Auto-response ใน manager.line.biz ไว้ก่อน ตามที่ตั้งค่าไปแล้ว)
+
+---
+
+## 8. Report / Dashboard (สรุปสถิติ — Admin, Leader ดูได้ทั้งคู่ read-only)
+
+### ภาพรวม Dashboard (จำนวนข่าวแยกสถานะ, ลูกบ้าน, broadcast, views)
+```bash
+curl http://localhost:3000/api/report/summary -H "Authorization: Bearer <TOKEN>"
+```
+
+### ข่าวยอดนิยม (เรียงตามจำนวนเข้าชม)
+```bash
+curl "http://localhost:3000/api/report/top-news?limit=5" -H "Authorization: Bearer <TOKEN>"
+```
+
+### ประวัติการส่งข่าวย้อนหลัง
+```bash
+curl "http://localhost:3000/api/report/broadcast-history?limit=10" -H "Authorization: Bearer <TOKEN>"
+```
+
+### สถิติเข้าชมข่าวรายอัน
+```bash
+curl http://localhost:3000/api/report/news/<news_id>/views -H "Authorization: Bearer <TOKEN>"
+```
+
+---
+
+## 9. Villager (ฝั่งลูกบ้าน — ทดสอบผ่าน curl ตรงๆ ไม่ได้ ต้องผ่าน LIFF จริงเท่านั้น)
 
 เอกสารไว้ดูโครงสร้าง ไม่ได้ไว้ทดสอบด้วย curl เพราะต้องมี `idToken` จริงจาก LIFF SDK เท่านั้น
 ```
@@ -135,3 +230,7 @@ POST /api/news/:id/view      body: { idToken }   -- ดูรายละเอ�
 - **Token หมดอายุใน 8 ชม.** (ตั้งไว้ใน `.env` -> `JWT_EXPIRES_IN`) ถ้า error `Token ไม่ถูกต้องหรือหมดอายุ` ให้ login ใหม่
 - **Copy คำสั่งยาวๆ ไปวางใน terminal ทีเดียวรวด** ห้ามให้ตัดบรรทัด ไม่งั้น cmd จะตัดคำสั่งขาดครึ่ง
 - เก็บ token ของ admin/leader1 ไว้ใน Notepad ระหว่างทดสอบ จะได้ไม่ต้อง login ใหม่ทุกรอบ
+- **รันคำสั่งที่มีไฟล์แนบ (`-F "field=@ไฟล์"`) จากโฟลเดอร์ที่มีไฟล์นั้นอยู่จริงเสมอ** (เช่น `cd backend` ก่อน) ไม่งั้นเจอ `curl: (26) Failed to open/read local data`
+- ตัด `<` `>` ออกเสมอตอนใส่ค่าจริงแทน placeholder (token, id ต่างๆ)
+- **ngrok URL เปลี่ยนทุกครั้งที่ restart (free plan)** — ต้องอัปเดต 3 จุดพร้อมกันเสมอ: `backend/.env` -> `PUBLIC_APP_URL`, LIFF Endpoint URL, Webhook URL (ดู `docs/LINE_INTEGRATION.md`)
+- ทดสอบฝั่งลูกบ้าน (LIFF) ต้องผ่านมือถือจริงเท่านั้น ngrok tunnel ต้องชี้ไป frontend (5173) ตัวเดียว ไม่ใช่ backend
