@@ -78,3 +78,14 @@ docs/       -> เอกสารประกอบ (อ่านตามหั
 5. หลังทำฟีเจอร์เสร็จ ให้ติ๊ก `[x]` ใน `docs/FEATURES.md` ทันที
 
 > โปรเจกต์นี้พัฒนาโดยสลับใช้ AI หลายตัว (Claude Code, Gemini CLI, Codex CLI) ไฟล์นี้คือ **แหล่งความจริงเดียว** ที่ทุกตัวต้องอ่าน — `GEMINI.md` และ `AGENTS.md` เป็นแค่ตัวชี้มาที่ไฟล์นี้ ไม่มีเนื้อหาซ้ำ เพื่อกันปัญหาไฟล์ตีกันเวลาต้องแก้ context
+
+## UI/UX Source of Truth
+
+Before creating or modifying frontend UI, the AI must read:
+
+- docs/DESIGN_SYSTEM.md
+- docs/UI_DESIGN.md
+
+These documents are the source of truth for all UI/UX decisions.
+
+Do not introduce new colors, spacing, typography, components, or visual patterns without checking the existing design system first.

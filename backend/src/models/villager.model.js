@@ -37,4 +37,17 @@ async function create({ lineUserId, displayName, firstName, lastName, houseNumbe
   return result.insertId;
 }
 
-module.exports = { findByLineUserId, findById, create };
+/**
+ * ดึงรายชื่อลูกบ้านทั้งหมด (Admin เท่านั้น)
+ */
+async function findAll() {
+  const [rows] = await pool.query(
+    `SELECT villager_id, display_name, first_name, last_name,
+            house_number, zone_name, join_date
+     FROM tb_villager
+     ORDER BY join_date DESC`
+  );
+  return rows;
+}
+
+module.exports = { findByLineUserId, findById, create, findAll };

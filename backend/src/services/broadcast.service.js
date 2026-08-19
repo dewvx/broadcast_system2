@@ -24,6 +24,10 @@ function buildNewsFlexMessage(news) {
   const previewText =
     news.news_content.length > 100 ? news.news_content.slice(0, 100) + '...' : news.news_content;
 
+  const targetUri = process.env.LIFF_ID
+    ? `https://liff.line.me/${process.env.LIFF_ID}/news/${news.news_id}`
+    : `${baseUrl}/liff/news/${news.news_id}`;
+
   const bubble = {
     type: 'bubble',
     body: {
@@ -45,7 +49,7 @@ function buildNewsFlexMessage(news) {
           action: {
             type: 'uri',
             label: 'ดูรายละเอียด',
-            uri: `${baseUrl}/liff/news/${news.news_id}`,
+            uri: targetUri,
           },
         },
       ],

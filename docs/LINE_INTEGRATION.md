@@ -73,10 +73,8 @@ VITE_LIFF_ID=               # แท็บ LIFF ของ LINE Login channel เ
 
 ## TODO ที่ค้างอยู่ (สำคัญ อย่าลืม)
 
-1. **[กำลังแก้อยู่] `liff.init()` ค้างที่ `isLiffReady: false` ตลอด บนหน้า `/liff/news/:id`**
-   — `/liff/register` ใช้งานได้ปกติ (เคย register สำเร็จแล้ว) แต่ `/liff/news/2` ค้างที่ "กำลังโหลดข่าว..." ตลอด ไม่มี error โผล่มา (`liffError: ไม่มี`)
-   — เช็คแล้วว่า: routing ถูกต้อง (curl localhost ได้ 200 ทั้งคู่), ngrok ไม่ได้รันซ้อนกัน, `LiffContext.jsx` ใช้ `redirectUri` แบบ official แล้ว
-   — ยังไม่เช็ค: `VITE_LIFF_ID` ใน `frontend/.env` มีค่าจริงมั้ย (ต้อง restart frontend หลังแก้ env ด้วย), LIFF Endpoint URL ตรงกับ ngrok domain ปัจจุบันเป๊ะมั้ย (ห้ามมี `/` เกินท้าย)
+1. **[แก้ไขแล้ว] `liff.init()` ค้างที่ `isLiffReady: false`** — ปรับปรุง `LiffContext.jsx` และ `NewsDetailPage.jsx` ให้จัดการ Token และ Login Redirect ปลอดภัย มี UI fallback ชัดเจน
+
 2. **`PUBLIC_APP_URL` ต้องอัปเดตมือทุกครั้งที่ ngrok restart** — เจอปัญหานี้ซ้ำหลายรอบระหว่าง debug วันนี้ พิจารณาทำ script เช็ค/แจ้งเตือนอัตโนมัติทีหลัง
 3. **ตั้งเวลาส่งข่าวล่วงหน้า** (3.7) ยังไม่ทำ ต้องใช้ scheduler เพิ่ม (เช่น `node-cron`)
 4. **Chatbot** ยังไม่มี logic เลย มีแค่ webhook รับ event ทั่วไปเฉยๆ
@@ -86,8 +84,9 @@ VITE_LIFF_ID=               # แท็บ LIFF ของ LINE Login channel เ
 - [x] Webhook verify ผ่าน + response settings ปิด auto-reply ครบ
 - [x] LIFF register ลูกบ้าน (ทดสอบผ่านมือถือจริงแล้ว)
 - [x] Broadcast ส่งข่าวผ่าน Flex Message + filter โซนได้ (ทดสอบส่งจริงแล้ว)
-- [ ] หน้า NewsDetailPage สำหรับปุ่มลิงก์ใน Flex Message
-- [ ] Chatbot ตอบอัตโนมัติ
+- [x] หน้า NewsDetailPage สำหรับปุ่มลิงก์ใน Flex Message
+- [x] หน้า ActivityListPage (`/liff/activities`) และ DocumentListPage (`/liff/documents`) ฝั่งลูกบ้าน
+- [x] Chatbot ตอบอัตโนมัติ (เชื่อมต่อ LINE Webhook + `tb_chatbot_faq` Keyword matching)
 - [ ] ตั้งเวลาส่งข่าวล่วงหน้า
 
 ## Known Issues / วิธีแก้ที่เจอมาแล้ว

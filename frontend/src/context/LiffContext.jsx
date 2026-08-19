@@ -9,30 +9,45 @@ export function LiffProvider({ children }) {
   const [idToken, setIdToken] = useState(null);
   const [profile, setProfile] = useState(null);
 
-  const hasInitialized = useRef(false);
+  const isInitializing = useRef(false);
 
   useEffect(() => {
-    if (hasInitialized.current) return;
-    hasInitialized.current = true;
+    if (isInitializing.current) return;
+    isInitializing.current = true;
 
     async function initLiff() {
-      try {
-        await liff.init({ liffId: import.meta.env.VITE_LIFF_ID });
+      const liffId = import.meta.env.VITE_LIFF_ID;
 
-        if (!liff.isLoggedIn()) {
+      if (!liffId) {
+        console.warn('VITE_LIFF_ID is not defined in environment variables.');
+        setIsLiffReady(true);
+        return;
+      }
+
+      try {
+        // init liff พร้อมกับการ auto redirect login เมื่อเปิดภายนอก
+        await liff.init({ liffId });
+
+        if (liff.isLoggedIn()) {
+          try {
+            const token = liff.getIDToken();
+            const userProfile = await liff.getProfile();
+            setIdToken(token);
+            setProfile(userProfile);
+          } catch (profileErr) {
+            console.warn('Failed to fetch LIFF profile/token:', profileErr);
+          }
+        } else {
+          // ถ้ายังไม่ได้ล็อกอิน ให้สั่ง liff.login() อัตโนมัติ
           liff.login({ redirectUri: window.location.href });
           return;
         }
 
-        const token = liff.getIDToken();
-        const userProfile = await liff.getProfile();
-
-        setIdToken(token);
-        setProfile(userProfile);
         setIsLiffReady(true);
       } catch (err) {
         console.error('LIFF init error:', err);
-        setLiffError(err.message);
+        setLiffError(err.message || 'ไม่สามารถเปิดใช้งาน LINE LIFF ได้');
+        setIsLiffReady(true);
       }
     }
 
@@ -40,7 +55,7 @@ export function LiffProvider({ children }) {
   }, []);
 
   return (
-    <LiffContext.Provider value={{ isLiffReady, liffError, idToken, profile }}>
+    <LiffContext.Provider value={{ liff, isLiffReady, liffError, idToken, profile }}>
       {children}
     </LiffContext.Provider>
   );

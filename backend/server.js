@@ -36,6 +36,7 @@ app.use('/api/chatbot-faq', require('./src/routes/chatbotFaq.routes'));
 app.use('/api/activity', require('./src/routes/activity.routes'));
 app.use('/api/document', require('./src/routes/document.routes'));
 app.use('/api/report', require('./src/routes/report.routes'));
+app.use('/api/user', require('./src/routes/user.routes'));
 
 app.use(errorHandler);
 

@@ -64,6 +64,7 @@ CREATE TABLE tb_news (
 CREATE TABLE tb_activity (
   act_id INT AUTO_INCREMENT PRIMARY KEY,
   act_title VARCHAR(255) NOT NULL,
+  act_content TEXT NULL,
   act_date DATE NOT NULL,
   act_location VARCHAR(255) NOT NULL,
   created_by INT NOT NULL,

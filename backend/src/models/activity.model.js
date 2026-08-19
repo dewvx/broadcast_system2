@@ -2,7 +2,7 @@ const pool = require('../config/db');
 
 async function findAll() {
   const [rows] = await pool.query(
-    `SELECT a.act_id, a.act_title, a.act_date, a.act_location, a.created_by, u.full_name AS created_by_name
+    `SELECT a.act_id, a.act_title, a.act_content, a.act_date, a.act_location, a.created_by, u.full_name AS created_by_name
      FROM tb_activity a
      JOIN tb_user u ON a.created_by = u.user_id
      ORDER BY a.act_date ASC`
@@ -21,18 +21,18 @@ async function findById(actId) {
   return rows[0] || null;
 }
 
-async function create({ actTitle, actDate, actLocation, createdBy }) {
+async function create({ actTitle, actContent, actDate, actLocation, createdBy }) {
   const [result] = await pool.query(
-    `INSERT INTO tb_activity (act_title, act_date, act_location, created_by) VALUES (?, ?, ?, ?)`,
-    [actTitle, actDate, actLocation, createdBy]
+    `INSERT INTO tb_activity (act_title, act_content, act_date, act_location, created_by) VALUES (?, ?, ?, ?, ?)`,
+    [actTitle, actContent || null, actDate, actLocation, createdBy]
   );
   return result.insertId;
 }
 
-async function update(actId, { actTitle, actDate, actLocation }) {
+async function update(actId, { actTitle, actContent, actDate, actLocation }) {
   await pool.query(
-    `UPDATE tb_activity SET act_title = ?, act_date = ?, act_location = ? WHERE act_id = ?`,
-    [actTitle, actDate, actLocation, actId]
+    `UPDATE tb_activity SET act_title = ?, act_content = ?, act_date = ?, act_location = ? WHERE act_id = ?`,
+    [actTitle, actContent || null, actDate, actLocation, actId]
   );
 }
 

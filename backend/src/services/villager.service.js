@@ -52,4 +52,11 @@ async function registerVillager(idToken, { firstName, lastName, houseNumber, zon
   return villagerModel.findById(villagerId);
 }
 
-module.exports = { checkOrLogin, registerVillager };
+/**
+ * ดึงรายชื่อลูกบ้านทั้งหมด (Admin เท่านั้น)
+ */
+async function getAllVillagers() {
+  return villagerModel.findAll();
+}
+
+module.exports = { checkOrLogin, registerVillager, getAllVillagers };

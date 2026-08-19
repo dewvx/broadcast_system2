@@ -56,6 +56,7 @@
 |---|---|---|---|
 | act_id | int | PK | Auto Increment |
 | act_title | varchar(255) | - | NOT NULL |
+| act_content | text | - | รายละเอียดเนื้อหากิจกรรม (NULL ได้) |
 | act_date | date | - | NOT NULL |
 | act_location | varchar(255) | - | NOT NULL |
 | created_by | int | FK | อ้าง tb_user |

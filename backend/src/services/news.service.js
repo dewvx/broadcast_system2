@@ -114,17 +114,22 @@ async function getPublicNewsDetail(newsId, idToken) {
 
   // ลูกบ้านดูได้เฉพาะข่าวที่อนุมัติแล้ว (กันเข้าไปเห็นข่าวร่าง/ยังไม่ผ่านตรวจ)
   if (news.news_status !== 'Approved') {
-    throwError('ไม่พบข่าวนี้', 404); // จงใจตอบเหมือน "ไม่พบ" ไม่บอกว่า "มีแต่ยังไม่อนุมัติ" กันคนเดาสถานะข่าวได้
+    throwError('ไม่พบข่าวนี้', 404);
   }
 
-  // verify token เพื่อรู้ว่าใครดู จะได้บันทึก view log ผูกกับ villager ได้ถูกคน
-  const { lineUserId } = await verifyLiffIdToken(idToken);
-  const villager = await villagerModel.findByLineUserId(lineUserId);
+  // verify token เพื่อรู้ว่าใครดู - ถ้า verify มีปัญหา ก็ยังคงให้ดูข่าวได้ปกติ แค่ไม่บันทึก view log
+  try {
+    if (idToken && idToken !== 'guest') {
+      const { lineUserId } = await verifyLiffIdToken(idToken);
+      const villager = await villagerModel.findByLineUserId(lineUserId);
 
-  if (villager) {
-    await viewModel.createViewLog(newsId, villager.villager_id);
+      if (villager) {
+        await viewModel.createViewLog(newsId, villager.villager_id);
+      }
+    }
+  } catch (logErr) {
+    console.warn('View log recording skipped:', logErr.message || logErr);
   }
-  // ถ้ายังไม่เคยลงทะเบียนเป็น villager (edge case) ก็ยังให้ดูข่าวได้ปกติ แค่ไม่บันทึก log
 
   return news;
 }

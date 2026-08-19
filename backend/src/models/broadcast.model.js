@@ -2,29 +2,36 @@ const pool = require('../config/db');
 
 /**
  * ดึง line_user_id ของลูกบ้าน
- * ถ้าไม่ส่ง zoneName มา (undefined) -> ดึงทุกคน
- * ถ้าส่ง zoneName มา -> ดึงเฉพาะคนในโซนนั้น
+ * ถ้าไม่ส่ง zoneName มา (undefined/empty) -> ดึงทุกคน
+ * ถ้าส่ง zoneName มา -> ดึงเฉพาะคนในโซนนั้น (เปรียบเทียบแบบยืดหยุ่น)
  */
 async function getVillagerLineIds(zoneName) {
-  if (!zoneName) {
-    const [rows] = await pool.query(`SELECT line_user_id FROM tb_villager`);
+  if (!zoneName || !zoneName.trim()) {
+    const [rows] = await pool.query(
+      `SELECT line_user_id FROM tb_villager WHERE line_user_id IS NOT NULL AND line_user_id != ''`
+    );
     return rows.map((row) => row.line_user_id);
   }
 
+  const cleanZone = zoneName.trim();
   const [rows] = await pool.query(
-    `SELECT line_user_id FROM tb_villager WHERE zone_name = ?`,
-    [zoneName]
+    `SELECT line_user_id FROM tb_villager 
+     WHERE line_user_id IS NOT NULL AND line_user_id != ''
+       AND (TRIM(zone_name) = ? OR zone_name LIKE ?)`,
+    [cleanZone, `%${cleanZone}%`]
   );
   return rows.map((row) => row.line_user_id);
 }
 
 /**
- * ดึงรายชื่อโซนทั้งหมดที่มีลูกบ้านอยู่จริง (ไม่เอาค่า NULL)
- * ใช้ตอน frontend แสดง dropdown ให้ Admin เลือกโซน
+ * ดึงรายชื่อโซนทั้งหมดที่มีลูกบ้านอยู่จริง (ไม่เอาค่า NULL หรือ ค่าว่าง)
  */
 async function getAllZones() {
   const [rows] = await pool.query(
-    `SELECT DISTINCT zone_name FROM tb_villager WHERE zone_name IS NOT NULL ORDER BY zone_name`
+    `SELECT DISTINCT zone_name 
+     FROM tb_villager 
+     WHERE zone_name IS NOT NULL AND TRIM(zone_name) != '' 
+     ORDER BY zone_name`
   );
   return rows.map((row) => row.zone_name);
 }

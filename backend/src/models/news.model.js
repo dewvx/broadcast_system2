@@ -4,10 +4,11 @@ async function findAll() {
   const [rows] = await pool.query(
     `SELECT n.news_id, n.news_title, n.news_content, n.category_id, c.category_name,
             n.news_image, n.news_status, n.created_by, u.full_name AS created_by_name,
-            n.approved_by, n.created_at
+            n.approved_by, n.created_at,
+            (SELECT COUNT(*) FROM tb_view_log WHERE news_id = n.news_id) AS view_count
      FROM tb_news n
-     JOIN tb_category c ON n.category_id = c.category_id
-     JOIN tb_user u ON n.created_by = u.user_id
+     LEFT JOIN tb_category c ON n.category_id = c.category_id
+     LEFT JOIN tb_user u ON n.created_by = u.user_id
      ORDER BY n.created_at DESC`
   );
   return rows;
@@ -15,10 +16,11 @@ async function findAll() {
 
 async function findById(newsId) {
   const [rows] = await pool.query(
-    `SELECT n.*, c.category_name, u.full_name AS created_by_name
+    `SELECT n.*, c.category_name, u.full_name AS created_by_name,
+            (SELECT COUNT(*) FROM tb_view_log WHERE news_id = n.news_id) AS view_count
      FROM tb_news n
-     JOIN tb_category c ON n.category_id = c.category_id
-     JOIN tb_user u ON n.created_by = u.user_id
+     LEFT JOIN tb_category c ON n.category_id = c.category_id
+     LEFT JOIN tb_user u ON n.created_by = u.user_id
      WHERE n.news_id = ?`,
     [newsId]
   );

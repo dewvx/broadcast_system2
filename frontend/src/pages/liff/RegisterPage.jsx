@@ -1,127 +1,211 @@
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useLiff } from '../../context/LiffContext';
 import { checkOrLogin, registerVillager } from '../../api/villager.api';
+import { Button, Input, Card, LoadingSpinner } from '../../components/ui';
+import { Radio, CheckCircle, ArrowRight } from 'lucide-react';
 
 function RegisterPage() {
-  const { isLiffReady, liffError, idToken, profile } = useLiff();
+  const { liff, isLiffReady, liffError } = useLiff();
+  const navigate = useNavigate();
+  const [checking, setChecking] = useState(true);
+  const [registeredVillager, setRegisteredVillager] = useState(null);
+  const [idToken, setIdToken] = useState('');
+  const [displayName, setDisplayName] = useState('');
 
-  const [status, setStatus] = useState('checking');
-  const [errorMsg, setErrorMsg] = useState('');
-  const [villager, setVillager] = useState(null);
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [houseNumber, setHouseNumber] = useState('');
+  const [zoneName, setZoneName] = useState('');
 
-  const [form, setForm] = useState({ firstName: '', lastName: '', houseNumber: '', zoneName: '' });
   const [submitting, setSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+  const [redirectTarget, setRedirectTarget] = useState(null);
 
   useEffect(() => {
-    if (!isLiffReady || !idToken) return;
+    if (!isLiffReady) return;
 
-    checkOrLogin(idToken)
-      .then((res) => {
-        if (res.data.isNewUser) {
-          setStatus('form');
-        } else {
-          setVillager(res.data.villager);
-          setStatus('done');
+    const pendingTarget = sessionStorage.getItem('target_after_register');
+    if (pendingTarget) {
+      setRedirectTarget(pendingTarget);
+    }
+
+    async function verifyUser() {
+      try {
+        if (!liff.isLoggedIn()) {
+          liff.login();
+          return;
         }
-      })
-      .catch((err) => {
-        setErrorMsg(err.response?.data?.message || 'เกิดข้อผิดพลาด กรุณาลองใหม่');
-        setStatus('form');
-      });
-  }, [isLiffReady, idToken]);
 
-  function handleChange(e) {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  }
+        const token = liff.getIDToken();
+        setIdToken(token);
+
+        const res = await checkOrLogin(token);
+        if (res.data.isNewUser) {
+          setDisplayName(res.data.displayName || '');
+        } else {
+          setRegisteredVillager(res.data.villager);
+        }
+      } catch (err) {
+        setErrorMsg(err.response?.data?.message || 'เกิดข้อผิดพลาดในการตรวจสอบสิทธิ์ LINE');
+      } finally {
+        setChecking(false);
+      }
+    }
+
+    verifyUser();
+  }, [isLiffReady, liff]);
 
   async function handleSubmit(e) {
     e.preventDefault();
-    setSubmitting(true);
     setErrorMsg('');
 
+    if (!firstName.trim() || !lastName.trim() || !houseNumber.trim()) {
+      setErrorMsg('กรุณากรอกชื่อ นามสกุล และบ้านเลขที่ให้ครบถ้วน');
+      return;
+    }
+
     try {
-      const res = await registerVillager(idToken, form);
-      setVillager(res.data.villager);
-      setStatus('done');
+      setSubmitting(true);
+
+      // ปรับรูปแบบชื่อโซน หากผู้ใช้ใส่แค่ตัวเลข เช่น "4" ให้บันทึกเป็น "หมู่ 4" เพื่อความเป็นมาตรฐาน
+      let finalZone = zoneName.trim();
+      if (/^\d+$/.test(finalZone)) {
+        finalZone = `หมู่ ${finalZone}`;
+      }
+
+      const res = await registerVillager(idToken, {
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        houseNumber: houseNumber.trim(),
+        zoneName: finalZone,
+      });
+
+      setRegisteredVillager(res.data.villager);
+
+      const target = sessionStorage.getItem('target_after_register');
+      if (target) {
+        sessionStorage.removeItem('target_after_register');
+        setTimeout(() => {
+          navigate(target, { replace: true });
+        }, 1500);
+      }
     } catch (err) {
-      setErrorMsg(err.response?.data?.message || 'สมัครไม่สำเร็จ กรุณาลองใหม่');
+      setErrorMsg(err.response?.data?.message || 'การลงทะเบียนไม่สำเร็จ');
     } finally {
       setSubmitting(false);
     }
   }
 
+  function handleContinue() {
+    const target = sessionStorage.getItem('target_after_register');
+    if (target) {
+      sessionStorage.removeItem('target_after_register');
+      navigate(target, { replace: true });
+    } else {
+      navigate('/liff/home', { replace: true });
+    }
+  }
+
   if (liffError) {
-    return <div className="p-6 text-red-600">เกิดข้อผิดพลาดในการเชื่อมต่อ LINE: {liffError}</div>;
-  }
-
-  if (!isLiffReady || status === 'checking') {
-    return <div className="p-6 text-slate-600">กำลังตรวจสอบข้อมูล...</div>;
-  }
-
-  if (status === 'done') {
     return (
-      <div className="p-6">
-        <h1 className="text-xl font-bold text-green-700">ยินดีต้อนรับ {villager.first_name || profile?.displayName}</h1>
-        <p className="mt-2 text-slate-600">พร้อมใช้งานระบบหอกระจายข่าวชุมชนแล้ว</p>
+      <div className="p-6 text-center text-error space-y-2">
+        <p className="font-bold">เกิดข้อผิดพลาด LIFF</p>
+        <p className="text-xs text-text-secondary">{liffError}</p>
+      </div>
+    );
+  }
+
+  if (!isLiffReady || checking) {
+    return <LoadingSpinner text="กำลังเชื่อมต่อ LINE..." className="min-h-screen" />;
+  }
+
+  if (registeredVillager) {
+    return (
+      <div className="min-h-screen bg-background p-4 flex flex-col justify-center max-w-md mx-auto">
+        <Card className="text-center space-y-4 py-8">
+          <div className="w-14 h-14 rounded-full bg-success-soft text-success mx-auto flex items-center justify-center">
+            <CheckCircle className="w-8 h-8" />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-text-primary">ลงทะเบียนเรียบร้อยแล้ว</h2>
+            <p className="text-xs text-text-secondary mt-1">ยินดีต้อนรับเข้าสู่ระบบหอกระจายข่าวชุมชน</p>
+          </div>
+          <div className="bg-slate-50 p-4 rounded-sm border border-border text-left text-xs space-y-2 text-text-primary">
+            <p><strong>ชื่อ-นามสกุล:</strong> {registeredVillager.first_name} {registeredVillager.last_name}</p>
+            <p><strong>บ้านเลขที่:</strong> {registeredVillager.house_number}</p>
+            <p><strong>หมู่บ้าน / โซน:</strong> {registeredVillager.zone_name || '—'}</p>
+          </div>
+
+          <Button variant="primary" fullWidth icon={ArrowRight} onClick={handleContinue}>
+            {redirectTarget ? 'ไปที่ข่าวสารที่กดดู' : 'เข้าสู่ระบบข่าวสารชุมชน'}
+          </Button>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div className="p-6 max-w-md mx-auto">
-      <h1 className="text-xl font-bold text-slate-800 mb-1">ลงทะเบียนลูกบ้าน</h1>
-      <p className="text-slate-500 mb-4">สวัสดี {profile?.displayName} กรอกข้อมูลเพื่อเริ่มใช้งาน</p>
+    <div className="min-h-screen bg-background p-4 flex flex-col justify-center max-w-md mx-auto space-y-4">
+      <div className="text-center space-y-2">
+        <div className="w-12 h-12 rounded-md bg-primary mx-auto flex items-center justify-center text-white shadow-sm">
+          <Radio className="w-6 h-6" />
+        </div>
+        <h1 className="text-xl font-bold text-text-primary">ลงทะเบียนลูกบ้าน</h1>
+        <p className="text-xs text-text-secondary">
+          สวัสดีคุณ <strong className="text-text-primary">{displayName || 'ลูกบ้าน'}</strong> กรุณากรอกข้อมูลเพื่อรับข่าวสาร
+        </p>
+      </div>
 
-      {errorMsg && <p className="text-red-600 mb-3">{errorMsg}</p>}
+      <Card>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {errorMsg && (
+            <div className="p-3 bg-error-soft border border-error/20 text-error text-xs rounded-sm">
+              {errorMsg}
+            </div>
+          )}
 
-      <form onSubmit={handleSubmit} className="space-y-3">
-        <div>
-          <label className="block text-sm text-slate-600 mb-1">ชื่อ</label>
-          <input
-            name="firstName"
-            value={form.firstName}
-            onChange={handleChange}
+          <Input
+            label="ชื่อจริง"
             required
-            className="w-full border rounded px-3 py-2"
+            placeholder="เช่น สมชาย"
+            value={firstName}
+            onChange={(e) => setFirstName(e.target.value)}
           />
-        </div>
-        <div>
-          <label className="block text-sm text-slate-600 mb-1">นามสกุล</label>
-          <input
-            name="lastName"
-            value={form.lastName}
-            onChange={handleChange}
+
+          <Input
+            label="นามสกุล"
             required
-            className="w-full border rounded px-3 py-2"
+            placeholder="เช่น ใจดี"
+            value={lastName}
+            onChange={(e) => setLastName(e.target.value)}
           />
-        </div>
-        <div>
-          <label className="block text-sm text-slate-600 mb-1">บ้านเลขที่</label>
-          <input
-            name="houseNumber"
-            value={form.houseNumber}
-            onChange={handleChange}
+
+          <Input
+            label="บ้านเลขที่"
             required
-            className="w-full border rounded px-3 py-2"
+            placeholder="เช่น 123/45"
+            value={houseNumber}
+            onChange={(e) => setHouseNumber(e.target.value)}
           />
-        </div>
-        <div>
-          <label className="block text-sm text-slate-600 mb-1">คุ้ม/หมู่บ้าน (ไม่บังคับ)</label>
-          <input
-            name="zoneName"
-            value={form.zoneName}
-            onChange={handleChange}
-            className="w-full border rounded px-3 py-2"
-          />
-        </div>
-        <button
-          type="submit"
-          disabled={submitting}
-          className="w-full bg-green-600 text-white rounded py-2 disabled:opacity-50"
-        >
-          {submitting ? 'กำลังบันทึก...' : 'ลงทะเบียน'}
-        </button>
-      </form>
+
+          <div>
+            <Input
+              label="หมู่บ้าน / โซน (ใส่เฉพาะตัวเลขหมู่ เช่น 4)"
+              placeholder="ระบุตัวเลขหมู่ เช่น 4"
+              value={zoneName}
+              onChange={(e) => setZoneName(e.target.value)}
+            />
+            <p className="text-[11px] text-text-muted mt-1">
+              * หากพิมพ์เฉพาะตัวเลข "4" ระบบจะบันทึกเป็น "หมู่ 4" ให้อัตโนมัติ
+            </p>
+          </div>
+
+          <Button type="submit" variant="primary" fullWidth loading={submitting} className="mt-2">
+            ยืนยันการลงทะเบียน
+          </Button>
+        </form>
+      </Card>
     </div>
   );
 }

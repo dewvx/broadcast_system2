@@ -1,3 +1,4 @@
+const newsPublicService = require('../services/newsPublic.service');
 const newsService = require('../services/news.service');
 
 async function getAll(req, res, next) {
@@ -81,16 +82,19 @@ async function uploadImage(req, res, next) {
 
 async function publicView(req, res, next) {
   try {
-    const { idToken } = req.body;
-    if (!idToken) {
-      return res.status(400).json({ success: false, message: 'ไม่พบ idToken' });
-    }
-
+    const idToken = req.body?.idToken || 'guest';
     const news = await newsService.getPublicNewsDetail(req.params.id, idToken);
     res.json({ success: true, data: news });
   } catch (err) {
     next(err);
   }
 }
-
-module.exports = { getAll, getOne, create, update, remove, approve, reject, uploadImage, publicView };
+async function publicList(req, res, next) {
+  try {
+    const news = await newsPublicService.getPublicNewsList();
+    res.json({ success: true, data: news });
+  } catch (err) {
+    next(err);
+  }
+}
+module.exports = { getAll, getOne, create, update, remove, approve, reject, uploadImage, publicView, publicList };

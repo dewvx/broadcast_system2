@@ -1,4 +1,7 @@
 const villagerService = require('../services/villager.service');
+const activityService = require('../services/activity.service');
+const documentService = require('../services/document.service');
+const newsPublicService = require('../services/newsPublic.service');
 
 async function checkOrLogin(req, res, next) {
   try {
@@ -36,4 +39,49 @@ async function register(req, res, next) {
   }
 }
 
-module.exports = { checkOrLogin, register };
+async function getAll(req, res, next) {
+  try {
+    const villagers = await villagerService.getAllVillagers();
+    res.json({ success: true, data: villagers });
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function getActivities(req, res, next) {
+  try {
+    const activities = await activityService.getAllActivities();
+    res.json({ success: true, data: activities });
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function getActivityDetail(req, res, next) {
+  try {
+    const activity = await activityService.getActivityById(req.params.id);
+    res.json({ success: true, data: activity });
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function getDocuments(req, res, next) {
+  try {
+    const docs = await documentService.getAllDocuments();
+    res.json({ success: true, data: docs });
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function getNews(req, res, next) {
+  try {
+    const news = await newsPublicService.getPublicNewsList();
+    res.json({ success: true, data: news });
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { checkOrLogin, register, getAll, getActivities, getActivityDetail, getDocuments, getNews };
