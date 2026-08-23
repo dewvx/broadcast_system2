@@ -3,8 +3,10 @@ import { Link } from 'react-router-dom';
 import { getAllNews, approveNews, rejectNews, deleteNews } from '../../api/news.api';
 import { getZones, broadcastNews } from '../../api/broadcast.api';
 import { useAuth } from '../../context/AuthContext';
-import { Button, Badge, Modal, Select, EmptyState, LoadingSpinner } from '../../components/ui';
+import { Button, Badge, Modal, Select, EmptyState, LoadingSpinner, Pagination } from '../../components/ui';
 import { Plus, Eye, Edit2, Trash2, CheckCircle, XCircle, Send, Radio, Search } from 'lucide-react';
+
+const ITEMS_PER_PAGE = 8;
 
 function NewsManagementPage() {
   const { user } = useAuth();
@@ -12,6 +14,7 @@ function NewsManagementPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
   const [broadcastData, setBroadcastData] = useState({ newsId: null, zoneName: '' });
   const [zones, setZones] = useState([]);
   const [sendingBroadcast, setSendingBroadcast] = useState(false);
@@ -20,6 +23,11 @@ function NewsManagementPage() {
     fetchNews();
     fetchZones();
   }, []);
+
+  // เมื่อเปลี่ยน search หรือ filter ให้รีเซ็ตกลับหน้า 1
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filter]);
 
   async function fetchNews() {
     try {
@@ -36,7 +44,6 @@ function NewsManagementPage() {
   async function fetchZones() {
     try {
       const res = await getZones();
-      // ดึงเฉพาะโซนที่มีลูกบ้านลงทะเบียนไว้จริงใน DB
       setZones(res.data.data || []);
     } catch (err) {
       console.error('Failed to fetch zones:', err);
@@ -98,6 +105,11 @@ function NewsManagementPage() {
     return matchFilter && matchSearch;
   });
 
+  const paginatedNews = filteredNews.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
   if (loading) return <LoadingSpinner text="กำลังโหลดรายการข่าวสาร..." />;
 
   return (
@@ -149,98 +161,108 @@ function NewsManagementPage() {
             description="ไม่มีรายการข่าวสารที่ตรงกับเงื่อนไขการค้นหาในขณะนี้"
           />
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left">
-              <thead className="bg-slate-50 border-b border-border text-xs text-text-secondary font-semibold uppercase tracking-wider">
-                <tr>
-                  <th className="px-6 py-3.5">หัวข้อข่าว</th>
-                  <th className="px-6 py-3.5">หมวดหมู่</th>
-                  <th className="px-6 py-3.5">สถานะ</th>
-                  <th className="px-6 py-3.5">ยอดดู</th>
-                  <th className="px-6 py-3.5">วันที่สร้าง</th>
-                  <th className="px-6 py-3.5 text-right">จัดการ</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {filteredNews.map((item) => (
-                  <tr key={item.news_id} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="px-6 py-4 font-medium text-text-primary max-w-xs truncate">
-                      {item.news_title}
-                    </td>
-                    <td className="px-6 py-4 text-text-secondary">{item.category_name || '—'}</td>
-                    <td className="px-6 py-4">
-                      <Badge status={item.news_status} />
-                    </td>
-                    <td className="px-6 py-4 text-text-secondary font-medium">
-                      {item.view_count || 0} ครั้ง
-                    </td>
-                    <td className="px-6 py-4 text-text-muted">
-                      {new Date(item.created_at).toLocaleDateString('th-TH')}
-                    </td>
-                    <td className="px-6 py-4 text-right space-x-2">
-                      <Link to={`/admin/news/view/${item.news_id}`}>
-                        <Button size="sm" variant="ghost" title="ดูข่าว">
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                      </Link>
-
-                      {canEdit(item) && (
-                        <Link to={`/admin/news/edit/${item.news_id}`}>
-                          <Button size="sm" variant="ghost" title="แก้ไข">
-                            <Edit2 className="w-4 h-4 text-primary" />
+          <div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left">
+                <thead className="bg-slate-50 border-b border-border text-xs text-text-secondary font-semibold uppercase tracking-wider">
+                  <tr>
+                    <th className="px-6 py-3.5">หัวข้อข่าว</th>
+                    <th className="px-6 py-3.5">หมวดหมู่</th>
+                    <th className="px-6 py-3.5">สถานะ</th>
+                    <th className="px-6 py-3.5">ยอดดู</th>
+                    <th className="px-6 py-3.5">วันที่สร้าง</th>
+                    <th className="px-6 py-3.5 text-right">จัดการ</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {paginatedNews.map((item) => (
+                    <tr key={item.news_id} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="px-6 py-4 font-medium text-text-primary max-w-xs truncate">
+                        {item.news_title}
+                      </td>
+                      <td className="px-6 py-4 text-text-secondary">{item.category_name || '—'}</td>
+                      <td className="px-6 py-4">
+                        <Badge status={item.news_status} />
+                      </td>
+                      <td className="px-6 py-4 text-text-secondary font-medium">
+                        {item.view_count || 0} ครั้ง
+                      </td>
+                      <td className="px-6 py-4 text-text-muted">
+                        {new Date(item.created_at).toLocaleDateString('th-TH')}
+                      </td>
+                      <td className="px-6 py-4 text-right space-x-2">
+                        <Link to={`/admin/news/view/${item.news_id}`}>
+                          <Button size="sm" variant="ghost" title="ดูข่าว">
+                            <Eye className="w-4 h-4" />
                           </Button>
                         </Link>
-                      )}
 
-                      {user.roleName === 'Admin' && item.news_status === 'Pending' && (
-                        <>
+                        {canEdit(item) && (
+                          <Link to={`/admin/news/edit/${item.news_id}`}>
+                            <Button size="sm" variant="ghost" title="แก้ไข">
+                              <Edit2 className="w-4 h-4 text-primary" />
+                            </Button>
+                          </Link>
+                        )}
+
+                        {user.roleName === 'Admin' && item.news_status === 'Pending' && (
+                          <>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleApprove(item.news_id)}
+                              title="อนุมัติ"
+                            >
+                              <CheckCircle className="w-4 h-4 text-success" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleReject(item.news_id)}
+                              title="ปฏิเสธ"
+                            >
+                              <XCircle className="w-4 h-4 text-error" />
+                            </Button>
+                          </>
+                        )}
+
+                        {item.news_status === 'Approved' && (
                           <Button
                             size="sm"
                             variant="ghost"
-                            onClick={() => handleApprove(item.news_id)}
-                            title="อนุมัติ"
+                            onClick={() => {
+                              setBroadcastData({ newsId: item.news_id, zoneName: '' });
+                            }}
+                            title="ส่งข่าวหาลูกบ้านผ่าน LINE"
                           >
-                            <CheckCircle className="w-4 h-4 text-success" />
+                            <Send className="w-4 h-4 text-secondary" />
                           </Button>
+                        )}
+
+                        {user.roleName === 'Admin' && (
                           <Button
                             size="sm"
                             variant="ghost"
-                            onClick={() => handleReject(item.news_id)}
-                            title="ปฏิเสธ"
+                            onClick={() => handleDelete(item.news_id)}
+                            title="ลบ"
                           >
-                            <XCircle className="w-4 h-4 text-error" />
+                            <Trash2 className="w-4 h-4 text-text-muted hover:text-error" />
                           </Button>
-                        </>
-                      )}
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
-                      {item.news_status === 'Approved' && (
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => {
-                            setBroadcastData({ newsId: item.news_id, zoneName: '' });
-                          }}
-                          title="ส่งข่าวหาลูกบ้านผ่าน LINE"
-                        >
-                          <Send className="w-4 h-4 text-secondary" />
-                        </Button>
-                      )}
-
-                      {user.roleName === 'Admin' && (
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => handleDelete(item.news_id)}
-                          title="ลบ"
-                        >
-                          <Trash2 className="w-4 h-4 text-text-muted hover:text-error" />
-                        </Button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            {/* Pagination */}
+            <Pagination
+              currentPage={currentPage}
+              totalItems={filteredNews.length}
+              itemsPerPage={ITEMS_PER_PAGE}
+              onPageChange={setCurrentPage}
+            />
           </div>
         )}
       </div>

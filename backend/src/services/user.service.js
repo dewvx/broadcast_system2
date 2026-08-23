@@ -16,7 +16,7 @@ async function getAllRoles() {
 }
 
 async function createUser(data) {
-  const { username, password, fullName, roleId } = data;
+  const { username, password, fullName, roleId, lineUserId } = data;
 
   if (!username || !password || !fullName || !roleId) {
     throwError('กรุณากรอกข้อมูลให้ครบถ้วน (username, password, full_name, role_id)', 400);
@@ -33,6 +33,7 @@ async function createUser(data) {
     hashedPassword,
     fullName: fullName.trim(),
     roleId,
+    lineUserId: lineUserId ? lineUserId.trim() : null,
   });
 
   return userModel.findById(userId);
@@ -49,13 +50,14 @@ async function updateUser(userId, data, currentUser) {
 
   const fullName = data.fullName ? data.fullName.trim() : user.full_name;
   const roleId = currentUser.roleName === 'Admin' && data.roleId ? data.roleId : user.role_id;
+  const lineUserId = data.lineUserId !== undefined ? (data.lineUserId ? data.lineUserId.trim() : null) : user.line_user_id;
 
   let hashedPassword = null;
   if (data.password && data.password.trim()) {
     hashedPassword = await bcrypt.hash(data.password.trim(), 10);
   }
 
-  await userModel.update(userId, { fullName, roleId, hashedPassword });
+  await userModel.update(userId, { fullName, roleId, hashedPassword, lineUserId });
   return userModel.findById(userId);
 }
 

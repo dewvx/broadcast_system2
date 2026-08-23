@@ -55,16 +55,18 @@ function HomePage() {
   return (
     <div className="p-4 space-y-6">
       {/* Welcome Banner */}
-      <div className="bg-gradient-to-r from-slate-900 to-slate-800 text-white p-5 rounded-md shadow-sm space-y-2 relative overflow-hidden">
-        <div className="flex items-center gap-2">
-          <span className="p-1.5 bg-primary/20 text-primary rounded-sm">
-            <Radio className="w-5 h-5" />
-          </span>
-          <h1 className="text-base font-bold tracking-wide">ยินดีต้อนรับสู่หอกระจายข่าว</h1>
+      <div className="bg-gradient-to-r from-slate-900 to-slate-800 text-white p-4 rounded-md shadow-sm flex items-center gap-3.5 relative overflow-hidden">
+        <img
+          src="/logo.jpg"
+          alt="โลโก้หอกระจายข่าวบ้านสี่แยก"
+          className="w-14 h-14 rounded-full object-cover border-2 border-slate-700 shadow-md shrink-0 ring-2 ring-primary/30"
+        />
+        <div className="space-y-1 min-w-0">
+          <h1 className="text-sm font-bold tracking-wide leading-tight">หอกระจายข่าวบ้านสี่แยก</h1>
+          <p className="text-[11px] text-slate-300 leading-relaxed">
+            ศูนย์รวมข้อมูลข่าวสาร ประกาศด่วน กิจกรรม และแบบฟอร์มเอกสารของชุมชน
+          </p>
         </div>
-        <p className="text-xs text-slate-300 leading-relaxed">
-          ศูนย์รวมข้อมูลข่าวสาร ประกาศด่วน กิจกรรม และแบบฟอร์มเอกสารประจำหมู่บ้าน
-        </p>
       </div>
 
       {/* Featured / Hero News */}

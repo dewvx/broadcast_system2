@@ -154,10 +154,17 @@ function LiffContentWrapper() {
   return (
     <div className="min-h-screen bg-background pb-16">
       {/* Mobile Header Bar */}
-      <header className="h-12 bg-slate-900 text-white px-4 flex items-center justify-between sticky top-0 z-30 max-w-md mx-auto shadow-sm">
-        <div className="flex items-center gap-2">
-          <Radio className="w-4 h-4 text-primary" />
-          <span className="text-sm font-bold tracking-wide">หอกระจายข่าวชุมชน</span>
+      <header className="h-14 bg-slate-900 text-white px-4 flex items-center justify-between sticky top-0 z-30 max-w-md mx-auto shadow-sm">
+        <div className="flex items-center gap-2.5">
+          <img
+            src="/logo.jpg"
+            alt="โลโก้หอกระจายข่าวบ้านสี่แยก"
+            className="w-8 h-8 rounded-full object-cover border border-slate-700 shadow-xs shrink-0"
+          />
+          <div>
+            <span className="text-xs font-bold tracking-wide block leading-tight">หอกระจายข่าวบ้านสี่แยก</span>
+            <span className="text-[10px] text-slate-400 font-normal leading-tight">ระบบประชาสัมพันธ์ชุมชน</span>
+          </div>
         </div>
       </header>
 

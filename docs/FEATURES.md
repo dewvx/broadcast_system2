@@ -7,6 +7,8 @@
 - [x] เช็ค session ปัจจุบัน (/me)
 - [x] จัดการบัญชีผู้ใช้งาน (Admin เท่านั้น) (หน้า UserPage `/admin/users`)
 - [x] แก้ไข username/password/ชื่อจริง ของตนเองผ่าน GUI (ไม่ต้องรัน cURL)
+- [x] ผูกบัญชี LINE Official Account กับผู้ใช้งานระบบ Admin/Leader (`tb_user.line_user_id`)
+- [x] ระบบกู้คืน/รีเซ็ตรหัสผ่านผ่าน LINE OA OTP 6 หลัก (`/admin/forgot-password`)
 - [x] LINE LIFF auto-register/verify (ลูกบ้าน, ดึง LINE User ID อัตโนมัติ)
 
 ## 3.2 ระบบจัดการข่าวสารและประกาศหมู่บ้าน
@@ -52,11 +54,29 @@
 
 ## 3.9 ระบบบันทึกประวัติการส่งข่าว (Broadcast Log)
 - [x] บันทึกวันที่/เวลา/ผู้ส่ง/จำนวนผู้รับ
+- [x] กรองเฉพาะลูกบ้าน is_active = 1 ตอนส่ง broadcast (ตัดคนที่ unfollow/บล็อก OA ออกอัตโนมัติ)
 
 ## 3.10 ระบบรายงานและสถิติการเข้าถึงข้อมูล
 - [x] จำนวนข่าวที่เผยแพร่
 - [x] สถิติการเข้าถึงข่าว (Tracking Views ผ่าน tb_view_log Real-time)
 - [x] รายงานสรุปย้อนหลัง (broadcast history)
+
+## 3.11 ระบบจัดการข้อมูลลูกบ้าน (Villager Management)
+- [x] ลูกบ้านลงทะเบียนครั้งแรกผ่าน LINE LIFF (Registration Guard)
+- [x] ลูกบ้านแก้ไขข้อมูลตัวเองได้ผ่านหน้า ProfilePage (`POST /api/villager/update-profile` ต้อง verify idToken)
+- [x] Admin แก้ไขข้อมูลลูกบ้านแทนได้ผ่านหน้า VillagerPage Modal (`PUT /api/villager/:id`)
+- [x] Admin ลบลูกบ้านออกจากระบบได้ (`DELETE /api/villager/:id`) — ลูกบ้านต้องลงทะเบียนใหม่
+- [x] แสดงสถานะ Active/Inactive บนตาราง VillagerPage พร้อม Filter
+- [x] คอลัมน์ `is_active` ใน `tb_villager` (1 = ปกติ, 0 = เลิกติดตาม/บล็อก)
+- [x] Webhook Event `unfollow` → mark `is_active = 0` (ไม่ลบ record เก็บประวัติไว้)
+- [x] Webhook Event `follow` → mark `is_active = 1` (เมื่อแอดกลับมา restore สถานะทันที)
+
+## 3.12 ระบบคุ้มครองข้อมูลส่วนบุคคล (PDPA / Compliance)
+- [x] แสดงข้อความขอความยินยอมเก็บข้อมูลส่วนบุคคล (ชื่อ-นามสกุล, บ้านเลขที่, หมู่บ้าน) บนหน้าลงทะเบียน LIFF
+- [x] Checkbox ยินยอม PDPA ก่อนลงทะเบียน (ปุ่มลงทะเบียน disabled จนกว่าจะติ๊กยินยอม)
+- [x] Server-side validation บังคับ `pdpaConsent === true` (Reject HTTP 400 หากไม่ยินยอม)
+- [x] บันทึกเวลาที่ยินยอมลงในคอลัมน์ `pdpa_consent_at` (TIMESTAMP) ในฐานข้อมูล `tb_villager`
+
 ---
 
 ## Infrastructure / Setup (ทำก่อนเริ่มฟีเจอร์ด้านบน)

@@ -1,15 +1,17 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { getUsers, getRoles, createUser, updateUser, deleteUser } from '../../api/user.api';
-import { Button, Input, Select, Modal, Badge, EmptyState, LoadingSpinner, Card } from '../../components/ui';
-import { Users, Plus, Edit2, Trash2, ShieldCheck, Key, UserCheck, AlertCircle } from 'lucide-react';
+import { getAllVillagers } from '../../api/admin-villager.api';
+import { Button, Input, Select, Modal, Badge, EmptyState, LoadingSpinner } from '../../components/ui';
+import { Users, Plus, Edit2, Trash2, Key, AlertCircle, MessageSquare, Check, X } from 'lucide-react';
 
-const EMPTY_FORM = { username: '', password: '', fullName: '', roleId: '' };
+const EMPTY_FORM = { username: '', password: '', fullName: '', roleId: '', lineUserId: '' };
 
 function UserPage() {
   const { user: currentUser } = useAuth();
   const [users, setUsers] = useState([]);
   const [roles, setRoles] = useState([]);
+  const [villagers, setVillagers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
   const [showModal, setShowModal] = useState(false);
@@ -19,30 +21,33 @@ function UserPage() {
   const [formError, setFormError] = useState('');
 
   useEffect(() => {
-    fetchUsers();
-    if (currentUser?.roleName === 'Admin') {
-      fetchRoles();
-    }
+    fetchData();
   }, [currentUser]);
 
-  async function fetchUsers() {
+  async function fetchData() {
     try {
       setLoading(true);
-      const res = await getUsers();
-      setUsers(res.data.data);
+      const [usersRes, rolesRes, villagersRes] = await Promise.all([
+        getUsers(),
+        currentUser?.roleName === 'Admin' ? getRoles() : Promise.resolve({ data: { data: [] } }),
+        getAllVillagers().catch(() => ({ data: { data: [] } })),
+      ]);
+      setUsers(usersRes.data.data);
+      if (rolesRes.data?.data) setRoles(rolesRes.data.data);
+      if (villagersRes.data?.data) setVillagers(villagersRes.data.data);
     } catch (err) {
-      setErrorMsg(err.response?.data?.message || 'โหลดข้อมูลผู้ใช้ไม่สำเร็จ');
+      setErrorMsg(err.response?.data?.message || 'โหลดข้อมูลไม่สำเร็จ');
     } finally {
       setLoading(false);
     }
   }
 
-  async function fetchRoles() {
+  async function fetchUsers() {
     try {
-      const res = await getRoles();
-      setRoles(res.data.data);
+      const res = await getUsers();
+      setUsers(res.data.data);
     } catch (err) {
-      console.error('Failed to fetch roles:', err);
+      console.error('Failed to reload users:', err);
     }
   }
 
@@ -60,6 +65,7 @@ function UserPage() {
       password: '', // ปล่อยว่างถ้าไม่ต้องการเปลี่ยน password
       fullName: item.full_name || '',
       roleId: item.role_id || '',
+      lineUserId: item.line_user_id || '',
     });
     setFormError('');
     setShowModal(true);
@@ -154,12 +160,14 @@ function UserPage() {
                   <th className="px-6 py-3.5">ชื่อ-นามสกุล</th>
                   <th className="px-6 py-3.5">ชื่อผู้ใช้งาน (Username)</th>
                   <th className="px-6 py-3.5">สิทธิ์การใช้งาน (Role)</th>
+                  <th className="px-6 py-3.5">ผูกบัญชี LINE (รับ OTP)</th>
                   <th className="px-6 py-3.5 text-right">จัดการ</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {users.map((item) => {
                   const isSelf = currentUser?.userId === item.user_id;
+                  const matchedVillager = villagers.find((v) => v.line_user_id === item.line_user_id);
                   return (
                     <tr key={item.user_id} className="hover:bg-slate-50/80 transition-colors">
                       <td className="px-6 py-4 font-medium text-text-primary">
@@ -173,6 +181,18 @@ function UserPage() {
                         <Badge variant={item.role_name === 'Admin' ? 'danger' : 'secondary'}>
                           {item.role_name === 'Admin' ? 'ผู้ใหญ่บ้าน (Admin)' : 'ผู้นำชุมชน (Leader)'}
                         </Badge>
+                      </td>
+                      <td className="px-6 py-4">
+                        {item.line_user_id ? (
+                          <Badge variant="success" className="gap-1">
+                            <Check className="w-3 h-3 inline" />
+                            {matchedVillager ? `LINE: ${matchedVillager.display_name || matchedVillager.first_name}` : 'ผูก LINE แล้ว'}
+                          </Badge>
+                        ) : (
+                          <Badge variant="default" className="text-text-muted">
+                            ยังไม่ผูก LINE
+                          </Badge>
+                        )}
                       </td>
                       <td className="px-6 py-4 text-right space-x-2">
                         {(currentUser?.roleName === 'Admin' || isSelf) && (
@@ -259,6 +279,30 @@ function UserPage() {
               ))}
             </Select>
           )}
+
+          {/* ผูกบัญชี LINE สำหรับรับ OTP กู้รหัสผ่าน */}
+          <div>
+            <label className="block text-xs font-medium text-text-secondary mb-1">
+              ผูกบัญชี LINE OA (สำหรับรับ OTP กู้รหัสผ่าน)
+            </label>
+            <select
+              value={form.lineUserId}
+              onChange={(e) => setForm({ ...form, lineUserId: e.target.value })}
+              className="w-full h-10 px-3 text-sm bg-surface border border-border rounded-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            >
+              <option value="">— ไม่ผูกบัญชี LINE —</option>
+              {villagers
+                .filter((v) => v.line_user_id)
+                .map((v) => (
+                  <option key={v.villager_id} value={v.line_user_id}>
+                    {v.first_name} {v.last_name} ({v.display_name ? `LINE: ${v.display_name}` : 'ลูกบ้าน'} • {v.house_number})
+                  </option>
+                ))}
+            </select>
+            <p className="text-[11px] text-text-muted mt-1">
+              * เลือกชื่อบัญชี LINE ของท่านที่เคยลงทะเบียนในระบบ เพื่อให้ระบบสามารถส่ง OTP กู้คืนรหัสผ่านเข้า LINE ได้
+            </p>
+          </div>
         </form>
       </Modal>
     </div>

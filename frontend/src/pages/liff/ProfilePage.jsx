@@ -1,14 +1,26 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useLiff } from '../../context/LiffContext';
-import { checkOrLogin } from '../../api/villager.api';
+import { checkOrLogin, updateSelfProfile } from '../../api/villager.api';
 import { Card, Button, Badge, LoadingSpinner } from '../../components/ui';
-import { User, Phone, MapPin, ShieldCheck, UserCheck, AlertTriangle, Building, PhoneCall, Calendar } from 'lucide-react';
+import { User, Phone, MapPin, ShieldCheck, UserCheck, AlertTriangle, Building, PhoneCall, Calendar, Pencil, X, Check } from 'lucide-react';
 
 function ProfilePage() {
   const { liff, isLiffReady, idToken } = useLiff();
   const [villager, setVillager] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  // Edit mode state
+  const [isEditing, setIsEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [form, setForm] = useState({
+    firstName: '',
+    lastName: '',
+    houseNumber: '',
+    zoneName: '',
+  });
 
   useEffect(() => {
     async function loadProfile() {
@@ -34,6 +46,62 @@ function ProfilePage() {
     }
   }, [isLiffReady, liff, idToken]);
 
+  function openEditForm() {
+    if (!villager) return;
+    setForm({
+      firstName: villager.first_name || '',
+      lastName: villager.last_name || '',
+      houseNumber: villager.house_number || '',
+      zoneName: villager.zone_name || '',
+    });
+    setSaveError('');
+    setSaveSuccess(false);
+    setIsEditing(true);
+  }
+
+  function handleFormChange(e) {
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+  }
+
+  async function handleSaveProfile(e) {
+    e.preventDefault();
+    setSaveError('');
+    setSaveSuccess(false);
+
+    if (!form.firstName.trim() || !form.lastName.trim() || !form.houseNumber.trim()) {
+      setSaveError('กรุณากรอกชื่อ นามสกุล และบ้านเลขที่ให้ครบ');
+      return;
+    }
+
+    // แปลงตัวเลขหมู่เป็น "หมู่ X"
+    let zoneName = form.zoneName.trim();
+    if (zoneName && /^\d+$/.test(zoneName)) {
+      zoneName = `หมู่ ${zoneName}`;
+    }
+
+    try {
+      setSaving(true);
+      const token = idToken || (liff?.getIDToken ? liff.getIDToken() : null);
+      const res = await updateSelfProfile(token, {
+        firstName: form.firstName.trim(),
+        lastName: form.lastName.trim(),
+        houseNumber: form.houseNumber.trim(),
+        zoneName: zoneName || null,
+      });
+      setVillager(res.data.villager);
+      setSaveSuccess(true);
+      setTimeout(() => {
+        setIsEditing(false);
+        setSaveSuccess(false);
+      }, 1500);
+    } catch (err) {
+      setSaveError(err?.response?.data?.message || 'เกิดข้อผิดพลาด กรุณาลองใหม่');
+    } finally {
+      setSaving(false);
+    }
+  }
+
   if (loading) return <LoadingSpinner text="กำลังโหลดข้อมูลส่วนตัว..." className="min-h-screen" />;
 
   return (
@@ -46,37 +114,154 @@ function ProfilePage() {
 
       {/* User Info / Profile Card */}
       {villager ? (
-        <Card padding="md" className="space-y-4 border-primary/30 shadow-xs">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-primary-soft text-primary flex items-center justify-center font-bold text-lg shrink-0">
-              {villager.first_name?.charAt(0) || 'V'}
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <h2 className="font-bold text-text-primary text-base truncate">
-                  {villager.first_name} {villager.last_name}
-                </h2>
-                <Badge variant="success">ลงทะเบียนแล้ว</Badge>
+        <>
+          {/* Profile Display Card */}
+          {!isEditing ? (
+            <Card padding="md" className="space-y-4 border-primary/30 shadow-xs">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-primary-soft text-primary flex items-center justify-center font-bold text-lg shrink-0">
+                  {villager.first_name?.charAt(0) || 'V'}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <h2 className="font-bold text-text-primary text-base truncate">
+                      {villager.first_name} {villager.last_name}
+                    </h2>
+                    <Badge variant="success">ลงทะเบียนแล้ว</Badge>
+                  </div>
+                  <p className="text-xs text-text-secondary mt-0.5">
+                    บ้านเลขที่ {villager.house_number} {villager.zone_name ? `• ${villager.zone_name}` : ''}
+                  </p>
+                </div>
               </div>
-              <p className="text-xs text-text-secondary mt-0.5">
-                บ้านเลขที่ {villager.house_number} {villager.zone_name ? `• ${villager.zone_name}` : ''}
-              </p>
-            </div>
-          </div>
 
-          <div className="bg-slate-50 p-3 rounded-sm border border-border text-xs space-y-1.5 text-text-secondary">
-            <div className="flex items-center justify-between">
-              <span>วันที่ลงทะเบียนระบบ:</span>
-              <span className="font-semibold text-text-primary">
-                {new Date(villager.join_date).toLocaleDateString('th-TH')}
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span>สถานะบัญชี:</span>
-              <span className="font-semibold text-success">ยืนยันตัวตนผ่าน LINE แล้ว</span>
-            </div>
-          </div>
-        </Card>
+              <div className="bg-slate-50 p-3 rounded-sm border border-border text-xs space-y-1.5 text-text-secondary">
+                <div className="flex items-center justify-between">
+                  <span>วันที่ลงทะเบียนระบบ:</span>
+                  <span className="font-semibold text-text-primary">
+                    {new Date(villager.join_date).toLocaleDateString('th-TH')}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span>สถานะบัญชี:</span>
+                  <span className="font-semibold text-success">ยืนยันตัวตนผ่าน LINE แล้ว</span>
+                </div>
+              </div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                fullWidth
+                icon={Pencil}
+                onClick={openEditForm}
+              >
+                แก้ไขข้อมูลส่วนตัว
+              </Button>
+            </Card>
+          ) : (
+            /* Edit Form Card */
+            <Card padding="md" className="space-y-4 border-primary/30 shadow-xs">
+              <div className="flex items-center justify-between">
+                <h2 className="font-bold text-text-primary text-sm">แก้ไขข้อมูลส่วนตัว</h2>
+                <button
+                  onClick={() => setIsEditing(false)}
+                  className="text-text-muted hover:text-text-primary"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <form onSubmit={handleSaveProfile} className="space-y-3">
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-xs font-medium text-text-secondary mb-1">ชื่อจริง</label>
+                    <input
+                      type="text"
+                      name="firstName"
+                      value={form.firstName}
+                      onChange={handleFormChange}
+                      required
+                      className="w-full text-sm px-3 py-2 border border-border rounded-sm focus:outline-none focus:border-primary bg-white"
+                      placeholder="ชื่อ"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-text-secondary mb-1">นามสกุล</label>
+                    <input
+                      type="text"
+                      name="lastName"
+                      value={form.lastName}
+                      onChange={handleFormChange}
+                      required
+                      className="w-full text-sm px-3 py-2 border border-border rounded-sm focus:outline-none focus:border-primary bg-white"
+                      placeholder="นามสกุล"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-text-secondary mb-1">บ้านเลขที่</label>
+                  <input
+                    type="text"
+                    name="houseNumber"
+                    value={form.houseNumber}
+                    onChange={handleFormChange}
+                    required
+                    className="w-full text-sm px-3 py-2 border border-border rounded-sm focus:outline-none focus:border-primary bg-white"
+                    placeholder="เช่น 123/4"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-text-secondary mb-1">
+                    หมู่บ้าน / โซน <span className="text-text-muted font-normal">(กรอกเฉพาะตัวเลขหมู่ เช่น 4)</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="zoneName"
+                    value={form.zoneName}
+                    onChange={handleFormChange}
+                    className="w-full text-sm px-3 py-2 border border-border rounded-sm focus:outline-none focus:border-primary bg-white"
+                    placeholder="เช่น 4 (ระบบจะแปลงเป็น หมู่ 4)"
+                  />
+                </div>
+
+                {saveError && (
+                  <p className="text-xs text-error bg-error-soft/30 border border-error/30 rounded-sm px-3 py-2">
+                    {saveError}
+                  </p>
+                )}
+                {saveSuccess && (
+                  <p className="text-xs text-success bg-success-soft/30 border border-success/30 rounded-sm px-3 py-2 flex items-center gap-1.5">
+                    <Check className="w-3.5 h-3.5" /> บันทึกข้อมูลเรียบร้อยแล้ว
+                  </p>
+                )}
+
+                <div className="flex gap-2 pt-1">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    fullWidth
+                    onClick={() => setIsEditing(false)}
+                    disabled={saving}
+                  >
+                    ยกเลิก
+                  </Button>
+                  <Button
+                    type="submit"
+                    variant="primary"
+                    size="sm"
+                    fullWidth
+                    disabled={saving}
+                  >
+                    {saving ? 'กำลังบันทึก...' : 'บันทึก'}
+                  </Button>
+                </div>
+              </form>
+            </Card>
+          )}
+        </>
       ) : (
         <Card padding="md" className="text-center space-y-3 border-warning/30 bg-warning-soft/30">
           <div className="w-10 h-10 rounded-full bg-warning-soft text-warning mx-auto flex items-center justify-center">

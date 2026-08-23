@@ -51,6 +51,20 @@
 - **Admin User Management**: มีหน้าจัดการผู้ใช้งานระบบ ([UserPage.jsx](file:///d:/broadcast_lineOA/frontend/src/pages/admin/UserPage.jsx)) เส้นทาง `/admin/users` สำหรับเพิ่ม แก้ไขสิทธิ์ เปลี่ยนรหัสผ่าน และลบบัญชีผู้ใหญ่บ้าน (Admin) หรือผู้นำชุมชน (Leader) ได้โดยตรงบน GUI (ไม่ต้องรัน cURL)
 - **Backend API**: `/api/user` (CRUD User & Roles) สอดคล้องกับ `tb_user` และ `tb_role`
 
+### 7. ระบบจัดการข้อมูลลูกบ้าน & สถานะการติดตาม (Villager Management & LINE Status)
+- **Admin Villager Management**: หน้าจัดการลูกบ้าน ([VillagerPage.jsx](file:///d:/broadcast_lineOA/frontend/src/pages/admin/VillagerPage.jsx)) รองรับการค้นหา, กรองตามโซน/สถานะ Active, แก้ไขข้อมูลลูกบ้านแทน (Modal) และลบลูกบ้านออกจากระบบ (Confirm Dialog)
+- **Self-service Edit Profile**: ลูกบ้านสามารถแก้ไขข้อมูลส่วนตัวของตนเองได้โดยตรงผ่านหน้า [ProfilePage.jsx](file:///d:/broadcast_lineOA/frontend/src/pages/liff/ProfilePage.jsx)
+- **LINE Webhook Active Tracking**: ดัก Event `unfollow` ปรับ `is_active = 0` และ Event `follow` ปรับ `is_active = 1` เพื่อให้ระบบ Broadcast กรองเฉพาะผู้ใช้งานที่ active เท่านั้น
+
+### 8. ระบบความยินยอมคุ้มครองข้อมูลส่วนบุคคล (PDPA Consent)
+- **PDPA Policy & Consent Checkbox**: หน้ารงทะเบียนลูกบ้าน ([RegisterPage.jsx](file:///d:/broadcast_lineOA/frontend/src/pages/liff/RegisterPage.jsx)) มีกล่องข้อความอธิบายวัตถุประสงค์การจัดเก็บข้อมูลส่วนบุคคล และ Checkbox บังคับยินยอมก่อนกดยืนยัน (ปุ่ม submit จะ disabled จนกว่าจะกดยินยอม)
+- **Server-side Enforcement**: Backend ตรวจสอบ `pdpaConsent === true` เสมอ และบันทึกเวลาที่ยินยอมลงในคอลัมน์ `pdpa_consent_at` (TIMESTAMP) ในฐานข้อมูล `tb_villager` เพื่อการอ้างอิงย้อนหลัง
+
+### 9. ระบบกู้คืนและรีเซ็ตรหัสผ่านผู้ดูแลระบบผ่าน LINE OA (Admin Password Reset via LINE OTP)
+- **LINE Account Binding**: ในหน้าจัดการผู้ใช้งาน ([UserPage.jsx](file:///d:/broadcast_lineOA/frontend/src/pages/admin/UserPage.jsx)) ผู้ใหญ่บ้านสามารถผูกบัญชี LINE Official Account กับบัญชี Admin/Leader ได้อย่างง่ายดายผ่าน Dropdown เลือกลูกบ้านที่ลงทะเบียนในระบบ (`tb_user.line_user_id`)
+- **Forgot Password Flow**: หน้า [ForgotPasswordPage.jsx](file:///d:/broadcast_lineOA/frontend/src/pages/admin/ForgotPasswordPage.jsx) (`/admin/forgot-password`) ให้ Admin ระบุ Username เพื่อขอ **รหัส OTP 6 หลัก (อายุ 10 นาที)** ผ่าน LINE Messaging API Push Message
+- **OTP Verification & Password Reset**: ยืนยันรหัส OTP และกำหนดรหัสผ่านใหม่ โดยระบบจะ Hash ด้วย `bcrypt` และส่ง Push Message ยืนยันความปลอดภัยกลับไปยัง LINE OA ทันที
+
 ---
 
 ## 📁 Key File Map (ไฟล์สำคัญของระบบ)
@@ -62,20 +76,33 @@
   - `docs/SETUP_LOG.md`: ประวัติการตั้งค่าและพัฒนา Phase 1-7
   - `docs/ProjectContext.md`: สรุปบริบทและงานที่ทำทั้งหมดสำหรับ Handover
 - **Backend**:
-  - `backend/src/routes/`: `villager.routes.js`, `news.routes.js`, `broadcast.routes.js`, `activity.routes.js`, `category.routes.js`, `user.routes.js`
-  - `backend/src/services/`: `broadcast.service.js`, `liffAuth.service.js`, `news.service.js`, `newsPublic.service.js`, `user.service.js`
-  - `backend/src/models/`: `news.model.js`, `broadcast.model.js`, `activity.model.js`, `villager.model.js`, `user.model.js`
+  - `backend/src/routes/`: `auth.routes.js`, `villager.routes.js`, `news.routes.js`, `broadcast.routes.js`, `activity.routes.js`, `category.routes.js`, `user.routes.js`
+  - `backend/src/services/`: `auth.service.js`, `broadcast.service.js`, `liffAuth.service.js`, `news.service.js`, `newsPublic.service.js`, `user.service.js`, `villager.service.js`
+  - `backend/src/models/`: `user.model.js`, `passwordReset.model.js`, `news.model.js`, `broadcast.model.js`, `activity.model.js`, `villager.model.js`
 - **Frontend**:
   - `frontend/src/components/layout/LiffLayout.jsx`: Bottom Nav 5 เมนู + Registration Guard + ล้าง `liff.state`
   - `frontend/src/pages/liff/`: `HomePage.jsx`, `NewsListPage.jsx`, `NewsDetailPage.jsx`, `ActivityListPage.jsx`, `ActivityDetailPage.jsx`, `ProfilePage.jsx`, `RegisterPage.jsx`
-  - `frontend/src/pages/admin/`: `NewsManagementPage.jsx`, `NewsFormPage.jsx`, `ActivityPage.jsx`, `DashboardPage.jsx`, `UserPage.jsx`
+  - `frontend/src/pages/admin/`: `LoginPage.jsx`, `ForgotPasswordPage.jsx`, `NewsManagementPage.jsx`, `NewsFormPage.jsx`, `ActivityPage.jsx`, `DashboardPage.jsx`, `UserPage.jsx`, `VillagerPage.jsx`
 
 ---
 
 ## 📌 ขั้นตอนและคำสั่งสำหรับเริ่มรันพัฒนาต่อ
-1. **DB Alter Table Command** (รันใน MySQL/phpMyAdmin):
+1. **DB Alter Table Commands** (รันใน MySQL/phpMyAdmin หากยังไม่มี):
    ```sql
    ALTER TABLE tb_activity ADD COLUMN act_content TEXT NULL AFTER act_title;
+   ALTER TABLE tb_villager ADD COLUMN is_active TINYINT(1) DEFAULT 1 AFTER zone_name;
+   ALTER TABLE tb_villager ADD COLUMN pdpa_consent_at TIMESTAMP NULL AFTER zone_name;
+   ALTER TABLE tb_user ADD COLUMN line_user_id VARCHAR(100) NULL AFTER full_name;
+   CREATE TABLE IF NOT EXISTS tb_password_reset (
+     reset_id INT AUTO_INCREMENT PRIMARY KEY,
+     user_id INT NOT NULL,
+     reset_otp VARCHAR(6) NOT NULL,
+     reset_token VARCHAR(64) NOT NULL,
+     is_used TINYINT(1) DEFAULT 0,
+     expires_at DATETIME NOT NULL,
+     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+     FOREIGN KEY (user_id) REFERENCES tb_user(user_id) ON DELETE CASCADE
+   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
    ```
 2. **Run Backend & Frontend**:
    - Backend: `cd backend && npm run dev`

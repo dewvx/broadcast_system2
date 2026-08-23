@@ -12,6 +12,7 @@ import DocumentListPage from '../pages/liff/DocumentListPage';
 import RegisterPage from '../pages/liff/RegisterPage';
 import ProfilePage from '../pages/liff/ProfilePage';
 import LoginPage from '../pages/admin/LoginPage';
+import ForgotPasswordPage from '../pages/admin/ForgotPasswordPage';
 import DashboardPage from '../pages/admin/DashboardPage';
 import NewsManagementPage from '../pages/admin/NewsManagementPage';
 import NewsFormPage from '../pages/admin/NewsFormPage';
@@ -64,6 +65,7 @@ const router = createBrowserRouter([
     ),
     children: [
       { path: 'login', element: <LoginPage /> },
+      { path: 'forgot-password', element: <ForgotPasswordPage /> },
       {
         element: <ProtectedRoute />,
         children: [

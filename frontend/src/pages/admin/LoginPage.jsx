@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { Button, Input, Card } from '../../components/ui';
-import { Radio } from 'lucide-react';
+import { Radio, KeyRound } from 'lucide-react';
 
 function LoginPage() {
   const [username, setUsername] = useState('');
@@ -38,11 +38,13 @@ function LoginPage() {
       <div className="w-full max-w-md space-y-6">
         {/* Brand Header */}
         <div className="text-center space-y-2">
-          <div className="w-12 h-12 rounded-md bg-primary mx-auto flex items-center justify-center text-white shadow-sm mb-3">
-            <Radio className="w-6 h-6" />
-          </div>
-          <h1 className="text-2xl font-bold text-text-primary">เข้าสู่ระบบจัดการหอกระจายข่าว</h1>
-          <p className="text-sm text-text-secondary">สำหรับผู้ใหญ่บ้านและผู้นำชุมชน</p>
+          <img
+            src="/logo.jpg"
+            alt="โลโก้หอกระจายข่าวบ้านสี่แยก"
+            className="w-20 h-20 rounded-full mx-auto object-cover shadow-md border-2 border-white ring-2 ring-primary/20 mb-2"
+          />
+          <h1 className="text-2xl font-bold text-text-primary">หอกระจายข่าวบ้านสี่แยก</h1>
+          <p className="text-sm text-text-secondary">ระบบจัดการสำหรับผู้ใหญ่บ้านและผู้นำชุมชน</p>
         </div>
 
         {/* Card Form */}
@@ -62,14 +64,27 @@ function LoginPage() {
               onChange={(e) => setUsername(e.target.value)}
             />
 
-            <Input
-              label="รหัสผ่าน (Password)"
-              type="password"
-              required
-              placeholder="ระบุรหัสผ่าน"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs font-medium text-text-secondary">
+                  รหัสผ่าน (Password) <span className="text-error">*</span>
+                </label>
+                <Link
+                  to="/admin/forgot-password"
+                  className="text-xs text-primary hover:underline inline-flex items-center gap-1"
+                >
+                  <KeyRound className="w-3 h-3" /> ลืมรหัสผ่าน?
+                </Link>
+              </div>
+              <input
+                type="password"
+                required
+                placeholder="ระบุรหัสผ่าน"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full h-10 px-3 text-sm bg-surface border border-border rounded-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+              />
+            </div>
 
             <Button type="submit" variant="primary" fullWidth loading={loading} className="mt-2">
               เข้าสู่ระบบ

@@ -7,3 +7,11 @@ export function login(username, password) {
 export function getMe() {
   return axiosClient.get('/api/auth/me');
 }
+
+export function forgotPassword(username) {
+  return axiosClient.post('/api/auth/forgot-password', { username });
+}
+
+export function resetPassword({ resetToken, otp, newPassword }) {
+  return axiosClient.post('/api/auth/reset-password', { resetToken, otp, newPassword });
+}

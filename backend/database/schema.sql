@@ -21,8 +21,21 @@ CREATE TABLE tb_user (
   username VARCHAR(50) NOT NULL UNIQUE,
   password VARCHAR(255) NOT NULL,        -- hashed password (bcrypt)
   full_name VARCHAR(100) NOT NULL,
+  line_user_id VARCHAR(100) NULL,        -- ผูกบัญชี LINE สำหรับรับ OTP กู้คืนรหัสผ่าน
   role_id INT NOT NULL,
   FOREIGN KEY (role_id) REFERENCES tb_role(role_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ตารางขอรีเซ็ตรหัสผ่านผ่าน LINE OA (OTP)
+CREATE TABLE tb_password_reset (
+  reset_id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  reset_otp VARCHAR(6) NOT NULL,
+  reset_token VARCHAR(64) NOT NULL,
+  is_used TINYINT(1) DEFAULT 0,
+  expires_at DATETIME NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES tb_user(user_id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ตารางที่ 3.3 ข้อมูลลูกบ้านและผู้ใช้ LINE
@@ -34,6 +47,8 @@ CREATE TABLE tb_villager (
   last_name VARCHAR(100) NOT NULL,
   house_number VARCHAR(50) NOT NULL,
   zone_name VARCHAR(100) NULL,
+  pdpa_consent_at TIMESTAMP NULL,
+  is_active TINYINT(1) DEFAULT 1,
   join_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 

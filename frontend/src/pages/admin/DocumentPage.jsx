@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { getAllDocuments, uploadDocument, deleteDocument } from '../../api/document.api';
-import { Button, Input, Modal, Badge, EmptyState, LoadingSpinner } from '../../components/ui';
+import { Button, Input, Modal, Badge, EmptyState, LoadingSpinner, Pagination } from '../../components/ui';
 import { FileText, Upload, Download, Trash2, FileCode, File, AlertCircle } from 'lucide-react';
+
+const ITEMS_PER_PAGE = 8;
 
 function DocumentPage() {
   const { user } = useAuth();
@@ -12,6 +14,7 @@ function DocumentPage() {
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState('');
   const [docName, setDocName] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
   const fileRef = useRef(null);
   const [showUploadModal, setShowUploadModal] = useState(false);
 
@@ -83,6 +86,11 @@ function DocumentPage() {
     return filePath.split('.').pop()?.toUpperCase() || 'FILE';
   }
 
+  const paginatedDocs = documents.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
   if (loading) return <LoadingSpinner text="กำลังโหลดแบบฟอร์มเอกสาร..." />;
 
   if (errorMsg) {
@@ -125,56 +133,66 @@ function DocumentPage() {
             description="กดปุ่มอัปโหลดเอกสารด้านบนเพื่อเพิ่มแบบฟอร์มราชการในระบบ"
           />
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left">
-              <thead className="bg-slate-50 border-b border-border text-xs text-text-secondary font-semibold uppercase tracking-wider">
-                <tr>
-                  <th className="px-6 py-3.5">ชื่อเอกสาร</th>
-                  <th className="px-6 py-3.5">ประเภท</th>
-                  <th className="px-6 py-3.5">อัปโหลดโดย</th>
-                  <th className="px-6 py-3.5">วันที่อัปโหลด</th>
-                  <th className="px-6 py-3.5 text-right">จัดการ</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {documents.map((doc) => (
-                  <tr key={doc.doc_id} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-slate-100 rounded-sm">
-                          {getFileIcon(doc.doc_file_path)}
-                        </div>
-                        <span className="font-medium text-text-primary">{doc.doc_name}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <Badge variant="neutral">{getFileExt(doc.doc_file_path)}</Badge>
-                    </td>
-                    <td className="px-6 py-4 text-text-secondary">{doc.created_by_name || '—'}</td>
-                    <td className="px-6 py-4 text-text-muted">
-                      {new Date(doc.upload_date).toLocaleDateString('th-TH')}
-                    </td>
-                    <td className="px-6 py-4 text-right space-x-2">
-                      <a href={doc.doc_file_path} target="_blank" rel="noopener noreferrer">
-                        <Button size="sm" variant="outline" icon={Download}>
-                          ดาวน์โหลด
-                        </Button>
-                      </a>
-                      {user?.roleName === 'Admin' && (
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => handleDelete(doc.doc_id)}
-                          title="ลบ"
-                        >
-                          <Trash2 className="w-4 h-4 text-text-muted hover:text-error" />
-                        </Button>
-                      )}
-                    </td>
+          <div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left">
+                <thead className="bg-slate-50 border-b border-border text-xs text-text-secondary font-semibold uppercase tracking-wider">
+                  <tr>
+                    <th className="px-6 py-3.5">ชื่อเอกสาร</th>
+                    <th className="px-6 py-3.5">ประเภท</th>
+                    <th className="px-6 py-3.5">อัปโหลดโดย</th>
+                    <th className="px-6 py-3.5">วันที่อัปโหลด</th>
+                    <th className="px-6 py-3.5 text-right">จัดการ</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {paginatedDocs.map((doc) => (
+                    <tr key={doc.doc_id} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-slate-100 rounded-sm">
+                            {getFileIcon(doc.doc_file_path)}
+                          </div>
+                          <span className="font-medium text-text-primary">{doc.doc_name}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <Badge variant="neutral">{getFileExt(doc.doc_file_path)}</Badge>
+                      </td>
+                      <td className="px-6 py-4 text-text-secondary">{doc.created_by_name || '—'}</td>
+                      <td className="px-6 py-4 text-text-muted">
+                        {new Date(doc.upload_date).toLocaleDateString('th-TH')}
+                      </td>
+                      <td className="px-6 py-4 text-right space-x-2">
+                        <a href={doc.doc_file_path} target="_blank" rel="noopener noreferrer">
+                          <Button size="sm" variant="outline" icon={Download}>
+                            ดาวน์โหลด
+                          </Button>
+                        </a>
+                        {user?.roleName === 'Admin' && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleDelete(doc.doc_id)}
+                            title="ลบ"
+                          >
+                            <Trash2 className="w-4 h-4 text-text-muted hover:text-error" />
+                          </Button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination */}
+            <Pagination
+              currentPage={currentPage}
+              totalItems={documents.length}
+              itemsPerPage={ITEMS_PER_PAGE}
+              onPageChange={setCurrentPage}
+            />
           </div>
         )}
       </div>

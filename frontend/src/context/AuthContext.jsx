@@ -56,12 +56,19 @@ export function AuthProvider({ children }) {
     setUser(null);
   }
 
+  function refreshUser(updatedUser) {
+    const merged = { ...user, ...updatedUser };
+    localStorage.setItem('admin_user', JSON.stringify(merged));
+    setUser(merged);
+  }
+
   const value = {
     user,
     isLoading,
     isAuthenticated: !!user,
     login,
     logout,
+    refreshUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

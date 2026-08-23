@@ -8,7 +8,8 @@ const pool = require('../config/db');
 async function getVillagerLineIds(zoneName) {
   if (!zoneName || !zoneName.trim()) {
     const [rows] = await pool.query(
-      `SELECT line_user_id FROM tb_villager WHERE line_user_id IS NOT NULL AND line_user_id != ''`
+      `SELECT line_user_id FROM tb_villager 
+       WHERE line_user_id IS NOT NULL AND line_user_id != '' AND is_active = 1`
     );
     return rows.map((row) => row.line_user_id);
   }
@@ -16,7 +17,7 @@ async function getVillagerLineIds(zoneName) {
   const cleanZone = zoneName.trim();
   const [rows] = await pool.query(
     `SELECT line_user_id FROM tb_villager 
-     WHERE line_user_id IS NOT NULL AND line_user_id != ''
+     WHERE line_user_id IS NOT NULL AND line_user_id != '' AND is_active = 1
        AND (TRIM(zone_name) = ? OR zone_name LIKE ?)`,
     [cleanZone, `%${cleanZone}%`]
   );

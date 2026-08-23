@@ -7,6 +7,7 @@ const liffAuthMiddleware = require('../middlewares/liffAuth.middleware');
 
 router.post('/check', villagerController.checkOrLogin);
 router.post('/register', villagerController.register);
+router.post('/update-profile', liffAuthMiddleware({ optional: false }), villagerController.updateSelfProfile);
 
 // ดูรายการข่าวสาร (ข่าวสาธารณะ - optional auth)
 router.post('/news', liffAuthMiddleware({ optional: true }), villagerController.getNews);
@@ -17,7 +18,9 @@ router.post('/activities/:id', liffAuthMiddleware({ optional: true }), villagerC
 router.get('/activities/public/:id', villagerController.getActivityDetail);
 router.post('/documents', liffAuthMiddleware({ optional: false }), villagerController.getDocuments);
 
-// Admin ดูรายชื่อลูกบ้านทั้งหมด (ใช้ JWT auth ปกติ)
+// Admin ดูรายชื่อ, แก้ไขข้อมูลแทน, และ ลบลูกบ้านออกจากระบบ (ใช้ JWT auth ปกติ)
 router.get('/', authMiddleware, roleMiddleware(['Admin']), villagerController.getAll);
+router.put('/:id', authMiddleware, roleMiddleware(['Admin']), villagerController.updateByAdmin);
+router.delete('/:id', authMiddleware, roleMiddleware(['Admin']), villagerController.removeByAdmin);
 
 module.exports = router;

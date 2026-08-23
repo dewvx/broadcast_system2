@@ -18,7 +18,19 @@
 | username | varchar(50) | - | NOT NULL, unique |
 | password | varchar(255) | - | bcrypt hash |
 | full_name | varchar(100) | - | NOT NULL |
+| line_user_id | varchar(100) | - | ผูกบัญชี LINE สำหรับรับ OTP กู้คืนรหัสผ่าน (NULL ได้) |
 | role_id | int | FK | อ้าง tb_role |
+
+### tb_password_reset
+| Field | Type | Key | Note |
+|---|---|---|---|
+| reset_id | int | PK | Auto Increment |
+| user_id | int | FK | อ้าง tb_user (ON DELETE CASCADE) |
+| reset_otp | varchar(6) | - | รหัส OTP 6 หลัก |
+| reset_token | varchar(64) | - | Secure Token อ้างอิงคำขอ |
+| is_used | tinyint(1) | - | 1 = ใช้แล้ว, 0 = ยังไม่ใช้ (default 0) |
+| expires_at | datetime | - | เวลาหมดอายุ (10 นาที) |
+| created_at | timestamp | - | default CURRENT_TIMESTAMP |
 
 ### tb_villager
 | Field | Type | Key | Note |
@@ -29,6 +41,8 @@
 | first_name / last_name | varchar(100) | - | กรอกตอนลงทะเบียนครั้งแรก |
 | house_number | varchar(50) | - | ใช้ยืนยันตัวตน |
 | zone_name | varchar(100) | - | คุ้ม/กลุ่มเป้าหมาย (NULL ได้) |
+| pdpa_consent_at | timestamp | - | เวลาที่ยินยอม PDPA (NULL = ลงทะเบียนก่อนมีฟีเจอร์นี้) |
+| is_active | tinyint(1) | - | 1 = ติดตาม/ใช้งานปกติ, 0 = เลิกติดตาม/บล็อก |
 | join_date | timestamp | - | default CURRENT_TIMESTAMP |
 
 ### tb_category

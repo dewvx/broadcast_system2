@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useLiff } from '../../context/LiffContext';
 import { checkOrLogin, registerVillager } from '../../api/villager.api';
 import { Button, Input, Card, LoadingSpinner } from '../../components/ui';
-import { Radio, CheckCircle, ArrowRight } from 'lucide-react';
+import { Radio, CheckCircle, ArrowRight, ShieldCheck } from 'lucide-react';
 
 function RegisterPage() {
   const { liff, isLiffReady, liffError } = useLiff();
@@ -17,6 +17,7 @@ function RegisterPage() {
   const [lastName, setLastName] = useState('');
   const [houseNumber, setHouseNumber] = useState('');
   const [zoneName, setZoneName] = useState('');
+  const [pdpaConsent, setPdpaConsent] = useState(false);
 
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -65,6 +66,11 @@ function RegisterPage() {
       return;
     }
 
+    if (!pdpaConsent) {
+      setErrorMsg('กรุณายินยอมให้เก็บข้อมูลส่วนบุคคลก่อนลงทะเบียน');
+      return;
+    }
+
     try {
       setSubmitting(true);
 
@@ -79,6 +85,7 @@ function RegisterPage() {
         lastName: lastName.trim(),
         houseNumber: houseNumber.trim(),
         zoneName: finalZone,
+        pdpaConsent: true, // ส่งหลังผ่าน client validation แล้ว — backend ยังคง enforce อีกรอบอยู่ดี
       });
 
       setRegisteredVillager(res.data.villager);
@@ -148,9 +155,11 @@ function RegisterPage() {
   return (
     <div className="min-h-screen bg-background p-4 flex flex-col justify-center max-w-md mx-auto space-y-4">
       <div className="text-center space-y-2">
-        <div className="w-12 h-12 rounded-md bg-primary mx-auto flex items-center justify-center text-white shadow-sm">
-          <Radio className="w-6 h-6" />
-        </div>
+        <img
+          src="/logo.jpg"
+          alt="โลโก้หอกระจายข่าวบ้านสี่แยก"
+          className="w-18 h-18 rounded-full mx-auto object-cover shadow-md border-2 border-white ring-2 ring-primary/20"
+        />
         <h1 className="text-xl font-bold text-text-primary">ลงทะเบียนลูกบ้าน</h1>
         <p className="text-xs text-text-secondary">
           สวัสดีคุณ <strong className="text-text-primary">{displayName || 'ลูกบ้าน'}</strong> กรุณากรอกข้อมูลเพื่อรับข่าวสาร
@@ -201,7 +210,40 @@ function RegisterPage() {
             </p>
           </div>
 
-          <Button type="submit" variant="primary" fullWidth loading={submitting} className="mt-2">
+          {/* PDPA Consent Checkbox */}
+          <div className="bg-slate-50 border border-border rounded-sm p-3 space-y-2">
+            <div className="flex items-start gap-2 text-text-secondary">
+              <ShieldCheck className="w-4 h-4 shrink-0 mt-0.5 text-primary" />
+              <p className="text-[11px] leading-relaxed">
+                <strong className="text-text-primary">นโยบายความเป็นส่วนตัว (PDPA)</strong>
+                <br />
+                ระบบหอกระจายข่าวชุมชนจะจัดเก็บข้อมูลส่วนบุคคลของท่าน ได้แก่ ชื่อ-นามสกุล บ้านเลขที่ และหมู่บ้าน
+                เพื่อวัตถุประสงค์ในการส่งข่าวสารและการติดต่อประชาสัมพันธ์ของชุมชนเท่านั้น
+                ข้อมูลจะไม่ถูกเปิดเผยหรือส่งต่อให้บุคคลภายนอก
+              </p>
+            </div>
+
+            <label className="flex items-start gap-2 cursor-pointer group">
+              <input
+                type="checkbox"
+                checked={pdpaConsent}
+                onChange={(e) => setPdpaConsent(e.target.checked)}
+                className="mt-0.5 w-4 h-4 accent-primary shrink-0"
+              />
+              <span className="text-xs text-text-primary group-hover:text-primary transition-colors">
+                ข้าพเจ้ายินยอมให้ระบบเก็บและใช้ข้อมูลส่วนบุคคลตามวัตถุประสงค์ที่ระบุข้างต้น
+              </span>
+            </label>
+          </div>
+
+          <Button
+            type="submit"
+            variant="primary"
+            fullWidth
+            loading={submitting}
+            disabled={!pdpaConsent}
+            className="mt-2"
+          >
             ยืนยันการลงทะเบียน
           </Button>
         </form>
