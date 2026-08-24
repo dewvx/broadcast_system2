@@ -38,10 +38,11 @@ async function handleEvent(event) {
 
     case 'message':
       if (event.message.type === 'text') {
-        const answer = await chatbotService.findAnswer(event.message.text);
+        const lineUserId = event.source ? event.source.userId : null;
+        const responseMessage = await chatbotService.findAnswer(event.message.text, lineUserId);
         return lineClient.replyMessage({
           replyToken: event.replyToken,
-          messages: [{ type: 'text', text: answer }],
+          messages: [responseMessage],
         });
       }
       return Promise.resolve(null);

@@ -116,6 +116,21 @@ CREATE TABLE tb_broadcast_log (
   FOREIGN KEY (sent_by) REFERENCES tb_user(user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- ตารางคิวส่งข่าวล่วงหน้า (ฟีเจอร์ 3.7 ตั้งเวลาส่งข่าว)
+CREATE TABLE tb_scheduled_broadcast (
+  schedule_id INT AUTO_INCREMENT PRIMARY KEY,
+  news_id INT NOT NULL,
+  sent_by INT NOT NULL,                  -- ผู้สร้างตารางส่ง (Admin)
+  zone_name VARCHAR(100) NULL,           -- NULL = ส่งทุกโซน
+  scheduled_at DATETIME NOT NULL,        -- เวลาที่ต้องส่ง (เวลาท้องถิ่นเซิร์ฟเวอร์)
+  status ENUM('Pending', 'Sending', 'Sent', 'Failed', 'Cancelled') DEFAULT 'Pending',
+  error_message TEXT NULL,               -- บันทึกสาเหตุถ้าส่งไม่สำเร็จ
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (news_id) REFERENCES tb_news(news_id),
+  FOREIGN KEY (sent_by) REFERENCES tb_user(user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- ตารางที่ 3.9 ตารางเก็บสถิติการเข้าชมข่าวสาร
 CREATE TABLE tb_view_log (
   view_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -124,4 +139,14 @@ CREATE TABLE tb_view_log (
   view_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (news_id) REFERENCES tb_news(news_id),
   FOREIGN KEY (villager_id) REFERENCES tb_villager(villager_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ตารางที่ 3.11 ตารางเก็บประวัติการสอบถามของแชทบอท
+CREATE TABLE tb_chatbot_log (
+  log_id INT AUTO_INCREMENT PRIMARY KEY,
+  line_user_id VARCHAR(100) NOT NULL,
+  message_text TEXT NOT NULL,
+  response_text TEXT NOT NULL,
+  is_matched TINYINT(1) DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

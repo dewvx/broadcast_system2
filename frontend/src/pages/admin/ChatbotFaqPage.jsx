@@ -5,11 +5,15 @@ import {
   updateFaq,
   deleteFaq,
 } from '../../api/chatbotfaq.api';
+import { getAllNews } from '../../api/news.api';
+import { getAllDocuments } from '../../api/document.api';
 import { Button, Input, Textarea, Modal, Card, EmptyState, LoadingSpinner } from '../../components/ui';
 import { Bot, Plus, Edit2, Trash2, AlertCircle, MessageSquare } from 'lucide-react';
 
 function ChatbotFaqPage() {
   const [faqs, setFaqs] = useState([]);
+  const [news, setNews] = useState([]);
+  const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
   const [showModal, setShowModal] = useState(false);
@@ -21,6 +25,7 @@ function ChatbotFaqPage() {
 
   useEffect(() => {
     fetchFaqs();
+    fetchResources();
   }, []);
 
   async function fetchFaqs() {
@@ -32,6 +37,17 @@ function ChatbotFaqPage() {
       setErrorMsg(err.response?.data?.message || 'โหลดข้อมูล Chatbot FAQ ไม่สำเร็จ');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function fetchResources() {
+    try {
+      const newsRes = await getAllNews();
+      setNews(newsRes.data.data);
+      const docRes = await getAllDocuments();
+      setDocuments(docRes.data.data);
+    } catch (err) {
+      console.error('Failed to load resources for chatbot:', err);
     }
   }
 
@@ -210,6 +226,26 @@ function ChatbotFaqPage() {
             value={answerText}
             onChange={(e) => setAnswerText(e.target.value)}
           />
+
+          <div className="pt-4 border-t border-border">
+            <h3 className="text-sm font-semibold text-text-primary mb-2">แหล่งข้อมูลสำหรับคัดลอกลิงก์:</h3>
+            <div className="max-h-48 overflow-y-auto space-y-2 text-xs">
+              <div className="font-semibold text-text-secondary">ข่าวสาร (เฉพาะที่อนุมัติแล้ว):</div>
+              {news.filter(n => n.news_status === 'Approved').map(n => (
+                <div key={n.news_id} className="flex justify-between items-center bg-slate-50 p-1.5 rounded">
+                  <span className="truncate flex-1">{n.news_title}</span>
+                  <Button size="sm" variant="ghost" className="h-6" onClick={() => navigator.clipboard.writeText(`/news/${n.news_id}`)}>คัดลอก Path</Button>
+                </div>
+              ))}
+              <div className="font-semibold text-text-secondary pt-2">เอกสาร:</div>
+              {documents.map(d => (
+                <div key={d.doc_id} className="flex justify-between items-center bg-slate-50 p-1.5 rounded">
+                  <span className="truncate flex-1">{d.doc_name}</span>
+                  <Button size="sm" variant="ghost" className="h-6" onClick={() => navigator.clipboard.writeText(d.doc_file_path)}>คัดลอก Path</Button>
+                </div>
+              ))}
+            </div>
+          </div>
         </form>
       </Modal>
     </div>

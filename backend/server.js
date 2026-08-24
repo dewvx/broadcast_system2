@@ -4,6 +4,7 @@ const cors = require('cors');
 
 const errorHandler = require('./src/middlewares/errorHandler');
 const webhookRoutes = require('./src/routes/webhook.routes');
+const { startBroadcastScheduler } = require('./src/jobs/broadcastScheduler.job');
 
 const app = express();
 
@@ -44,3 +45,6 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
+
+// cron job: เช็คตารางส่งข่าวล่วงหน้าทุกนาที (ฟีเจอร์ 3.7)
+startBroadcastScheduler();

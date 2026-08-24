@@ -101,6 +101,19 @@
 | total_received | int | - | จำนวนที่ได้รับ (จาก LINE API response) |
 | sent_at | timestamp | - | default CURRENT_TIMESTAMP |
 
+### tb_scheduled_broadcast (ฟีเจอร์ 3.7 ตั้งเวลาส่งข่าว)
+| Field | Type | Key | Note |
+|---|---|---|---|
+| schedule_id | int | PK | Auto Increment |
+| news_id | int | FK | อ้าง tb_news |
+| sent_by | int | FK | อ้าง tb_user (ผู้สร้างตารางส่ง) |
+| zone_name | varchar(100) | - | NULL = ส่งทุกโซน |
+| scheduled_at | datetime | - | เวลาที่ต้องส่ง (เวลาท้องถิ่นเซิร์ฟเวอร์) |
+| status | enum | - | Pending / Sending / Sent / Failed / Cancelled, default Pending |
+| error_message | text | - | เหตุผลถ้า Failed |
+| created_at | timestamp | - | default CURRENT_TIMESTAMP |
+| updated_at | timestamp | - | ON UPDATE CURRENT_TIMESTAMP (ใช้เช็คงาน Sending ค้างจาก crash) | |
+
 ### tb_view_log
 | Field | Type | Key | Note |
 |---|---|---|---|
@@ -119,6 +132,7 @@ tb_user 1---N tb_document
 tb_user 1---N tb_chatbot_faq
 tb_news 1---N tb_broadcast_log
 tb_user 1---N tb_broadcast_log
+tb_scheduled_broadcast N---1 tb_news, tb_user
 tb_news 1---N tb_view_log
 tb_villager 1---N tb_view_log
 ```

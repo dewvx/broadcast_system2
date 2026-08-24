@@ -10,4 +10,7 @@ router.post('/', authMiddleware, roleMiddleware(['Admin']), chatbotFaqController
 router.put('/:id', authMiddleware, roleMiddleware(['Admin']), chatbotFaqController.update);
 router.delete('/:id', authMiddleware, roleMiddleware(['Admin']), chatbotFaqController.remove);
 
+// ดูประวัติการสอบถาม - Admin เท่านั้น
+router.get('/logs', authMiddleware, roleMiddleware(['Admin']), chatbotFaqController.getLogs);
+
 module.exports = router;

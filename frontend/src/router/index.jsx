@@ -23,6 +23,7 @@ import ActivityPage from '../pages/admin/ActivityPage';
 import DocumentPage from '../pages/admin/DocumentPage';
 import CategoryPage from '../pages/admin/CategoryPage';
 import ChatbotFaqPage from '../pages/admin/ChatbotFaqPage';
+import ChatbotLogPage from '../pages/admin/ChatbotLogPage';
 
 function LiffIndexRedirector() {
   const location = useLocation();
@@ -83,6 +84,7 @@ const router = createBrowserRouter([
               { path: 'villagers', element: <VillagerPage /> },
               { path: 'users', element: <UserPage /> },
               { path: 'chatbot-faq', element: <ChatbotFaqPage /> },
+              { path: 'chatbot-logs', element: <ChatbotLogPage /> },
             ],
           },
         ],

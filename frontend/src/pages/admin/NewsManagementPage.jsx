@@ -1,10 +1,27 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { getAllNews, approveNews, rejectNews, deleteNews } from '../../api/news.api';
-import { getZones, broadcastNews } from '../../api/broadcast.api';
+import {
+  getZones,
+  broadcastNews,
+  scheduleBroadcast,
+  getScheduledBroadcasts,
+  cancelScheduledBroadcast,
+} from '../../api/broadcast.api';
 import { useAuth } from '../../context/AuthContext';
 import { Button, Badge, Modal, Select, EmptyState, LoadingSpinner, Pagination } from '../../components/ui';
-import { Plus, Eye, Edit2, Trash2, CheckCircle, XCircle, Send, Radio, Search } from 'lucide-react';
+import {
+  Plus,
+  Eye,
+  Edit2,
+  Trash2,
+  CheckCircle,
+  XCircle,
+  Send,
+  Radio,
+  Search,
+  Clock,
+} from 'lucide-react';
 
 const ITEMS_PER_PAGE = 8;
 
@@ -15,13 +32,20 @@ function NewsManagementPage() {
   const [filter, setFilter] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const [broadcastData, setBroadcastData] = useState({ newsId: null, zoneName: '' });
+  const [broadcastData, setBroadcastData] = useState({
+    newsId: null,
+    zoneName: '',
+    mode: 'now',
+    scheduledAt: '',
+  });
   const [zones, setZones] = useState([]);
   const [sendingBroadcast, setSendingBroadcast] = useState(false);
+  const [scheduledList, setScheduledList] = useState([]);
 
   useEffect(() => {
     fetchNews();
     fetchZones();
+    fetchScheduled();
   }, []);
 
   // เมื่อเปลี่ยน search หรือ filter ให้รีเซ็ตกลับหน้า 1
@@ -47,6 +71,15 @@ function NewsManagementPage() {
       setZones(res.data.data || []);
     } catch (err) {
       console.error('Failed to fetch zones:', err);
+    }
+  }
+
+  async function fetchScheduled() {
+    try {
+      const res = await getScheduledBroadcasts('Pending');
+      setScheduledList(res.data.data || []);
+    } catch (err) {
+      console.error('Failed to fetch scheduled broadcasts:', err);
     }
   }
 
@@ -81,14 +114,43 @@ function NewsManagementPage() {
   async function handleBroadcast() {
     try {
       setSendingBroadcast(true);
-      const res = await broadcastNews(broadcastData.newsId, broadcastData.zoneName);
-      setBroadcastData({ newsId: null, zoneName: '' });
-      alert(res.data?.message || 'ส่งข่าวผ่าน LINE เรียบร้อยแล้ว');
+      if (broadcastData.mode === 'schedule') {
+        if (!broadcastData.scheduledAt) {
+          alert('กรุณาเลือกวันและเวลาที่ต้องการส่ง');
+          return;
+        }
+        const res = await scheduleBroadcast(
+          broadcastData.newsId,
+          broadcastData.zoneName,
+          broadcastData.scheduledAt
+        );
+        setBroadcastData({ newsId: null, zoneName: '', mode: 'now', scheduledAt: '' });
+        alert(res.data?.message || 'ตั้งเวลาส่งข่าวสำเร็จ');
+        fetchScheduled();
+      } else {
+        const res = await broadcastNews(broadcastData.newsId, broadcastData.zoneName);
+        setBroadcastData({ newsId: null, zoneName: '', mode: 'now', scheduledAt: '' });
+        alert(res.data?.message || 'ส่งข่าวผ่าน LINE เรียบร้อยแล้ว');
+      }
     } catch (err) {
       alert(err.response?.data?.message || 'ส่งข่าวไม่สำเร็จ');
     } finally {
       setSendingBroadcast(false);
     }
+  }
+
+  async function handleCancelSchedule(scheduleId) {
+    if (!window.confirm('ยืนยันยกเลิกตารางส่งข่าวนี้?')) return;
+    try {
+      await cancelScheduledBroadcast(scheduleId);
+      fetchScheduled();
+    } catch (err) {
+      alert(err.response?.data?.message || 'ยกเลิกไม่สำเร็จ');
+    }
+  }
+
+  function closeBroadcastModal() {
+    setBroadcastData({ newsId: null, zoneName: '', mode: 'now', scheduledAt: '' });
   }
 
   function canEdit(item) {
@@ -231,7 +293,12 @@ function NewsManagementPage() {
                             size="sm"
                             variant="ghost"
                             onClick={() => {
-                              setBroadcastData({ newsId: item.news_id, zoneName: '' });
+                              setBroadcastData({
+                                newsId: item.news_id,
+                                zoneName: '',
+                                mode: 'now',
+                                scheduledAt: '',
+                              });
                             }}
                             title="ส่งข่าวหาลูกบ้านผ่าน LINE"
                           >
@@ -270,23 +337,20 @@ function NewsManagementPage() {
       {/* Broadcast Modal */}
       <Modal
         isOpen={Boolean(broadcastData.newsId)}
-        onClose={() => setBroadcastData({ newsId: null, zoneName: '' })}
+        onClose={closeBroadcastModal}
         title="ส่งข่าวสารผ่าน LINE Official Account"
         footer={
           <>
-            <Button
-              variant="secondary"
-              onClick={() => setBroadcastData({ newsId: null, zoneName: '' })}
-            >
+            <Button variant="secondary" onClick={closeBroadcastModal}>
               ยกเลิก
             </Button>
             <Button
               variant="primary"
-              icon={Send}
+              icon={broadcastData.mode === 'schedule' ? Clock : Send}
               loading={sendingBroadcast}
               onClick={handleBroadcast}
             >
-              ส่งข่าวทันที
+              {broadcastData.mode === 'schedule' ? 'ตั้งเวลาส่ง' : 'ส่งข่าวทันที'}
             </Button>
           </>
         }
@@ -296,6 +360,54 @@ function NewsManagementPage() {
             <Radio className="w-4 h-4 shrink-0" />
             <span>ข่าวสารจะถูกส่งเป็น Flex Message แบบการ์ดไปยัง LINE ของลูกบ้าน</span>
           </div>
+
+          {/* เลือกโหมด: ส่งทันที / ตั้งเวลา */}
+          <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="เลือกโหมดการส่งข่าว">
+            <button
+              type="button"
+              onClick={() => setBroadcastData({ ...broadcastData, mode: 'now' })}
+              className={`h-11 text-sm font-medium border rounded-sm transition-colors ${
+                broadcastData.mode === 'now'
+                  ? 'bg-primary-soft border-primary text-primary'
+                  : 'bg-surface border-border text-text-secondary hover:border-border-strong'
+              }`}
+            >
+              ส่งทันที
+            </button>
+            <button
+              type="button"
+              onClick={() => setBroadcastData({ ...broadcastData, mode: 'schedule' })}
+              className={`h-11 text-sm font-medium border rounded-sm transition-colors flex items-center justify-center gap-1.5 ${
+                broadcastData.mode === 'schedule'
+                  ? 'bg-primary-soft border-primary text-primary'
+                  : 'bg-surface border-border text-text-secondary hover:border-border-strong'
+              }`}
+            >
+              <Clock className="w-4 h-4" />
+              ตั้งเวลาส่ง
+            </button>
+          </div>
+
+          {broadcastData.mode === 'schedule' && (
+            <div>
+              <label
+                htmlFor="scheduled-at"
+                className="block text-sm font-medium text-text-primary mb-1.5"
+              >
+                วันและเวลาที่ต้องการส่ง
+              </label>
+              <input
+                id="scheduled-at"
+                type="datetime-local"
+                value={broadcastData.scheduledAt}
+                onChange={(e) => setBroadcastData({ ...broadcastData, scheduledAt: e.target.value })}
+                className="w-full h-10 px-3 text-sm bg-surface border border-border rounded-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+              />
+              <p className="text-[11px] text-text-muted mt-1">
+                * ระบบจะส่งข่าวอัตโนมัติในเวลาที่กำหนด (เช็คทุก 1 นาที)
+              </p>
+            </div>
+          )}
 
           <Select
             label="เลือกกลุ่มเป้าหมาย (โซน/หมู่บ้าน)"
@@ -314,6 +426,47 @@ function NewsManagementPage() {
           </p>
         </div>
       </Modal>
+
+      {/* Scheduled Broadcasts */}
+      {user.roleName === 'Admin' && (
+        <div className="bg-surface border border-border rounded-md shadow-xs overflow-hidden">
+          <div className="flex items-center gap-2 px-6 py-4 border-b border-border">
+            <Clock className="w-4 h-4 text-secondary" />
+            <h2 className="text-sm font-semibold text-text-primary">ตารางส่งข่าวล่วงหน้า (รอส่ง)</h2>
+          </div>
+          {scheduledList.length === 0 ? (
+            <EmptyState
+              title="ไม่มีตารางส่งข่าวที่รออยู่"
+              description="กดปุ่มส่งข่าว แล้วเลือก “ตั้งเวลาส่ง” เพื่อกำหนดเวลาส่งล่วงหน้า"
+            />
+          ) : (
+            <ul className="divide-y divide-border">
+              {scheduledList.map((item) => (
+                <li
+                  key={item.schedule_id}
+                  className="flex flex-col sm:flex-row sm:items-center gap-2 px-6 py-4"
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-text-primary truncate">{item.news_title}</p>
+                    <p className="text-xs text-text-muted mt-0.5">
+                      ส่ง{' '}
+                      {new Date(item.scheduled_at).toLocaleString('th-TH', {
+                        dateStyle: 'medium',
+                        timeStyle: 'short',
+                      })}{' '}
+                      · ผู้รับ: {item.zone_name ? item.zone_name : 'ทั้งหมด'} · ตั้งโดย{' '}
+                      {item.sent_by_name}
+                    </p>
+                  </div>
+                  <Button size="sm" variant="secondary" onClick={() => handleCancelSchedule(item.schedule_id)}>
+                    ยกเลิก
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
     </div>
   );
 }

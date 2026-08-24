@@ -43,13 +43,13 @@
 ## 3.7 ระบบส่งข่าวผ่าน LINE Official Account
 - [x] เลือกกลุ่มผู้รับข่าว (filter ตาม zone_name)
 - [x] ส่งข่าวแบบลิงก์/รูปภาพผ่าน LINE Messaging API (Flex Message พร้อมรูป+ปุ่มลิงก์ official LIFF URI)
-- [ ] ตั้งเวลาส่งข่าวล่วงหน้า
+- [x] ตั้งเวลาส่งข่าวล่วงหน้า (`node-cron` เช็ค `tb_scheduled_broadcast` ทุกนาที + UI ตั้งเวลา/ยกเลิกใน NewsManagementPage)
 
 ## 3.8 ระบบแชทบอทตอบคำถามอัตโนมัติ
 - [x] ตอบคำถามพื้นฐานอัตโนมัติ (keyword match กับ tb_chatbot_faq ผ่าน LINE Webhook)
 - [x] จัดการคำถาม-คำตอบแชทบอทอัตโนมัติ (Admin Dashboard)
-- [ ] ส่งลิงก์ข่าว/ฟอร์มที่เกี่ยวข้อง
-- [ ] บันทึกประวัติการสอบถาม
+- [x] ส่งลิงก์ข่าว/ฟอร์มที่เกี่ยวข้อง (deep link รูปแบบ `https://liff.line.me/<LIFF_ID>/news/:id` เหมือน broadcast — ห้ามใส่ `/liff` ซ้ำเพราะ LIFF จะเปิดไม่ถึงหน้าข่าว)
+- [x] บันทึกประวัติการสอบถาม
 - [x] fallback "ไม่พบข้อมูล" (ยังไม่มีแจ้งเตือน Admin ให้ตอบ 1-on-1)
 
 ## 3.9 ระบบบันทึกประวัติการส่งข่าว (Broadcast Log)

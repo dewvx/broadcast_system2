@@ -36,4 +36,18 @@ async function remove(req, res, next) {
   }
 }
 
-module.exports = { getAll, create, update, remove };
+async function getLogs(req, res, next) {
+  try {
+    const { limit = 100, offset = 0 } = req.query;
+    const result = await chatbotService.getInquiryLogs({ limit, offset });
+    res.json({ 
+      success: true, 
+      data: result.logs, 
+      total: result.total 
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { getAll, create, update, remove, getLogs };

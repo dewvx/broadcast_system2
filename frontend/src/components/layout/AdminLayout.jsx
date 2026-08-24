@@ -18,6 +18,7 @@ import {
   X,
   Eye,
   EyeOff,
+  History,
 } from 'lucide-react';
 
 const navItems = [
@@ -29,6 +30,7 @@ const navItems = [
   { to: '/admin/villagers', label: 'ข้อมูลลูกบ้าน', icon: Users, adminOnly: true },
   { to: '/admin/users', label: 'จัดการผู้ใช้งานระบบ', icon: UserCog },
   { to: '/admin/chatbot-faq', label: 'แชทบอทตอบอัตโนมัติ', icon: Bot, adminOnly: true },
+  { to: '/admin/chatbot-logs', label: 'ประวัติการสอบถาม', icon: History, adminOnly: true },
 ];
 
 /* ---------- Edit Profile Modal ---------- */

@@ -76,7 +76,7 @@ VITE_LIFF_ID=               # แท็บ LIFF ของ LINE Login channel เ
 1. **[แก้ไขแล้ว] `liff.init()` ค้างที่ `isLiffReady: false`** — ปรับปรุง `LiffContext.jsx` และ `NewsDetailPage.jsx` ให้จัดการ Token และ Login Redirect ปลอดภัย มี UI fallback ชัดเจน
 
 2. **`PUBLIC_APP_URL` ต้องอัปเดตมือทุกครั้งที่ ngrok restart** — เจอปัญหานี้ซ้ำหลายรอบระหว่าง debug วันนี้ พิจารณาทำ script เช็ค/แจ้งเตือนอัตโนมัติทีหลัง
-3. **ตั้งเวลาส่งข่าวล่วงหน้า** (3.7) ยังไม่ทำ ต้องใช้ scheduler เพิ่ม (เช่น `node-cron`)
+3. **[ทำแล้ว] ตั้งเวลาส่งข่าวล่วงหน้า (3.7)** — ใช้ `node-cron` เช็ค `tb_scheduled_broadcast` ทุกนาที (`src/jobs/broadcastScheduler.job.js`) งาน overdue จาก server ดับจะถูกส่งตอน startup / รอบถัดไป, งาน 'Sending' ค้างเกิน 10 นาทีโยนกลับ Pending
 4. **Chatbot** ยังไม่มี logic เลย มีแค่ webhook รับ event ทั่วไปเฉยๆ
 
 ## Progress ปัจจุบัน
@@ -87,7 +87,19 @@ VITE_LIFF_ID=               # แท็บ LIFF ของ LINE Login channel เ
 - [x] หน้า NewsDetailPage สำหรับปุ่มลิงก์ใน Flex Message
 - [x] หน้า ActivityListPage (`/liff/activities`) และ DocumentListPage (`/liff/documents`) ฝั่งลูกบ้าน
 - [x] Chatbot ตอบอัตโนมัติ (เชื่อมต่อ LINE Webhook + `tb_chatbot_faq` Keyword matching)
-- [ ] ตั้งเวลาส่งข่าวล่วงหน้า
+- [x] ตั้งเวลาส่งข่าวล่วงหน้า (node-cron + `tb_scheduled_broadcast`)
+
+## API เกี่ยวกับ Broadcast
+
+| Method | Path | คำอธิบาย |
+|---|---|---|
+| POST | `/api/broadcast/:newsId` | ส่งทันที (body: `zoneName?`) |
+| POST | `/api/broadcast/:newsId/schedule` | ตั้งเวลาส่ง (body: `zoneName?`, `scheduledAt` = "YYYY-MM-DD HH:mm" local time) |
+| GET | `/api/broadcast/scheduled?status=Pending` | รายการตารางส่ง (ไม่ใส่ status = ทุกสถานะ) |
+| DELETE | `/api/broadcast/schedule/:scheduleId` | ยกเลิก (ได้เฉพาะ Pending) |
+| GET | `/api/broadcast/zones` | รายชื่อโซนที่มีลูกบ้านจริง |
+
+ทุก endpoint require JWT + role Admin. หมายเหตุ: `scheduled_at` เทียบกับ `NOW()` ของ MySQL — dev เครื่องเดียวกัน timezone ตรงกันอัตโนมัติ แต่ถ้า deploy server/DB คนละ timezone ต้องตั้ง MySQL timezone ให้ตรงกับ app
 
 ## Known Issues / วิธีแก้ที่เจอมาแล้ว
 

@@ -74,11 +74,12 @@ function buildNewsFlexMessage(news) {
   };
 }
 
-async function broadcastNews(newsId, zoneName, currentUser) {
-  if (currentUser.roleName !== 'Admin') {
-    throwError('เฉพาะผู้ใหญ่บ้านเท่านั้นที่ส่งข่าวได้', 403);
-  }
-
+/**
+ * Core logic การส่งข่าวจริงผ่าน LINE — ใช้ร่วมกันทั้ง "ส่งทันที" (API) และ
+ * "ตั้งเวลาส่ง" (scheduler job) เพื่อไม่ให้ logic Flex Message/multicast/log ซ้ำกัน
+ * คืน { logId, totalReceived } หรือ throw Error ถ้าส่งไม่ได้
+ */
+async function executeBroadcast(newsId, zoneName, sentByUserId) {
   if (!process.env.PUBLIC_APP_URL) {
     throwError('ยังไม่ได้ตั้งค่า PUBLIC_APP_URL ใน .env กรุณาตั้งค่าก่อนส่งข่าว', 500);
   }
@@ -103,15 +104,25 @@ async function broadcastNews(newsId, zoneName, currentUser) {
 
   const logId = await broadcastModel.createLog({
     newsId,
-    sentBy: currentUser.userId,
+    sentBy: sentByUserId,
     totalReceived: lineIds.length,
   });
 
-  return { logId, totalReceived: lineIds.length, zoneName: zoneName || 'ทั้งหมด' };
+  return { logId, totalReceived: lineIds.length };
+}
+
+async function broadcastNews(newsId, zoneName, currentUser) {
+  if (currentUser.roleName !== 'Admin') {
+    throwError('เฉพาะผู้ใหญ่บ้านเท่านั้นที่ส่งข่าวได้', 403);
+  }
+
+  const result = await executeBroadcast(newsId, zoneName, currentUser.userId);
+
+  return { ...result, zoneName: zoneName || 'ทั้งหมด' };
 }
 
 async function getZones() {
   return broadcastModel.getAllZones();
 }
 
-module.exports = { broadcastNews, getZones };
+module.exports = { broadcastNews, getZones, executeBroadcast };
