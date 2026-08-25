@@ -27,7 +27,6 @@ app.get('/', (req, res) => {
   res.json({ message: 'Village News API is running' });
 });
 
-// TODO: เพิ่ม route อื่นๆ ที่นี่ เช่น
 app.use('/api/auth', require('./src/routes/auth.routes'));
 app.use('/api/news', require('./src/routes/news.routes'));
 app.use('/api/category', require('./src/routes/category.routes'));

@@ -28,6 +28,7 @@
 | user_id | int | FK | อ้าง tb_user (ON DELETE CASCADE) |
 | reset_otp | varchar(6) | - | รหัส OTP 6 หลัก |
 | reset_token | varchar(64) | - | Secure Token อ้างอิงคำขอ |
+| attempts_count | int | - | จำนวนครั้งกรอก OTP ผิด (default 0, ครบ 5 = invalid token) |
 | is_used | tinyint(1) | - | 1 = ใช้แล้ว, 0 = ยังไม่ใช้ (default 0) |
 | expires_at | datetime | - | เวลาหมดอายุ (10 นาที) |
 | created_at | timestamp | - | default CURRENT_TIMESTAMP |

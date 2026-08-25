@@ -1,12 +1,33 @@
+const fs = require('fs');
+const path = require('path');
 const newsModel = require('../models/news.model');
 const viewModel = require('../models/view.model');
 const villagerModel = require('../models/villager.model');
 const { verifyLiffIdToken } = require('./liffAuth.service');
 
+// ไฟล์รูปเก็บที่ backend/public/uploads/ (ตรงกับ upload.middleware.js)
+const UPLOADS_DIR = path.join(__dirname, '../../public/uploads');
+
 function throwError(message, statusCode) {
   const err = new Error(message);
   err.statusCode = statusCode;
   throw err;
+}
+
+/**
+ * ลบไฟล์รูปออกจาก disk กัน orphan uploads
+ * - รับเฉพาะ path รูปแบบ /uploads/<filename> แล้วดึงชื่อไฟล์ด้วย basename (กัน path traversal)
+ * - fire-and-forget: ถ้าลบไม่ได้ (เช่นไฟล์หายไปก่อนแล้ว) แค่ warn ไม่ throw ทำให้ request หลักพัง
+ */
+function deleteUploadedImage(imagePath) {
+  if (!imagePath || !imagePath.startsWith('/uploads/')) return;
+
+  const filePath = path.join(UPLOADS_DIR, path.basename(imagePath));
+  fs.unlink(filePath, (err) => {
+    if (err && err.code !== 'ENOENT') {
+      console.warn(`ลบไฟล์รูปไม่สำเร็จ: ${filePath}`, err.message);
+    }
+  });
 }
 
 async function getAllNews() {
@@ -64,6 +85,9 @@ async function deleteNews(newsId, currentUser) {
   if (!news) throwError('ไม่พบข่าวนี้', 404);
 
   await newsModel.remove(newsId);
+
+  // ลบไฟล์รูปออกจาก disk ด้วย (กัน orphan uploads)
+  deleteUploadedImage(news.news_image);
 }
 
 async function approveNews(newsId, currentUser) {
@@ -102,6 +126,11 @@ async function setNewsImage(newsId, imagePath, currentUser) {
     if (news.news_status === 'Approved') {
       throwError('ข่าวนี้อนุมัติแล้ว ไม่สามารถแก้ไขรูปได้', 403);
     }
+  }
+
+  // ถ้ามีรูปเดิมอยู่แล้ว ลบไฟล์เดิมออกจาก disk ก่อน (กัน orphan uploads)
+  if (news.news_image && news.news_image !== imagePath) {
+    deleteUploadedImage(news.news_image);
   }
 
   await newsModel.setImage(newsId, imagePath);

@@ -46,7 +46,8 @@ async function verifyLiffIdToken(idToken) {
     // Fallback: ถ้านำ idToken มาถอดรหัส JWT Payload ได้ lineUserId (sub) ให้ใช้ค่านั้นเป็นทางเลือกสำรอง
     const decoded = parseJwtPayload(idToken);
     if (decoded && decoded.sub) {
-      console.log('Using decoded JWT fallback for lineUserId:', decoded.sub);
+      // Verify API fail แล้วใช้ fallback = เหตุการณ์ที่ควรรู้ (ไม่ใช่ debug log ธรรมดา)
+      console.warn('LINE Verify API failed - using decoded JWT payload fallback for lineUserId');
       return { lineUserId: decoded.sub, displayName: decoded.name || decoded.sub };
     }
 

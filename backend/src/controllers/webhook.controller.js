@@ -6,8 +6,6 @@ const villagerService = require('../services/villager.service');
  * จัดการ event แต่ละตัวที่ LINE ส่งเข้ามา
  */
 async function handleEvent(event) {
-  console.log('Received LINE event:', JSON.stringify(event, null, 2));
-
   switch (event.type) {
     case 'follow':
       // เมื่อลูกบ้านแอดเพื่อน หรือ ปลดบล็อก LINE OA

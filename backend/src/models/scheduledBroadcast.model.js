@@ -28,7 +28,9 @@ async function findSchedules(status) {
   const [rows] = await pool.query(
     `SELECT sb.schedule_id, sb.news_id, n.news_title, n.news_status,
             sb.sent_by, u.full_name AS sent_by_name,
-            sb.zone_name, sb.scheduled_at, sb.status, sb.error_message, sb.created_at
+            sb.zone_name,
+            DATE_FORMAT(sb.scheduled_at, '%Y-%m-%d %H:%i:%s') AS scheduled_at,
+            sb.status, sb.error_message, sb.created_at
      FROM tb_scheduled_broadcast sb
      JOIN tb_news n ON sb.news_id = n.news_id
      JOIN tb_user u ON sb.sent_by = u.user_id
@@ -51,12 +53,13 @@ async function findScheduleById(scheduleId) {
 /**
  * ดึงงานที่ถึงเวลาส่งแล้ว (Pending และเวลาผ่านมาแล้ว)
  * ใช้ทั้งจาก cron ทุกนาที และตอน startup เพื่อเก็บงาน overdue จากตอน server ดับ
+ * scheduled_at เก็บเป็น UTC เสมอ -> เทียบกับ UTC_TIMESTAMP() ไม่พึ่ง timezone ของ MySQL session
  */
 async function findDueSchedules() {
   const [rows] = await pool.query(
     `SELECT schedule_id, news_id, sent_by, zone_name
      FROM tb_scheduled_broadcast
-     WHERE status = 'Pending' AND scheduled_at <= NOW()
+     WHERE status = 'Pending' AND scheduled_at <= UTC_TIMESTAMP()
      ORDER BY scheduled_at ASC`
   );
   return rows;

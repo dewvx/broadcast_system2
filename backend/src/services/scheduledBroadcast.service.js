@@ -8,6 +8,80 @@ function throwError(message, statusCode) {
   throw err;
 }
 
+// เวลาไทย = UTC+7 ตายตัว (Admin ใช้งานจากไทยเสมอ) — คำนวณ offset ตรงๆ ไม่พึ่ง TZ ของเครื่องที่รัน
+const THAI_OFFSET_MS = 7 * 60 * 60 * 1000;
+
+function padTwo(number) {
+  return String(number).padStart(2, '0');
+}
+
+/**
+ * แปลง "YYYY-MM-DDTHH:mm" จาก <input type="datetime-local"> (เวลาไทยเสมอ)
+ * เป็น Date object (epoch UTC) — ใช้ Date.UTC + หัก offset 7 ชม. ตรงๆ
+ * จึงได้ผลเหมือนกันไม่ว่า server รันอยู่ timezone ไหน
+ * @returns {Date|null} null ถ้ารูปแบบ/วันที่ไม่ถูกต้อง
+ */
+function thaiInputToUtc(scheduledAt) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(String(scheduledAt).trim());
+  if (!match) return null;
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const hour = Number(match[4]);
+  const minute = Number(match[5]);
+
+  // เช็ควันที่ตามปฏิทินจริง (กัน 2026-02-30 ฯลฯ) โดยตีความเป็น UTC ล้วนๆ ก่อน
+  const naive = new Date(Date.UTC(year, month - 1, day, hour, minute));
+  if (
+    naive.getUTCFullYear() !== year ||
+    naive.getUTCMonth() !== month - 1 ||
+    naive.getUTCDate() !== day ||
+    naive.getUTCHours() !== hour ||
+    naive.getUTCMinutes() !== minute
+  ) {
+    return null;
+  }
+
+  // หัก 7 ชม. = แปลงจากเวลาไทย (+07:00) เป็น UTC อย่างชัดเจน
+  return new Date(naive.getTime() - THAI_OFFSET_MS);
+}
+
+/**
+ * ฟอร์แมต Date (epoch UTC) เป็นสตริง "YYYY-MM-DD HH:mm:ss" (ค่า UTC)
+ * สำหรับเก็บลง MySQL DATETIME — เราเก็บ scheduled_at เป็น UTC เสมอ
+ */
+function formatUtcForMySql(utcDate) {
+  return (
+    `${utcDate.getUTCFullYear()}-${padTwo(utcDate.getUTCMonth() + 1)}-${padTwo(utcDate.getUTCDate())} ` +
+    `${padTwo(utcDate.getUTCHours())}:${padTwo(utcDate.getUTCMinutes())}:${padTwo(utcDate.getUTCSeconds())}`
+  );
+}
+
+/**
+ * แปลงสตริง UTC จาก MySQL ("YYYY-MM-DD HH:mm:ss") เป็น ISO string เวลาไทย
+ * เช่น "2026-08-25T12:00:00+07:00" — frontend ใช้ new Date(...) อ่านแล้วโชว์เวลาไทยถูกต้องเสมอ
+ */
+function utcMysqlToThaiIso(mysqlUtcString) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2}):(\d{2})$/.exec(String(mysqlUtcString));
+  if (!match) return null;
+
+  const utcMs = Date.UTC(
+    Number(match[1]),
+    Number(match[2]) - 1,
+    Number(match[3]),
+    Number(match[4]),
+    Number(match[5]),
+    Number(match[6])
+  );
+  const thai = new Date(utcMs + THAI_OFFSET_MS);
+
+  return (
+    `${thai.getUTCFullYear()}-${padTwo(thai.getUTCMonth() + 1)}-${padTwo(thai.getUTCDate())}` +
+    `T${padTwo(thai.getUTCHours())}:${padTwo(thai.getUTCMinutes())}:${padTwo(thai.getUTCSeconds())}+07:00`
+  );
+}
+
 /**
  * สร้างตารางส่งข่าวล่วงหน้า (Admin เท่านั้น)
  * @param {string} newsId
@@ -22,11 +96,12 @@ async function scheduleNews(newsId, data, currentUser) {
   const { zoneName, scheduledAt } = data;
 
   // validate รูปแบบเวลา + ต้องเป็นอนาคตเท่านั้น
-  const targetDate = new Date(scheduledAt);
-  if (!scheduledAt || Number.isNaN(targetDate.getTime())) {
+  // ตีความ scheduledAt เป็นเวลาไทย (+07:00) เสมอ แล้วแปลงเป็น UTC ด้วย offset ตรงๆ
+  const targetUtcDate = thaiInputToUtc(scheduledAt);
+  if (!scheduledAt || !targetUtcDate) {
     throwError('รูปแบบวันเวลาไม่ถูกต้อง', 400);
   }
-  if (targetDate.getTime() <= Date.now()) {
+  if (targetUtcDate.getTime() <= Date.now()) {
     throwError('ต้องตั้งเวลาส่งเป็นเวลาในอนาคตเท่านั้น', 400);
   }
 
@@ -41,20 +116,25 @@ async function scheduleNews(newsId, data, currentUser) {
     newsId,
     sentBy: currentUser.userId,
     zoneName,
-    // MySQL รุ่นเกินไม่รับตัวคั่น "T" จาก <input type="datetime-local"> -> เปลี่ยนเป็นช่องว่าง
-    scheduledAt: scheduledAt.replace('T', ' '),
+    // เก็บลง MySQL เป็น UTC เสมอ (รูปแบบ "YYYY-MM-DD HH:mm:ss" ไม่มีตัวคั่น "T" ให้ MySQL รุ่นเกินติด)
+    scheduledAt: formatUtcForMySql(targetUtcDate),
   });
 
   return {
     scheduleId,
     newsTitle: news.news_title,
     zoneName: zoneName || 'ทั้งหมด',
-    scheduledAt: targetDate.toISOString(),
+    scheduledAt: utcMysqlToThaiIso(formatUtcForMySql(targetUtcDate)),
   };
 }
 
 async function getSchedules(status) {
-  return scheduledBroadcastModel.findSchedules(status || null);
+  const rows = await scheduledBroadcastModel.findSchedules(status || null);
+  // scheduled_at ใน DB เป็น UTC — แปลงกลับเป็นเวลาไทย (+07:00) ก่อนส่งให้ Admin
+  return rows.map((row) => ({
+    ...row,
+    scheduled_at: utcMysqlToThaiIso(row.scheduled_at) ?? row.scheduled_at,
+  }));
 }
 
 /**
@@ -114,4 +194,13 @@ async function resetStaleSchedules(staleMinutes) {
   return scheduledBroadcastModel.resetStaleSending(staleMinutes);
 }
 
-module.exports = { scheduleNews, getSchedules, cancelSchedule, processDueSchedules, resetStaleSchedules };
+module.exports = {
+  scheduleNews,
+  getSchedules,
+  cancelSchedule,
+  processDueSchedules,
+  resetStaleSchedules,
+  thaiInputToUtc,
+  formatUtcForMySql,
+  utcMysqlToThaiIso,
+};

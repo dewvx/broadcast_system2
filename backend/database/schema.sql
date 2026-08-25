@@ -32,6 +32,7 @@ CREATE TABLE tb_password_reset (
   user_id INT NOT NULL,
   reset_otp VARCHAR(6) NOT NULL,
   reset_token VARCHAR(64) NOT NULL,
+  attempts_count INT NOT NULL DEFAULT 0, -- จำนวนครั้งกรอก OTP ผิด (ครบ 5 = invalid token)
   is_used TINYINT(1) DEFAULT 0,
   expires_at DATETIME NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

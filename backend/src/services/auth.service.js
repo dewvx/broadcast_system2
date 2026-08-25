@@ -11,6 +11,14 @@ function throwError(message, statusCode = 400) {
   throw err;
 }
 
+// กรอก OTP ผิดได้สูงสุดครั้งละ token — เกินนี้ token invalid ทันที (กัน brute force OTP)
+const MAX_OTP_ATTEMPTS = 5;
+// ขอ OTP ซ้ำได้ทุกกี่วินาทีต่อ user (กันสแปมกดขอ OTP รัว)
+const RESEND_COOLDOWN_SECONDS = 60;
+// Response เดียวกันทุกกรณี (มี/ไม่มี username, ผูก/ไม่ผูก LINE) — กัน user enumeration
+const GENERIC_OTP_MESSAGE =
+  'หากชื่อผู้ใช้งานถูกต้องและผูกบัญชี LINE Official Account เรียบร้อยแล้ว ระบบได้ส่งรหัส OTP 6 หลักไปยัง LINE ของท่านแล้ว กรุณาตรวจสอบข้อความจาก LINE OA';
+
 async function login(username, password) {
   const user = await userModel.findByUsername(username);
 
@@ -54,6 +62,8 @@ async function hashPassword(plainPassword) {
 
 /**
  * ขอ OTP รีเซ็ตรหัสผ่านผ่าน LINE OA
+ * กัน user enumeration: ตอบกลับ message เดียวกันทุกกรณี (username ไม่มี / ไม่ได้ผูก LINE / สำเร็จ)
+ * — ความจริงแต่ละกรณี log ไว้ฝั่ง server เท่านั้น
  */
 async function requestPasswordReset(username) {
   if (!username || !username.trim()) {
@@ -61,19 +71,25 @@ async function requestPasswordReset(username) {
   }
 
   const user = await userModel.findByUsername(username.trim());
+
   if (!user) {
-    throwError('ไม่พบบัญชีผู้ใช้นี้ในระบบ กรุณาตรวจสอบชื่อผู้ใช้งานอีกครั้ง', 404);
+    console.warn(`[password-reset] ขอ OTP ด้วย username ที่ไม่มีในระบบ: "${username.trim()}"`);
+    return { message: GENERIC_OTP_MESSAGE };
   }
 
   if (!user.line_user_id || !user.line_user_id.trim()) {
-    throwError(
-      'บัญชีนี้ยังไม่ได้ผูกกับ LINE Official Account จึงไม่สามารถรับรหัส OTP ได้ กรุณาติดต่อผู้ดูแลระบบเพื่อรีเซ็ตรหัสผ่าน',
-      400
-    );
+    console.warn(`[password-reset] user "${user.username}" ยังไม่ได้ผูก LINE — ไม่ส่ง OTP`);
+    return { message: GENERIC_OTP_MESSAGE };
   }
 
-  // สร้าง OTP 6 หลักสุ่ม และ Secure Token
-  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  // cooldown 60 วินาที/ครั้ง กันขอ OTP รัว (LINE push message มี quota)
+  if (await passwordResetModel.hasRecentReset(user.user_id, RESEND_COOLDOWN_SECONDS)) {
+    throwError('คุณเพิ่งขอรหัส OTP ไปเมื่อสักครู่ กรุณารอประมาณ 1 นาทีแล้วลองใหม่อีกครั้ง', 429);
+  }
+
+  // สร้าง OTP 6 หลัก (CSPRNG - Math.random() predictable ไม่ปลอดภัย) และ Secure Token
+  const otp = crypto.randomInt(100000, 1000000).toString();
+  // reset_token เก็บใน DB เป็น internal reference เท่านั้น — ไม่ส่งกลับให้ client
   const resetToken = crypto.randomBytes(32).toString('hex');
   const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 นาที
 
@@ -100,30 +116,31 @@ async function requestPasswordReset(username) {
     throwError('ไม่สามารถส่งข้อความ OTP ไปยัง LINE ได้ กรุณาตรวจสอบว่าท่านได้เพิ่มเพื่อน LINE OA หรือยัง', 500);
   }
 
-  return {
-    resetToken,
-    message: `ส่งรหัส OTP 6 หลักไปยัง LINE Official Account ของท่านเรียบร้อยแล้ว`,
-  };
+  return { message: GENERIC_OTP_MESSAGE };
 }
 
 /**
- * ยืนยัน OTP และตั้งรหัสผ่านใหม่
+ * ยืนยัน OTP และตั้งรหัสผ่านใหม่ — ระบุตัวตนด้วย username + OTP (ไม่ใช้ reset_token จาก client)
  */
-async function resetPassword({ resetToken, otp, newPassword }) {
-  if (!resetToken || !otp || !otp.trim()) {
-    throwError('กรุณากรอกรหัส OTP 6 หลักให้ครบถ้วน', 400);
+async function resetPassword({ username, otp, newPassword }) {
+  if (!username || !username.trim() || !otp || !otp.trim()) {
+    throwError('กรุณากรอกชื่อผู้ใช้งานและรหัส OTP 6 หลักให้ครบถ้วน', 400);
   }
 
   if (!newPassword || newPassword.trim().length < 6) {
     throwError('รหัสผ่านใหม่ต้องมีความยาวอย่างน้อย 6 ตัวอักษร', 400);
   }
 
-  const resetRecord = await passwordResetModel.findValidReset({
-    resetToken,
-    otp: otp.trim(),
-  });
+  const resetRecord = await passwordResetModel.findActiveByUsername(username);
 
+  // error message เดียวกันทุกกรณี (username ไม่มี / OTP ผิด / หมดอายุ / ถูกล็อค) — กัน enumeration
   if (!resetRecord) {
+    throwError('รหัส OTP ไม่ถูกต้อง หรือหมดอายุแล้ว กรุณากดขอรหัสใหม่อีกครั้ง', 400);
+  }
+
+  // เทียบ OTP เอง เพื่อนับ attempt เมื่อกรอกผิด — ผิดครบ 5 ครั้ง token ถูก invalid ทันที
+  if (resetRecord.reset_otp !== otp.trim()) {
+    await passwordResetModel.registerFailedAttempt(resetRecord.reset_id, MAX_OTP_ATTEMPTS);
     throwError('รหัส OTP ไม่ถูกต้อง หรือหมดอายุแล้ว กรุณากดขอรหัสใหม่อีกครั้ง', 400);
   }
 
