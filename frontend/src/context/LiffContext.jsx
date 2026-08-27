@@ -8,31 +8,46 @@ export function LiffProvider({ children }) {
   const [liffError, setLiffError] = useState(null);
   const [idToken, setIdToken] = useState(null);
   const [profile, setProfile] = useState(null);
-  const hasInitialized = useRef(false);
+
+  const isInitializing = useRef(false);
 
   useEffect(() => {
-  if (hasInitialized.current) return;
-  hasInitialized.current = true;
+    if (isInitializing.current) return;
+    isInitializing.current = true;
 
-  async function initLiff() {
+    async function initLiff() {
+      const liffId = import.meta.env.VITE_LIFF_ID;
+
+      if (!liffId) {
+        console.warn('VITE_LIFF_ID is not defined in environment variables.');
+        setIsLiffReady(true);
+        return;
+      }
+
       try {
-        await liff.init({ liffId: import.meta.env.VITE_LIFF_ID });
+        // init liff พร้อมกับการ auto redirect login เมื่อเปิดภายนอก
+        await liff.init({ liffId });
 
-        // ถ้ายังไม่ login เข้า LINE เลย (เช่นเปิดผ่าน browser ปกติ) ให้เด้งไป login ก่อน
-        if (!liff.isLoggedIn()) {
-          liff.login();
-          return; // liff.login() จะ redirect ออกไปเลย โค้ดหลังจากนี้จะไม่ทำงานต่อในรอบนี้
+        if (liff.isLoggedIn()) {
+          try {
+            const token = liff.getIDToken();
+            const userProfile = await liff.getProfile();
+            setIdToken(token);
+            setProfile(userProfile);
+          } catch (profileErr) {
+            console.warn('Failed to fetch LIFF profile/token:', profileErr);
+          }
+        } else {
+          // ถ้ายังไม่ได้ล็อกอิน ให้สั่ง liff.login() อัตโนมัติ
+          liff.login({ redirectUri: window.location.href });
+          return;
         }
 
-        const token = liff.getIDToken();
-        const userProfile = await liff.getProfile();
-
-        setIdToken(token);
-        setProfile(userProfile);
         setIsLiffReady(true);
       } catch (err) {
         console.error('LIFF init error:', err);
-        setLiffError(err.message);
+        setLiffError(err.message || 'ไม่สามารถเปิดใช้งาน LINE LIFF ได้');
+        setIsLiffReady(true);
       }
     }
 
@@ -40,13 +55,12 @@ export function LiffProvider({ children }) {
   }, []);
 
   return (
-    <LiffContext.Provider value={{ isLiffReady, liffError, idToken, profile }}>
+    <LiffContext.Provider value={{ liff, isLiffReady, liffError, idToken, profile }}>
       {children}
     </LiffContext.Provider>
   );
 }
 
-// custom hook เรียกใช้ง่ายๆ จาก component อื่น: const { idToken } = useLiff();
 export function useLiff() {
   return useContext(LiffContext);
 }

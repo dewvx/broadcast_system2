@@ -6,6 +6,8 @@ const roleMiddleware = require('../middlewares/role.middleware');
 const upload = require('../middlewares/upload.middleware');
 
 // ดูข่าวได้ทั้ง Admin และ Leader (แค่ login ก็พอ ไม่ต้องเช็ค role เพิ่ม)
+router.get('/public/list', newsController.publicList);
+// ดูข่าวได้ทั้ง Admin และ Leader (แค่ login ก็พอ ไม่ต้องเช็ค role เพิ่ม)
 router.get('/', authMiddleware, newsController.getAll);
 router.get('/:id', authMiddleware, newsController.getOne);
 
@@ -23,6 +25,10 @@ router.post(
   upload.single('image'),
   newsController.uploadImage
 );
+
+// ดูข่าวสารฝั่งลูกบ้าน (GET & POST) - ไม่มี authMiddleware ใช้ idToken แทน (verify ใน service)
+router.get('/public/:id', newsController.publicView);
+router.post('/:id/view', newsController.publicView);
 
 // ลบข่าว - Admin เท่านั้น
 router.delete('/:id', authMiddleware, roleMiddleware(['Admin']), newsController.remove);

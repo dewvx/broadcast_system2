@@ -4,6 +4,7 @@ const cors = require('cors');
 
 const errorHandler = require('./src/middlewares/errorHandler');
 const webhookRoutes = require('./src/routes/webhook.routes');
+const { startBroadcastScheduler } = require('./src/jobs/broadcastScheduler.job');
 
 const app = express();
 
@@ -26,11 +27,16 @@ app.get('/', (req, res) => {
   res.json({ message: 'Village News API is running' });
 });
 
-// TODO: เพิ่ม route อื่นๆ ที่นี่ เช่น
 app.use('/api/auth', require('./src/routes/auth.routes'));
 app.use('/api/news', require('./src/routes/news.routes'));
 app.use('/api/category', require('./src/routes/category.routes'));
 app.use('/api/villager', require('./src/routes/villager.routes'));
+app.use('/api/broadcast', require('./src/routes/broadcast.routes'));
+app.use('/api/chatbot-faq', require('./src/routes/chatbotFaq.routes'));
+app.use('/api/activity', require('./src/routes/activity.routes'));
+app.use('/api/document', require('./src/routes/document.routes'));
+app.use('/api/report', require('./src/routes/report.routes'));
+app.use('/api/user', require('./src/routes/user.routes'));
 
 app.use(errorHandler);
 
@@ -38,3 +44,6 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
+
+// cron job: เช็คตารางส่งข่าวล่วงหน้าทุกนาที (ฟีเจอร์ 3.7)
+startBroadcastScheduler();

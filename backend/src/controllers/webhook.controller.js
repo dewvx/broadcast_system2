@@ -1,27 +1,46 @@
 const { lineClient } = require('../config/line');
+const chatbotService = require('../services/chatbot.service');
+const villagerService = require('../services/villager.service');
 
 /**
  * จัดการ event แต่ละตัวที่ LINE ส่งเข้ามา
- * ตอนนี้ทำแค่ log + reply พื้นฐาน ไว้ต่อยอด logic
- * (chatbot keyword, บันทึกลง tb_villager ตอน follow ฯลฯ) ทีหลัง
  */
 async function handleEvent(event) {
-  console.log('Received LINE event:', JSON.stringify(event, null, 2));
-
   switch (event.type) {
     case 'follow':
-      // TODO: บันทึก line_user_id ลง tb_villager ถ้ายังไม่มี (ดู docs/LINE_INTEGRATION.md)
+      // เมื่อลูกบ้านแอดเพื่อน หรือ ปลดบล็อก LINE OA
+      if (event.source && event.source.userId) {
+        try {
+          await villagerService.setVillagerActiveStatus(event.source.userId, 1);
+        } catch (err) {
+          console.warn('Failed to update active status on follow:', err);
+        }
+      }
+
       return lineClient.replyMessage({
         replyToken: event.replyToken,
         messages: [{ type: 'text', text: 'ยินดีต้อนรับสู่ระบบหอกระจายข่าวชุมชนครับ' }],
       });
 
+    case 'unfollow':
+      // เมื่อลูกบ้านบล็อก หรือ ลบเพื่อน LINE OA -> ปรับ is_active = 0
+      if (event.source && event.source.userId) {
+        try {
+          await villagerService.setVillagerActiveStatus(event.source.userId, 0);
+          console.log(`Villager ${event.source.userId} unfollowed/blocked LINE OA. Marked is_active = 0.`);
+        } catch (err) {
+          console.warn('Failed to update active status on unfollow:', err);
+        }
+      }
+      return Promise.resolve(null);
+
     case 'message':
       if (event.message.type === 'text') {
-        // TODO: ส่งต่อให้ chatbot.service.js ค้นหา keyword ใน tb_chatbot_faq
+        const lineUserId = event.source ? event.source.userId : null;
+        const responseMessage = await chatbotService.findAnswer(event.message.text, lineUserId);
         return lineClient.replyMessage({
           replyToken: event.replyToken,
-          messages: [{ type: 'text', text: `รับข้อความแล้ว: ${event.message.text}` }],
+          messages: [responseMessage],
         });
       }
       return Promise.resolve(null);

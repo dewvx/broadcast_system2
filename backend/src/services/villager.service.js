@@ -1,4 +1,5 @@
 const villagerModel = require('../models/villager.model');
+const { verifyLiffIdToken } = require('./liffAuth.service');
 
 function throwError(message, statusCode) {
   const err = new Error(message);
@@ -7,39 +8,18 @@ function throwError(message, statusCode) {
 }
 
 /**
- * ส่ง idToken ไปให้ LINE ตรวจสอบว่าจริงมั้ย
- * LINE จะตอบกลับมาพร้อมข้อมูลเจ้าของ token (sub = line_user_id, name = ชื่อโปรไฟล์)
- * เอกสาร: https://developers.line.biz/en/reference/line-login/#verify-id-token
- */
-async function verifyLiffIdToken(idToken) {
-  const response = await fetch('https://api.line.me/oauth2/v2.1/verify', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({
-      id_token: idToken,
-      client_id: process.env.LIFF_CHANNEL_ID,
-    }),
-  });
-
-  if (!response.ok) {
-    throwError('LINE ID Token ไม่ถูกต้องหรือหมดอายุ', 401);
-  }
-
-  const data = await response.json();
-  // data.sub = line_user_id, data.name = ชื่อโปรไฟล์ LINE
-  return { lineUserId: data.sub, displayName: data.name };
-}
-
-/**
  * เช็คว่าลูกบ้านคนนี้เคยลงทะเบียนหรือยัง
- * - เคยแล้ว -> return ข้อมูลลูกบ้าน (isNewUser: false)
- * - ยังไม่เคย -> return แค่ line_user_id/displayName ให้ frontend ไปแสดงฟอร์มลงทะเบียนต่อ (isNewUser: true)
  */
 async function checkOrLogin(idToken) {
   const { lineUserId, displayName } = await verifyLiffIdToken(idToken);
 
   const existing = await villagerModel.findByLineUserId(lineUserId);
   if (existing) {
+    // หากเคยลงทะเบียนไว้และ re-follow กลับมา ให้ปรับสถานะเป็น active = 1
+    if (!existing.is_active) {
+      await villagerModel.setIsActiveByLineUserId(lineUserId, 1);
+      existing.is_active = 1;
+    }
     return { isNewUser: false, villager: existing };
   }
 
@@ -47,11 +27,16 @@ async function checkOrLogin(idToken) {
 }
 
 /**
- * สมัครลูกบ้านใหม่ - ต้อง verify idToken ซ้ำอีกรอบตรงนี้
- * (ห้ามเชื่อ lineUserId ที่ frontend ส่งมาตรงๆ แม้จะเพิ่งเช็คผ่าน checkOrLogin ไปแล้วก็ตาม
- *  เพราะ request นี้เป็นคนละ request กัน ต้องยืนยันใหม่เสมอ)
+ * สมัครลูกบ้านใหม่
+ * - ต้อง verify idToken ซ้ำอีกรอบตรงนี้ (ห้ามเชื่อ lineUserId ที่ frontend ส่งมาตรงๆ)
+ * - ต้องได้รับ pdpaConsent === true ก่อนถึงจะบันทึกได้ (Server-side enforce)
  */
-async function registerVillager(idToken, { firstName, lastName, houseNumber, zoneName }) {
+async function registerVillager(idToken, { firstName, lastName, houseNumber, zoneName, pdpaConsent }) {
+  // Validate PDPA consent — enforce ฝั่ง server เสมอ ไม่เชื่อ frontend ฝ่ายเดียว
+  if (pdpaConsent !== true) {
+    throwError('กรุณายินยอมให้เก็บข้อมูลส่วนบุคคลก่อนลงทะเบียน', 400);
+  }
+
   const { lineUserId, displayName } = await verifyLiffIdToken(idToken);
 
   const existing = await villagerModel.findByLineUserId(lineUserId);
@@ -70,9 +55,93 @@ async function registerVillager(idToken, { firstName, lastName, houseNumber, zon
     lastName,
     houseNumber,
     zoneName,
+    pdpaConsentAt: new Date(), // บันทึก server-side timestamp เพื่อกันปลอม
   });
 
   return villagerModel.findById(villagerId);
 }
 
-module.exports = { checkOrLogin, registerVillager };
+/**
+ * ดึงรายชื่อลูกบ้านทั้งหมด (Admin เท่านั้น)
+ */
+async function getAllVillagers() {
+  return villagerModel.findAll();
+}
+
+/**
+ * ลูกบ้านแก้ไขโปรไฟล์ตนเองผ่าน LIFF
+ */
+async function updateSelfProfile(idToken, { firstName, lastName, houseNumber, zoneName }) {
+  const { lineUserId } = await verifyLiffIdToken(idToken);
+
+  const existing = await villagerModel.findByLineUserId(lineUserId);
+  if (!existing) {
+    throwError('ไม่พบข้อมูลลูกบ้านนี้ในระบบ กรุณาลงทะเบียนก่อน', 404);
+  }
+
+  if (!firstName || !lastName || !houseNumber) {
+    throwError('กรุณากรอกชื่อ นามสกุล และบ้านเลขที่ให้ครบ', 400);
+  }
+
+  await villagerModel.updateByLineUserId(lineUserId, {
+    firstName: firstName.trim(),
+    lastName: lastName.trim(),
+    houseNumber: houseNumber.trim(),
+    zoneName: zoneName ? zoneName.trim() : null,
+  });
+
+  return villagerModel.findByLineUserId(lineUserId);
+}
+
+/**
+ * Admin แก้ไขข้อมูลลูกบ้านแทนให้
+ */
+async function updateVillagerByAdmin(villagerId, { firstName, lastName, houseNumber, zoneName, isActive }) {
+  const existing = await villagerModel.findById(villagerId);
+  if (!existing) {
+    throwError('ไม่พบลูกบ้านคนนี้ในระบบ', 404);
+  }
+
+  if (!firstName || !lastName || !houseNumber) {
+    throwError('กรุณากรอกชื่อ นามสกุล และบ้านเลขที่ให้ครบ', 400);
+  }
+
+  await villagerModel.updateByAdmin(villagerId, {
+    firstName: firstName.trim(),
+    lastName: lastName.trim(),
+    houseNumber: houseNumber.trim(),
+    zoneName: zoneName ? zoneName.trim() : null,
+    isActive: isActive !== undefined ? Number(isActive) : existing.is_active,
+  });
+
+  return villagerModel.findById(villagerId);
+}
+
+/**
+ * Admin ลบลูกบ้านออกจากระบบ
+ */
+async function deleteVillagerByAdmin(villagerId) {
+  const existing = await villagerModel.findById(villagerId);
+  if (!existing) {
+    throwError('ไม่พบลูกบ้านคนนี้ในระบบ', 404);
+  }
+
+  await villagerModel.remove(villagerId);
+}
+
+/**
+ * เปลี่ยนสถานะการติดตาม (is_active) เมื่อเกิด Event follow/unfollow จาก LINE Webhook
+ */
+async function setVillagerActiveStatus(lineUserId, isActive) {
+  await villagerModel.setIsActiveByLineUserId(lineUserId, isActive);
+}
+
+module.exports = {
+  checkOrLogin,
+  registerVillager,
+  getAllVillagers,
+  updateSelfProfile,
+  updateVillagerByAdmin,
+  deleteVillagerByAdmin,
+  setVillagerActiveStatus,
+};

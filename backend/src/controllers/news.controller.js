@@ -1,3 +1,4 @@
+const newsPublicService = require('../services/newsPublic.service');
 const newsService = require('../services/news.service');
 
 async function getAll(req, res, next) {
@@ -69,6 +70,7 @@ async function uploadImage(req, res, next) {
       return res.status(400).json({ success: false, message: 'กรุณาแนบไฟล์รูปภาพ (field name: image)' });
     }
 
+    // เก็บแค่ path สัมพัทธ์ ไม่เก็บ absolute path ของเครื่อง (ย้าย server แล้วพังได้)
     const imagePath = `/uploads/${req.file.filename}`;
     const news = await newsService.setNewsImage(req.params.id, imagePath, req.user);
 
@@ -78,4 +80,21 @@ async function uploadImage(req, res, next) {
   }
 }
 
-module.exports = { getAll, getOne, create, update, remove, approve, reject, uploadImage };
+async function publicView(req, res, next) {
+  try {
+    const idToken = req.body?.idToken || 'guest';
+    const news = await newsService.getPublicNewsDetail(req.params.id, idToken);
+    res.json({ success: true, data: news });
+  } catch (err) {
+    next(err);
+  }
+}
+async function publicList(req, res, next) {
+  try {
+    const news = await newsPublicService.getPublicNewsList();
+    res.json({ success: true, data: news });
+  } catch (err) {
+    next(err);
+  }
+}
+module.exports = { getAll, getOne, create, update, remove, approve, reject, uploadImage, publicView, publicList };

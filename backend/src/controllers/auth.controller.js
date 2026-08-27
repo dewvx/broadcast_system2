@@ -32,6 +32,7 @@ async function me(req, res, next) {
         userId: user.user_id,
         username: user.username,
         fullName: user.full_name,
+        lineUserId: user.line_user_id,
         roleId: user.role_id,
         roleName: user.role_name,
       },
@@ -41,4 +42,24 @@ async function me(req, res, next) {
   }
 }
 
-module.exports = { login, me };
+async function forgotPassword(req, res, next) {
+  try {
+    const { username } = req.body;
+    const result = await authService.requestPasswordReset(username);
+    res.json({ success: true, ...result });
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function resetPassword(req, res, next) {
+  try {
+    const { username, otp, newPassword } = req.body;
+    const result = await authService.resetPassword({ username, otp, newPassword });
+    res.json({ success: true, ...result });
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { login, me, forgotPassword, resetPassword };

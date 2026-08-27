@@ -1,3 +1,71 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    font-family: 'Noto Sans Thai', system-ui, sans-serif;
+    background-color: #F8FAFC;
+    color: #0F172A;
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background-color: rgba(37, 99, 235, 0.15);
+  }
+
+  :focus-visible {
+    outline: 2px solid #2563EB;
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  input,
+  select,
+  textarea {
+    font-family: inherit;
+  }
+
+  /* Thin, unobtrusive scrollbars (desktop) */
+  @media (min-width: 1024px) {
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: #CBD5E1 transparent;
+    }
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background-color: #CBD5E1;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+  }
+
+  /* Motion System M4 — respect reduced motion preference */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer utilities {
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+}

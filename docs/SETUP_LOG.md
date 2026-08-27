@@ -53,14 +53,53 @@
 
 ---
 
+## Phase 6: Debug flow ลงทะเบียน LIFF / ตรวจสอบ route
+
+21. สร้าง Flow ลงทะเบียนลูกบ้านผ่าน LIFF: Frontend ใช้ `LiffContext` ดึง `idToken` จาก LINE Login และแสดงหน้า RegisterPage
+22. เพิ่ม API ฝั่ง backend สำหรับลูกบ้าน:
+   - `POST /api/villager/check` ตรวจว่าลูกบ้านเคยลงทะเบียนหรือยัง
+   - `POST /api/villager/register` ลงทะเบียนใหม่ด้วยข้อมูล `firstName`, `lastName`, `houseNumber`, `zoneName`
+23. Backend ตรวจสอบ `idToken` ใหม่อีกครั้งด้วย LINE OAuth verify endpoint ก่อน insert ลง `tb_villager` เพื่อกัน spoofing
+24. ทดสอบเชื่อมต่อฐานข้อมูล MySQL ด้วย query `SELECT 1` → ได้ผลลัพธ์ `DB_OK` แปลว่า DB connection ปกติ
+25. ทดสอบการรัน backend จริง พบปัญหา: port 3000 ถูกใช้งานแล้ว (`EADDRINUSE`) จึงไม่สามารถ起 server ของ repo นี้ได้จนกว่าจะหยุด process อื่นหรือเปลี่ยน port
+26. ทดสอบ `npm run dev` บน PowerShell พบว่า script ถูกบล็อกด้วยการตั้งค่า execution policy ของ Windows (`npm.ps1 cannot be loaded because running scripts is disabled`)
+27. สรุปว่า route มีอยู่ในโค้ดจริง แต่ 404 /api/villager/register เป็นปัญหาด้าน environment/runtime มากกว่าโครงสร้าง route: request ไม่ถึง backend ที่ถูกต้อง หรือ backend ที่ใช้อยู่ไม่ใช่ project นี้
+28. สถานะข้อมูล: flow ลงทะเบียนและ route backend ถูกสร้างเรียบร้อยแล้ว แต่ยังต้องแก้ปัญหา environment (port, tunnel, startup script) ก่อนใช้งานจริง
+
 ## สถานะปัจจุบัน (ล่าสุด)
 
 - [x] วิเคราะห์ระบบ + วางโครงสร้างเอกสาร
 - [x] ออกแบบและสร้างโครง backend + frontend ครบ
 - [x] Messaging API Channel + LIFF Channel พร้อมใช้งาน (link กันแล้ว)
-- [x] Backend รันได้สำเร็จ เชื่อม `.env` ถูกต้อง
+- [x] Backend รันได้สำเร็จ เชื่อม `.env` ถูกต้อง (ตามตอนแรก)
 - [x] ngrok ติดตั้งและอัปเดตเวอร์ชันเรียบร้อย
-- [ ] **ขั้นต่อไป:** รัน `ngrok http 3000` อีกครั้งเพื่อเอา URL ไปตั้งใน LINE Console → กด Verify webhook
+- [x] สร้าง flow ลงทะเบียนลูกบ้านผ่าน LIFF + backend check/register
+- [x] ตรวจสอบฐานข้อมูล MySQL connection ปกติ (`DB_OK`)
+- [ ] ปัญหาพอร์ต 3000 ถูกใช้งานแล้ว ต้องหยุด process หรือเปลี่ยน port ก่อนทดสอบจริง
+- [ ] **ขั้นต่อไป:** ตั้งค่า backend ที่รันจริงบน port ที่ถูกต้อง → ทดสอบ `POST /api/villager/register` จริง
+- [ ] รัน `ngrok http 3000` อีกครั้งเพื่อเอา URL ไปตั้งใน LINE Console → กด Verify webhook
 - [ ] ปิด Greeting message / Auto-response ใน manager.line.biz
-- [ ] รัน `schema.sql` สร้างฐานข้อมูลจริง
-- [ ] เริ่มเขียนฟีเจอร์ตาม `docs/FEATURES.md`
+- [x] รัน `schema.sql` สร้างฐานข้อมูลจริง
+- [x] เริ่มเขียนฟีเจอร์ตาม `docs/FEATURES.md`
+
+---
+
+## Phase 7: พัฒนา UI/UX ฝั่งลูกบ้าน LIFF & ระบบกระจายข่าว Flex Message
+
+84. **ปรับปรุง Design System & Reusable Components**:
+    - สร้าง Design Tokens ใน `tailwind.config.js` ตาม `docs/DESIGN_SYSTEM.md` และ `docs/UI_DESIGN.md` (สี primary, secondary, font 'Noto Sans Thai')
+    - สร้าง UI Components: `Button`, `Input`, `Select`, `Textarea`, `Badge`, `Card`, `Modal`, `EmptyState`, `LoadingSpinner`, `Skeleton`
+85. **ปรับปรุงระบบข่าวสารและ Flex Message**:
+    - สร้าง Flex Message ปุ่ม URI รูปแบบ official: `https://liff.line.me/${LIFF_ID}/news/${news_id}`
+    - พัฒนาหน้าอ่านข่าวฝั่งลูกบ้าน ([NewsDetailPage.jsx](file:///d:/broadcast_lineOA/frontend/src/pages/liff/NewsDetailPage.jsx)) และหน้ารวมข่าวสาร ([NewsListPage.jsx](file:///d:/broadcast_lineOA/frontend/src/pages/liff/NewsListPage.jsx))
+    - เพิ่มระบบการนับสถิติยอดการเข้าชมข่าวสาร Real-time (`view_count`) ฝั่งลูกบ้านและ Admin
+86. **ปรับปรุง Bottom Navigation Bar ฝั่งลูกบ้านเป็น 5 เมนูหลัก**:
+    - `🏠 หน้าหลัก (Home)`: สรุปภาพรวมประกาศล่าสุด กิจกรรมเร็วๆ นี้ และเอกสารดาวน์โหลดด่วน
+    - `📰 ข่าว (News)`: หน้ารวมข่าวสาร พร้อมแถบชิปกรองตามหมวดหมู่ดึงจากตาราง `tb_category` และ `🔥 ข่าวยอดนิยม`
+    - `📅 กิจกรรม (Activities)`: หน้ารวมปฏิทินกิจกรรม พร้อมกดดูรายละเอียดกิจกรรมเต็ม ([ActivityDetailPage.jsx](file:///d:/broadcast_lineOA/frontend/src/pages/liff/ActivityDetailPage.jsx))
+    - `🗂️ เอกสาร (Documents)`: คลังแบบฟอร์มเอกสารเปิดให้ดาวน์โหลด
+    - `👤 ฉัน (Profile & Contact)`: หน้าโปรไฟล์ส่วนตัวลูกบ้าน + การ์ดติดต่อผู้ใหญ่บ้าน อสม. และเบอร์กู้ชีพฉุกเฉิน 1669
+87. **ปรับปรุงระบบคัดกรองและสิทธิ์การเข้าถึง**:
+    - **Villager Registration Guard**: ลูกบ้านรายใหม่ที่เปิดลิงก์/Flex Message เข้ามาจะถูกส่งไปหน้าลงทะเบียน (`/liff/register`) ก่อนเสมอ และเมื่อลงทะเบียนเสร็จจะวาร์ปส่งไปอ่านข่าวสารเป้าหมายที่กดดูทันที
+    - **Zone Broadcast**: ระบบเลือกส่งข่าวสารเจาะจงโซน (Dropdown ดึงโซนที่มีลูกบ้านลงทะเบียนจริงใน DB)
+    - **Activity Content**: เพิ่มคอลัมน์ `act_content TEXT NULL` ในตาราง `tb_activity` เพื่อบันทึกรายละเอียดกิจกรรมเพิ่มเติม

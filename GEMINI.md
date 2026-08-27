@@ -12,3 +12,14 @@
 ไฟล์นี้ตั้งใจให้สั้น เพราะเนื้อหาจริงทั้งหมดอยู่ใน `CLAUDE.md` ไฟล์เดียว เพื่อไม่ให้เกิดข้อมูลขัดกันเวลาสลับใช้ AI หลายตัว (Claude Code, Gemini CLI, Codex CLI) ในโปรเจกต์เดียวกัน
 
 **ห้ามแก้ tech stack, coding convention, หรือ architecture ในไฟล์นี้** — ถ้าจะเปลี่ยน ให้ไปแก้ที่ `CLAUDE.md` เท่านั้น แล้วให้ AI ตัวอื่นอ่านตามจากที่นั่น
+
+## UI/UX Source of Truth
+
+Before creating or modifying frontend UI, the AI must read:
+
+- docs/DESIGN_SYSTEM.md
+- docs/UI_DESIGN.md
+
+These documents are the source of truth for all UI/UX decisions.
+
+Do not introduce new colors, spacing, typography, components, or visual patterns without checking the existing design system first.
