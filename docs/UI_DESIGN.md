@@ -1,8 +1,12 @@
 # Broadcast System — UI/UX Design Guidelines
 
-> Version: 1.0
+> Version: 2.0
 > Status: Active
 > Purpose: Single Source of Truth for UI/UX behavior and layout
+>
+> v2.0 (2026-08-26): Full visual refresh — elderly-accessible typography (14px readable floor,
+> Thai line-height ≥ 1.6), 44px touch targets everywhere, and a formal Motion System.
+> All motion specs live in `DESIGN_SYSTEM.md` §M (source of truth).
 
 ---
 
@@ -76,8 +80,8 @@ UX priorities:
 
 1. Mobile-first
 2. Simple navigation
-3. Easy reading
-4. Large touch targets
+3. Easy reading — **assume elderly readers: 18px body text, high contrast, generous line-height**
+4. Large touch targets (≥ 44px)
 5. Minimal interaction steps
 
 ---
@@ -598,33 +602,32 @@ Large touch targets
 
 Minimum requirements:
 
-Semantic HTML
-Proper labels
-Alt text
-Keyboard accessibility
-Sufficient color contrast
-Visible focus states
-Touch targets >= 44px
+- Semantic HTML
+- Proper labels
+- Alt text
+- Keyboard accessibility
+- Sufficient color contrast (WCAG AA — text ≥ 4.5:1)
+- Visible focus states
+- Touch targets >= 44px, including bottom navigation and list row actions
+- Readable text floor: 14px minimum for any content the user must read; 12px only for timestamps/metadata
 
 Do not communicate information using color alone.
 
-22. Animation
+22. Animation & Motion
 
-Animations should support usability.
+Motion is specified in full in `DESIGN_SYSTEM.md` §M (Motion System) — that section is the
+single source of truth. Summary:
 
-Recommended duration:
+- Durations: fast 120ms (hover/press) · base 180ms (fades) · slow 280ms (modals/pages)
+- Enter with ease-out, exit with ease-in; nothing interactive exceeds 300ms
+- Patterns used in this product: staggered list fade-up on mount, page transitions via
+  `AnimatePresence`, modal scale-in, toast slide+fade, bottom-nav moving indicator,
+  skeleton shimmer, button press `scale(0.98)`
+- Always honor `prefers-reduced-motion`
+- Avoid decorative/infinite animations, parallax, and layout-property animation
 
-150ms–250ms
-
-Use animation for:
-
-Hover
-Button feedback
-Modal
-Page transitions
-Loading
-
-Avoid decorative animations that distract from communication.
+Use animation to support usability — hover, button feedback, modal, page transitions,
+loading — never as decoration that distracts from communication.
 
 23. AI UI Development Rules
 

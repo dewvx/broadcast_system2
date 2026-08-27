@@ -65,6 +65,7 @@
 | created_by | int | FK | อ้าง tb_user (คนสร้างข่าว) |
 | approved_by | int | FK | อ้าง tb_user (ผู้ใหญ่บ้านที่อนุมัติ) |
 | created_at | timestamp | - | default CURRENT_TIMESTAMP |
+| is_deleted | tinyint(1) | - | 0 = ปกติ, 1 = ถูกลบ (Soft Delete) |
 
 ### tb_activity
 | Field | Type | Key | Note |

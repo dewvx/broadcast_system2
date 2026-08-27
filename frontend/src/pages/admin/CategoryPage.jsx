@@ -104,7 +104,7 @@ function CategoryPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-text-primary">จัดการหมวดหมู่ข่าวสาร</h1>
+          <h1 className="text-h1 text-text-primary">จัดการหมวดหมู่ข่าวสาร</h1>
           <p className="text-sm text-text-secondary mt-1">
             หมวดหมู่สำหรับจัดกลุ่มข่าวสารและประกาศชุมชน ({categories.length} หมวดหมู่)
           </p>
@@ -125,7 +125,7 @@ function CategoryPage() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm text-left">
-              <thead className="bg-slate-50 border-b border-border text-xs text-text-secondary font-semibold uppercase tracking-wider">
+              <thead className="bg-slate-50 border-b border-border text-body-sm text-text-secondary font-semibold">
                 <tr>
                   <th className="px-6 py-3.5">#</th>
                   <th className="px-6 py-3.5">ชื่อหมวดหมู่</th>
@@ -176,7 +176,7 @@ function CategoryPage() {
       >
         <form onSubmit={handleSubmit} className="space-y-4">
           {formError && (
-            <div className="p-3 bg-error-soft border border-error/20 rounded-sm text-error text-xs">
+            <div className="p-3 bg-error-soft border border-error/20 rounded-sm text-error text-body-sm" role="alert">
               {formError}
             </div>
           )}

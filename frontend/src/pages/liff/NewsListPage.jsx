@@ -4,6 +4,7 @@ import { useLiff } from '../../context/LiffContext';
 import { getNewsListForVillager, getPublicCategories } from '../../api/villager.api';
 import axiosClient from '../../api/axiosClient';
 import { Badge, Card, EmptyState, LoadingSpinner, Button } from '../../components/ui';
+import { FadeStagger, FadeItem } from '../../components/motion';
 import { Newspaper, Calendar, ArrowRight, Search, AlertCircle, LogIn, Flame, Eye, Layers } from 'lucide-react';
 
 function NewsListPage() {
@@ -79,8 +80,8 @@ function NewsListPage() {
   if (liffError) {
     return (
       <div className="p-6 text-center text-error space-y-2">
-        <p className="font-bold">เกิดข้อผิดพลาด LIFF</p>
-        <p className="text-xs text-text-secondary">{liffError}</p>
+        <p className="font-bold text-body-lg">เกิดข้อผิดพลาด LIFF</p>
+        <p className="text-body-sm text-text-secondary">{liffError}</p>
       </div>
     );
   }
@@ -89,12 +90,12 @@ function NewsListPage() {
     return (
       <div className="p-6 flex items-center justify-center min-h-[80vh]">
         <Card className="text-center space-y-4 py-8 w-full">
-          <div className="w-12 h-12 rounded-full bg-primary-soft text-primary mx-auto flex items-center justify-center">
-            <LogIn className="w-6 h-6" />
+          <div className="w-14 h-14 rounded-full bg-primary-soft text-primary mx-auto flex items-center justify-center">
+            <LogIn className="w-7 h-7" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-text-primary">กรุณาล็อกอินผ่าน LINE</h2>
-            <p className="text-xs text-text-secondary mt-1">เข้าสู่ระบบเพื่ออ่านข่าวสารประกาศชุมชน</p>
+            <h2 className="text-h3 font-bold text-text-primary">กรุณาล็อกอินผ่าน LINE</h2>
+            <p className="text-body-sm text-text-secondary mt-1">เข้าสู่ระบบเพื่ออ่านข่าวสารประกาศชุมชน</p>
           </div>
           <Button
             variant="primary"
@@ -114,12 +115,12 @@ function NewsListPage() {
 
   if (errorMsg) {
     return (
-      <div className="p-4 m-4 bg-error-soft border border-error/20 rounded-sm text-error text-sm flex flex-col gap-2">
-        <div className="flex items-center gap-2 font-semibold">
-          <AlertCircle className="w-4 h-4 shrink-0" />
+      <div className="p-4 m-4 bg-error-soft border border-error/20 rounded-md text-error flex flex-col gap-2">
+        <div className="flex items-center gap-2 font-semibold text-body">
+          <AlertCircle className="w-5 h-5 shrink-0" />
           <span>เกิดข้อผิดพลาดในการโหลดข่าว</span>
         </div>
-        <p className="text-xs">{errorMsg}</p>
+        <p className="text-body-sm">{errorMsg}</p>
         <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
           ลองใหม่อีกครั้ง
         </Button>
@@ -128,133 +129,142 @@ function NewsListPage() {
   }
 
   return (
-    <div className="p-4 space-y-4">
+    <FadeStagger className="p-4 pt-5 space-y-4" key={selectedCategory}>
       {/* Header */}
-      <div>
-        <h1 className="text-xl font-bold text-text-primary">ข่าวสารและประกาศชุมชน</h1>
-        <p className="text-xs text-text-secondary mt-0.5">
-          ติดตามข่าวสาร ประกาศด่วน และข้อมูลสำคัญในหมู่บ้าน ({filteredNews.length} ข่าว)
-        </p>
-      </div>
+      <FadeItem>
+        <div>
+          <h1 className="text-h2 text-text-primary">ข่าวสารและประกาศชุมชน</h1>
+          <p className="text-body-sm text-text-secondary mt-1">
+            ติดตามข่าวสาร ประกาศด่วน และข้อมูลสำคัญในหมู่บ้าน ({filteredNews.length} ข่าว)
+          </p>
+        </div>
+      </FadeItem>
 
       {/* Search Input */}
-      <div className="relative">
-        <Search className="w-4 h-4 text-text-muted absolute left-3.5 top-3" />
-        <input
-          type="text"
-          placeholder="ค้นหาข่าวสาร หรือหมวดหมู่..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full h-10 pl-10 pr-4 text-xs bg-surface border border-border rounded-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-        />
-      </div>
+      <FadeItem>
+        <div className="relative">
+          <Search className="w-[18px] h-[18px] text-text-muted absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <input
+            type="search"
+            aria-label="ค้นหาข่าวสาร"
+            placeholder="ค้นหาข่าวสาร หรือหมวดหมู่..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full h-12 pl-11 pr-4 text-body bg-surface border border-border rounded-sm transition-colors duration-fast focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary"
+          />
+        </div>
+      </FadeItem>
 
       {/* Category Chips Bar (Horizontal Scrollable) */}
-      <div className="space-y-1.5">
-        <div className="flex items-center gap-1.5 text-xs text-text-muted font-medium px-0.5">
-          <Layers className="w-3.5 h-3.5" />
-          <span>หมวดหมู่ข่าวสาร:</span>
-        </div>
-        <div className="flex items-center gap-2 overflow-x-auto pb-1.5 pt-0.5 scrollbar-none text-xs">
-          {/* 1. All News Chip */}
-          <button
-            onClick={() => setSelectedCategory('ALL')}
-            className={`px-3.5 py-1.5 rounded-full font-medium whitespace-nowrap transition-all border ${
-              selectedCategory === 'ALL'
-                ? 'bg-primary text-white border-primary shadow-xs font-semibold'
-                : 'bg-surface text-text-secondary border-border hover:bg-slate-50'
-            }`}
-          >
-            ข่าวทั้งหมด
-          </button>
-
-          {/* 2. Popular News Chip */}
-          <button
-            onClick={() => setSelectedCategory('POPULAR')}
-            className={`px-3.5 py-1.5 rounded-full font-medium whitespace-nowrap transition-all flex items-center gap-1 border ${
-              selectedCategory === 'POPULAR'
-                ? 'bg-amber-500 text-white border-amber-500 shadow-xs font-semibold'
-                : 'bg-surface text-amber-600 border-amber-200 hover:bg-amber-50'
-            }`}
-          >
-            <Flame className="w-3.5 h-3.5" />
-            <span>ข่าวยอดนิยม</span>
-          </button>
-
-          {/* 3. Dynamic Categories from tb_category */}
-          {categories.map((cat) => (
+      <FadeItem>
+        <div className="space-y-2">
+          <div className="flex items-center gap-1.5 text-body-sm text-text-muted font-medium px-0.5">
+            <Layers className="w-4 h-4" />
+            <span>หมวดหมู่ข่าวสาร:</span>
+          </div>
+          <div className="flex items-center gap-2 overflow-x-auto pb-1.5 pt-0.5 scrollbar-none">
+            {/* 1. All News Chip */}
             <button
-              key={cat.category_id}
-              onClick={() => setSelectedCategory(String(cat.category_id))}
-              className={`px-3.5 py-1.5 rounded-full font-medium whitespace-nowrap transition-all border ${
-                String(selectedCategory) === String(cat.category_id)
-                  ? 'bg-primary text-white border-primary shadow-xs font-semibold'
-                  : 'bg-surface text-text-secondary border-border hover:bg-slate-50'
+              onClick={() => setSelectedCategory('ALL')}
+              className={`min-h-9 px-4 rounded-full text-body-sm whitespace-nowrap transition-all duration-fast border ${
+                selectedCategory === 'ALL'
+                  ? 'bg-primary text-white border-primary shadow-sm font-semibold'
+                  : 'bg-surface text-text-secondary border-border hover:bg-slate-50 active:bg-slate-100'
               }`}
             >
-              {cat.category_name}
+              ข่าวทั้งหมด
             </button>
-          ))}
+
+            {/* 2. Popular News Chip */}
+            <button
+              onClick={() => setSelectedCategory('POPULAR')}
+              className={`min-h-9 px-4 rounded-full text-body-sm whitespace-nowrap transition-all duration-fast flex items-center gap-1.5 border ${
+                selectedCategory === 'POPULAR'
+                  ? 'bg-warning text-white border-warning shadow-sm font-semibold'
+                  : 'bg-surface text-warning-hover border-warning/30 hover:bg-warning-soft'
+              }`}
+            >
+              <Flame className="w-4 h-4" />
+              <span>ข่าวยอดนิยม</span>
+            </button>
+
+            {/* 3. Dynamic Categories from tb_category */}
+            {categories.map((cat) => (
+              <button
+                key={cat.category_id}
+                onClick={() => setSelectedCategory(String(cat.category_id))}
+                className={`min-h-9 px-4 rounded-full text-body-sm whitespace-nowrap transition-all duration-fast border ${
+                  String(selectedCategory) === String(cat.category_id)
+                    ? 'bg-primary text-white border-primary shadow-sm font-semibold'
+                    : 'bg-surface text-text-secondary border-border hover:bg-slate-50 active:bg-slate-100'
+                }`}
+              >
+                {cat.category_name}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      </FadeItem>
 
       {/* News List */}
       {filteredNews.length === 0 ? (
-        <EmptyState
-          icon={Newspaper}
-          title="ยังไม่มีข่าวสาร"
-          description="ไม่พบรายการข่าวสารในหมวดหมู่นี้"
-        />
+        <FadeItem>
+          <EmptyState
+            icon={Newspaper}
+            title="ยังไม่มีข่าวสาร"
+            description="ไม่พบรายการข่าวสารในหมวดหมู่นี้"
+          />
+        </FadeItem>
       ) : (
-        <div className="space-y-4">
-          {filteredNews.map((item) => (
-            <Card key={item.news_id} padding="none" className="overflow-hidden shadow-xs hover:shadow-sm transition-shadow">
-              {/* Cover Image (Aspect ratio 16:9) */}
-              {item.news_image && (
-                <div className="w-full aspect-video overflow-hidden border-b border-border bg-slate-100">
-                  <img
-                    src={item.news_image}
-                    alt={item.news_title}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              )}
+        filteredNews.map((item) => (
+          <FadeItem key={item.news_id}>
+            <Link to={`/liff/news/${item.news_id}`} className="block">
+              <Card padding="none" hoverable className="overflow-hidden">
+                {/* Cover Image (Aspect ratio 16:9) */}
+                {item.news_image && (
+                  <div className="w-full aspect-video overflow-hidden border-b border-border bg-slate-100">
+                    <img
+                      src={item.news_image}
+                      alt={item.news_title}
+                      loading="lazy"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
 
-              <div className="p-4 space-y-2.5">
-                {/* Category Badge & View count */}
-                <div className="flex items-center justify-between">
-                  <Badge variant="primary">{item.category_name || 'ข่าวทั่วไป'}</Badge>
-                  <span className="text-[11px] text-text-muted flex items-center gap-1">
-                    <Eye className="w-3.5 h-3.5" />
-                    <span>อ่านแล้ว {item.view_count || 0} ครั้ง</span>
-                  </span>
-                </div>
+                <div className="p-4 space-y-2.5">
+                  {/* Category Badge & View count */}
+                  <div className="flex items-center justify-between gap-2">
+                    <Badge variant="primary">{item.category_name || 'ข่าวทั่วไป'}</Badge>
+                    <span className="text-meta text-text-muted flex items-center gap-1">
+                      <Eye className="w-3.5 h-3.5" />
+                      <span>อ่านแล้ว {item.view_count || 0} ครั้ง</span>
+                    </span>
+                  </div>
 
-                {/* Title */}
-                <h2 className="font-bold text-text-primary text-base leading-snug line-clamp-2">
-                  {item.news_title}
-                </h2>
+                  {/* Title */}
+                  <h2 className="font-bold text-text-primary text-h3 leading-snug line-clamp-2">
+                    {item.news_title}
+                  </h2>
 
-                {/* Date & Action */}
-                <div className="pt-2 border-t border-border flex items-center justify-between text-xs">
-                  <span className="text-text-muted flex items-center gap-1">
-                    <Calendar className="w-3.5 h-3.5" />
-                    <span>{new Date(item.created_at).toLocaleDateString('th-TH')}</span>
-                  </span>
-                  <Link
-                    to={`/liff/news/${item.news_id}`}
-                    className="text-primary font-semibold hover:text-primary-hover flex items-center gap-1 transition-colors"
-                  >
-                    <span>อ่านต่อ</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </Link>
+                  {/* Date & Action */}
+                  <div className="pt-2.5 border-t border-border flex items-center justify-between text-body-sm">
+                    <span className="text-meta text-text-muted flex items-center gap-1">
+                      <Calendar className="w-3.5 h-3.5" />
+                      <span>{new Date(item.created_at).toLocaleDateString('th-TH')}</span>
+                    </span>
+                    <span className="text-primary font-semibold hover:text-primary-hover flex items-center gap-1 py-1 -my-1 pr-1">
+                      <span>อ่านต่อ</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </span>
+                  </div>
                 </div>
-              </div>
-            </Card>
-          ))}
-        </div>
+              </Card>
+            </Link>
+          </FadeItem>
+        ))
       )}
-    </div>
+    </FadeStagger>
   );
 }
 

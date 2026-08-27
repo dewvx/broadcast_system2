@@ -106,7 +106,7 @@ function NewsFormPage() {
           <ArrowLeft className="w-4 h-4" />
         </Button>
         <div>
-          <h1 className="text-2xl font-bold text-text-primary">
+          <h1 className="text-h1 text-text-primary">
             {isEdit ? 'แก้ไขข่าวสาร' : 'สร้างข่าวสารใหม่'}
           </h1>
           <p className="text-sm text-text-secondary mt-0.5">
@@ -161,7 +161,7 @@ function NewsFormPage() {
                 ) : (
                   <div className="text-center p-4 text-text-muted">
                     <ImageIcon className="w-8 h-8 mx-auto mb-1 opacity-50" />
-                    <span className="text-xs">ไม่มีรูปภาพปก</span>
+                    <span className="text-body-sm">ไม่มีรูปภาพปก</span>
                   </div>
                 )}
               </div>
@@ -170,7 +170,7 @@ function NewsFormPage() {
                   type="file"
                   accept="image/*"
                   onChange={handleImageChange}
-                  className="text-xs text-text-secondary file:mr-3 file:py-2 file:px-3 file:rounded-sm file:border-0 file:text-xs file:font-medium file:bg-primary-soft file:text-primary hover:file:bg-primary/20 border border-border rounded-sm p-1 cursor-pointer"
+                  className="text-body-sm text-text-secondary file:mr-3 file:py-2.5 file:px-4 file:rounded-sm file:border-0 file:text-body-sm file:font-medium file:bg-primary-soft file:text-primary-active hover:file:bg-primary/20 border border-border rounded-sm p-1.5 cursor-pointer"
                 />
                 <p className="text-xs text-text-muted">
                   แนะนำสัดส่วน 16:9 ขนาดไม่เกิน 5MB (ไฟล์ .jpg, .png, .webp)

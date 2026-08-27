@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useLiff } from '../../context/LiffContext';
 import { checkOrLogin, registerVillager } from '../../api/villager.api';
 import { Button, Input, Card, LoadingSpinner } from '../../components/ui';
-import { Radio, CheckCircle, ArrowRight, ShieldCheck } from 'lucide-react';
+import { PageTransition } from '../../components/motion';
+import { CheckCircle, ArrowRight, ShieldCheck } from 'lucide-react';
 
 function RegisterPage() {
   const { liff, isLiffReady, liffError } = useLiff();
@@ -117,8 +118,8 @@ function RegisterPage() {
   if (liffError) {
     return (
       <div className="p-6 text-center text-error space-y-2">
-        <p className="font-bold">เกิดข้อผิดพลาด LIFF</p>
-        <p className="text-xs text-text-secondary">{liffError}</p>
+        <p className="font-bold text-body-lg">เกิดข้อผิดพลาด LIFF</p>
+        <p className="text-body-sm text-text-secondary">{liffError}</p>
       </div>
     );
   }
@@ -131,17 +132,23 @@ function RegisterPage() {
     return (
       <div className="min-h-screen bg-background p-4 flex flex-col justify-center max-w-md mx-auto">
         <Card className="text-center space-y-4 py-8">
-          <div className="w-14 h-14 rounded-full bg-success-soft text-success mx-auto flex items-center justify-center">
-            <CheckCircle className="w-8 h-8" />
+          <div className="w-16 h-16 rounded-full bg-success-soft text-success mx-auto flex items-center justify-center animate-scale-in">
+            <CheckCircle className="w-9 h-9" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-text-primary">ลงทะเบียนเรียบร้อยแล้ว</h2>
-            <p className="text-xs text-text-secondary mt-1">ยินดีต้อนรับเข้าสู่ระบบหอกระจายข่าวชุมชน</p>
+            <h2 className="text-h2 text-text-primary">ลงทะเบียนเรียบร้อยแล้ว</h2>
+            <p className="text-body-sm text-text-secondary mt-1">ยินดีต้อนรับเข้าสู่ระบบหอกระจายข่าวชุมชน</p>
           </div>
-          <div className="bg-slate-50 p-4 rounded-sm border border-border text-left text-xs space-y-2 text-text-primary">
-            <p><strong>ชื่อ-นามสกุล:</strong> {registeredVillager.first_name} {registeredVillager.last_name}</p>
-            <p><strong>บ้านเลขที่:</strong> {registeredVillager.house_number}</p>
-            <p><strong>หมู่บ้าน / โซน:</strong> {registeredVillager.zone_name || '—'}</p>
+          <div className="bg-slate-50 p-4 rounded-md border border-border text-left text-body-sm space-y-2 text-text-primary">
+            <p>
+              <strong>ชื่อ-นามสกุล:</strong> {registeredVillager.first_name} {registeredVillager.last_name}
+            </p>
+            <p>
+              <strong>บ้านเลขที่:</strong> {registeredVillager.house_number}
+            </p>
+            <p>
+              <strong>หมู่บ้าน / โซน:</strong> {registeredVillager.zone_name || '—'}
+            </p>
           </div>
 
           <Button variant="primary" fullWidth icon={ArrowRight} onClick={handleContinue}>
@@ -153,23 +160,23 @@ function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-4 flex flex-col justify-center max-w-md mx-auto space-y-4">
-      <div className="text-center space-y-2">
+    <PageTransition className="min-h-screen bg-background p-4 py-8 flex flex-col justify-center max-w-md mx-auto space-y-4">
+      <div className="text-center space-y-2.5">
         <img
           src="/logo.jpg"
           alt="โลโก้หอกระจายข่าวบ้านสี่แยก"
-          className="w-18 h-18 rounded-full mx-auto object-cover shadow-md border-2 border-white ring-2 ring-primary/20"
+          className="w-[72px] h-[72px] rounded-full mx-auto object-cover shadow-md border-2 border-white ring-2 ring-primary/20"
         />
-        <h1 className="text-xl font-bold text-text-primary">ลงทะเบียนลูกบ้าน</h1>
-        <p className="text-xs text-text-secondary">
+        <h1 className="text-h1 text-text-primary">ลงทะเบียนลูกบ้าน</h1>
+        <p className="text-body-sm text-text-secondary">
           สวัสดีคุณ <strong className="text-text-primary">{displayName || 'ลูกบ้าน'}</strong> กรุณากรอกข้อมูลเพื่อรับข่าวสาร
         </p>
       </div>
 
-      <Card>
+      <Card padding="sm">
         <form onSubmit={handleSubmit} className="space-y-4">
           {errorMsg && (
-            <div className="p-3 bg-error-soft border border-error/20 text-error text-xs rounded-sm">
+            <div className="p-3 bg-error-soft border border-error/20 text-error text-body-sm rounded-sm" role="alert">
               {errorMsg}
             </div>
           )}
@@ -198,23 +205,19 @@ function RegisterPage() {
             onChange={(e) => setHouseNumber(e.target.value)}
           />
 
-          <div>
-            <Input
-              label="หมู่บ้าน / โซน (ใส่เฉพาะตัวเลขหมู่ เช่น 4)"
-              placeholder="ระบุตัวเลขหมู่ เช่น 4"
-              value={zoneName}
-              onChange={(e) => setZoneName(e.target.value)}
-            />
-            <p className="text-[11px] text-text-muted mt-1">
-              * หากพิมพ์เฉพาะตัวเลข "4" ระบบจะบันทึกเป็น "หมู่ 4" ให้อัตโนมัติ
-            </p>
-          </div>
+          <Input
+            label="หมู่บ้าน / โซน"
+            helperText='หากพิมพ์เฉพาะตัวเลข "4" ระบบจะบันทึกเป็น "หมู่ 4" ให้อัตโนมัติ'
+            placeholder="ระบุตัวเลขหมู่ เช่น 4"
+            value={zoneName}
+            onChange={(e) => setZoneName(e.target.value)}
+          />
 
           {/* PDPA Consent Checkbox */}
-          <div className="bg-slate-50 border border-border rounded-sm p-3 space-y-2">
-            <div className="flex items-start gap-2 text-text-secondary">
-              <ShieldCheck className="w-4 h-4 shrink-0 mt-0.5 text-primary" />
-              <p className="text-[11px] leading-relaxed">
+          <div className="bg-slate-50 border border-border rounded-md p-4 space-y-3">
+            <div className="flex items-start gap-2.5 text-text-secondary">
+              <ShieldCheck className="w-5 h-5 shrink-0 mt-0.5 text-primary" />
+              <p className="text-body-sm leading-relaxed">
                 <strong className="text-text-primary">นโยบายความเป็นส่วนตัว (PDPA)</strong>
                 <br />
                 ระบบหอกระจายข่าวชุมชนจะจัดเก็บข้อมูลส่วนบุคคลของท่าน ได้แก่ ชื่อ-นามสกุล บ้านเลขที่ และหมู่บ้าน
@@ -223,32 +226,25 @@ function RegisterPage() {
               </p>
             </div>
 
-            <label className="flex items-start gap-2 cursor-pointer group">
+            <label className="flex items-start gap-2.5 min-h-11 cursor-pointer group -mx-1 px-1 py-1 rounded-sm hover:bg-primary-soft/40 transition-colors duration-fast">
               <input
                 type="checkbox"
                 checked={pdpaConsent}
                 onChange={(e) => setPdpaConsent(e.target.checked)}
-                className="mt-0.5 w-4 h-4 accent-primary shrink-0"
+                className="mt-0.5 w-5 h-5 accent-primary shrink-0 cursor-pointer"
               />
-              <span className="text-xs text-text-primary group-hover:text-primary transition-colors">
+              <span className="text-body-sm text-text-primary group-hover:text-primary-active transition-colors duration-fast">
                 ข้าพเจ้ายินยอมให้ระบบเก็บและใช้ข้อมูลส่วนบุคคลตามวัตถุประสงค์ที่ระบุข้างต้น
               </span>
             </label>
           </div>
 
-          <Button
-            type="submit"
-            variant="primary"
-            fullWidth
-            loading={submitting}
-            disabled={!pdpaConsent}
-            className="mt-2"
-          >
+          <Button type="submit" variant="primary" size="lg" fullWidth loading={submitting} disabled={!pdpaConsent} className="mt-2">
             ยืนยันการลงทะเบียน
           </Button>
         </form>
       </Card>
-    </div>
+    </PageTransition>
   );
 }
 

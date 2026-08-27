@@ -98,3 +98,9 @@
    - ข้อสังเกตเพิ่มเติม: `document.service.js:42` มี orphan pattern เดียวกัน (ลบ record แต่ไฟล์ document ค้างบน disk) — ยังไม่แก้ ควรทำ pattern เดียวกับ `deleteUploadedImage()` ถ้ามีเวลา
 
 > 🎯 สถานะปัจจุบัน: **ข้อ 1–9 แก้ครบทั้งหมด + E2E ผ่าน** — scheduled broadcast #4 ส่งข่าวสำเร็จจริงตรงเวลา 15:08 เวลาไทย (2026-08-25) ถึงลูกบ้าน 1 คน → timezone fix ยืนยันครบทั้ง chain: conversion → storage UTC → due query → ส่งจริง
+
+## 🔧 พบเพิ่มระหว่าง UI Refresh (2026-08-26)
+
+| # | ปัญหา | ตำแหน่ง | สถานะ |
+|---|---|---|---|
+| 10 | `ForgotPasswordPage` ยังส่ง `{resetToken, otp, newPassword}` ตาม contract เก่า ทั้งที่ API เปลี่ยนไปใช้ `{username, otp, newPassword}` แล้ว (audit รอบก่อนระบุว่าแก้แล้ว แต่หน้าเว็บไม่ได้อัปเดตตาม → reset password จะ fail เพราะ username = undefined) | `frontend/src/pages/admin/ForgotPasswordPage.jsx` | ✅ **แก้แล้ว** — เก็บ `username` ใน state แล้วส่งตาม contract ใหม่ + OTP filter ตัวเลขเท่านั้น |

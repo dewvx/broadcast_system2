@@ -1,71 +1,54 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { LiffProvider, useLiff } from '../../context/LiffContext';
 import { checkOrLogin } from '../../api/villager.api';
-import { Home, Newspaper, Calendar, FileText, User, Radio } from 'lucide-react';
+import { Home, Newspaper, Calendar, FileText, User } from 'lucide-react';
+
+const navItems = [
+  { to: '/liff/home', label: 'หน้าหลัก', icon: Home },
+  { to: '/liff/news', label: 'ข่าว', icon: Newspaper },
+  { to: '/liff/activities', label: 'กิจกรรม', icon: Calendar },
+  { to: '/liff/documents', label: 'เอกสาร', icon: FileText },
+];
 
 function LiffNavigation({ isRegistered }) {
+  const items = [...navItems, { to: '/liff/profile', label: isRegistered ? 'ฉัน' : 'ลงทะเบียน', icon: User }];
+
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-surface border-t border-border z-40 max-w-md mx-auto flex items-center justify-around h-14 shadow-lg">
-      <NavLink
-        to="/liff/home"
-        className={({ isActive }) =>
-          `flex flex-col items-center justify-center gap-0.5 text-[10px] font-medium transition-colors ${
-            isActive ? 'text-primary font-semibold' : 'text-text-muted hover:text-text-secondary'
-          }`
-        }
-      >
-        <Home className="w-5 h-5" />
-        <span>หน้าหลัก</span>
-      </NavLink>
-
-      <NavLink
-        to="/liff/news"
-        className={({ isActive }) =>
-          `flex flex-col items-center justify-center gap-0.5 text-[10px] font-medium transition-colors ${
-            isActive ? 'text-primary font-semibold' : 'text-text-muted hover:text-text-secondary'
-          }`
-        }
-      >
-        <Newspaper className="w-5 h-5" />
-        <span>ข่าว</span>
-      </NavLink>
-
-      <NavLink
-        to="/liff/activities"
-        className={({ isActive }) =>
-          `flex flex-col items-center justify-center gap-0.5 text-[10px] font-medium transition-colors ${
-            isActive ? 'text-primary font-semibold' : 'text-text-muted hover:text-text-secondary'
-          }`
-        }
-      >
-        <Calendar className="w-5 h-5" />
-        <span>กิจกรรม</span>
-      </NavLink>
-
-      <NavLink
-        to="/liff/documents"
-        className={({ isActive }) =>
-          `flex flex-col items-center justify-center gap-0.5 text-[10px] font-medium transition-colors ${
-            isActive ? 'text-primary font-semibold' : 'text-text-muted hover:text-text-secondary'
-          }`
-        }
-      >
-        <FileText className="w-5 h-5" />
-        <span>เอกสาร</span>
-      </NavLink>
-
-      <NavLink
-        to="/liff/profile"
-        className={({ isActive }) =>
-          `flex flex-col items-center justify-center gap-0.5 text-[10px] font-medium transition-colors ${
-            isActive ? 'text-primary font-semibold' : 'text-text-muted hover:text-text-secondary'
-          }`
-        }
-      >
-        <User className="w-5 h-5" />
-        <span>{isRegistered ? 'ฉัน' : 'ลงทะเบียน'}</span>
-      </NavLink>
+    <nav className="fixed bottom-0 left-0 right-0 bg-surface/95 backdrop-blur-md border-t border-border z-40 max-w-md mx-auto shadow-[0_-4px_16px_rgba(15,23,42,0.06)] safe-bottom">
+      <div className="flex items-stretch justify-around h-16">
+        {items.map((item) => {
+          const Icon = item.icon;
+          return (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              className={({ isActive }) =>
+                `relative flex flex-col items-center justify-center gap-1 flex-1 min-h-11 text-body-sm font-medium transition-colors duration-fast ${
+                  isActive ? 'text-primary' : 'text-text-muted active:text-text-secondary'
+                }`
+              }
+            >
+              {({ isActive }) => (
+                <>
+                  {isActive && (
+                    <motion.span
+                      layoutId="liff-nav-pill"
+                      transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                      className="absolute top-1.5 w-12 h-9 rounded-full bg-primary-soft"
+                    />
+                  )}
+                  <motion.span whileTap={{ scale: 0.88 }} className="relative">
+                    <Icon className={`w-6 h-6 transition-transform duration-fast ${isActive ? 'scale-105' : ''}`} />
+                  </motion.span>
+                  <span className="relative leading-none">{item.label}</span>
+                </>
+              )}
+            </NavLink>
+          );
+        })}
+      </div>
     </nav>
   );
 }
@@ -152,18 +135,18 @@ function LiffContentWrapper() {
   }, [isLiffReady, liff, idToken, navigate]);
 
   return (
-    <div className="min-h-screen bg-background pb-16">
+    <div className="min-h-screen bg-background pb-24">
       {/* Mobile Header Bar */}
       <header className="h-14 bg-slate-900 text-white px-4 flex items-center justify-between sticky top-0 z-30 max-w-md mx-auto shadow-sm">
         <div className="flex items-center gap-2.5">
           <img
             src="/logo.jpg"
             alt="โลโก้หอกระจายข่าวบ้านสี่แยก"
-            className="w-8 h-8 rounded-full object-cover border border-slate-700 shadow-xs shrink-0"
+            className="w-9 h-9 rounded-full object-cover border border-slate-700 shrink-0"
           />
           <div>
-            <span className="text-xs font-bold tracking-wide block leading-tight">หอกระจายข่าวบ้านสี่แยก</span>
-            <span className="text-[10px] text-slate-400 font-normal leading-tight">ระบบประชาสัมพันธ์ชุมชน</span>
+            <span className="text-[15px] font-bold tracking-wide block leading-tight">หอกระจายข่าวบ้านสี่แยก</span>
+            <span className="text-meta text-slate-400 font-normal leading-tight">ระบบประชาสัมพันธ์ชุมชน</span>
           </div>
         </div>
       </header>

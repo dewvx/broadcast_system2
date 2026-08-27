@@ -179,7 +179,7 @@ function NewsManagementPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-text-primary">จัดการข่าวสาร</h1>
+          <h1 className="text-h1 text-text-primary">จัดการข่าวสาร</h1>
           <p className="text-sm text-text-secondary mt-1">รายการข่าว ประกาศ และกิจกรรมชุมชนทั้งหมด</p>
         </div>
         <Link to="/admin/news/create">
@@ -226,7 +226,7 @@ function NewsManagementPage() {
           <div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm text-left">
-                <thead className="bg-slate-50 border-b border-border text-xs text-text-secondary font-semibold uppercase tracking-wider">
+                <thead className="bg-slate-50 border-b border-border text-body-sm text-text-secondary font-semibold">
                   <tr>
                     <th className="px-6 py-3.5">หัวข้อข่าว</th>
                     <th className="px-6 py-3.5">หมวดหมู่</th>
@@ -356,8 +356,8 @@ function NewsManagementPage() {
         }
       >
         <div className="space-y-4">
-          <div className="p-3 bg-primary-soft border border-primary/20 rounded-sm text-primary text-xs flex items-center gap-2">
-            <Radio className="w-4 h-4 shrink-0" />
+          <div className="p-3.5 bg-primary-soft border border-primary/20 rounded-md text-primary-active text-body-sm flex items-center gap-2.5">
+            <Radio className="w-[18px] h-[18px] shrink-0" />
             <span>ข่าวสารจะถูกส่งเป็น Flex Message แบบการ์ดไปยัง LINE ของลูกบ้าน</span>
           </div>
 
@@ -403,7 +403,7 @@ function NewsManagementPage() {
                 onChange={(e) => setBroadcastData({ ...broadcastData, scheduledAt: e.target.value })}
                 className="w-full h-10 px-3 text-sm bg-surface border border-border rounded-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
               />
-              <p className="text-[11px] text-text-muted mt-1">
+              <p className="text-body-sm text-text-muted mt-1">
                 * ระบบจะส่งข่าวอัตโนมัติในเวลาที่กำหนด (เช็คทุก 1 นาที)
               </p>
             </div>
@@ -421,7 +421,7 @@ function NewsManagementPage() {
               </option>
             ))}
           </Select>
-          <p className="text-[11px] text-text-muted">
+          <p className="text-body-sm text-text-muted">
             * ดึงรายชื่อโซนเฉพาะที่มีลูกบ้านลงทะเบียนจริงในระบบ
           </p>
         </div>

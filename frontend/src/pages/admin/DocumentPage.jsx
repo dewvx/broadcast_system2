@@ -107,7 +107,7 @@ function DocumentPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-text-primary">แบบฟอร์มราชการ</h1>
+          <h1 className="text-h1 text-text-primary">แบบฟอร์มราชการ</h1>
           <p className="text-sm text-text-secondary mt-1">
             คลังเอกสารและแบบฟอร์มทางการสำหรับลูกบ้านดาวน์โหลด ({documents.length} ไฟล์)
           </p>
@@ -136,7 +136,7 @@ function DocumentPage() {
           <div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm text-left">
-                <thead className="bg-slate-50 border-b border-border text-xs text-text-secondary font-semibold uppercase tracking-wider">
+                <thead className="bg-slate-50 border-b border-border text-body-sm text-text-secondary font-semibold">
                   <tr>
                     <th className="px-6 py-3.5">ชื่อเอกสาร</th>
                     <th className="px-6 py-3.5">ประเภท</th>
@@ -215,7 +215,7 @@ function DocumentPage() {
       >
         <form onSubmit={handleUpload} className="space-y-4">
           {uploadError && (
-            <div className="p-3 bg-error-soft border border-error/20 rounded-sm text-error text-xs">
+            <div className="p-3 bg-error-soft border border-error/20 rounded-sm text-error text-body-sm">
               {uploadError}
             </div>
           )}
@@ -234,9 +234,9 @@ function DocumentPage() {
               type="file"
               ref={fileRef}
               accept=".pdf,.doc,.docx"
-              className="w-full text-xs text-text-secondary file:mr-3 file:py-2 file:px-3 file:rounded-sm file:border-0 file:text-xs file:font-medium file:bg-primary-soft file:text-primary hover:file:bg-primary/20 border border-border rounded-sm p-1 cursor-pointer"
+              className="w-full text-body-sm text-text-secondary file:mr-3 file:py-2.5 file:px-4 file:rounded-sm file:border-0 file:text-body-sm file:font-medium file:bg-primary-soft file:text-primary-active hover:file:bg-primary/20 border border-border rounded-sm p-1.5 cursor-pointer"
             />
-            <p className="text-xs text-text-muted">รองรับไฟล์ .pdf, .doc, .docx ขนาดไม่เกิน 10MB</p>
+            <p className="text-body-sm text-text-muted">รองรับไฟล์ .pdf, .doc, .docx ขนาดไม่เกิน 10MB</p>
           </div>
         </form>
       </Modal>

@@ -1,16 +1,15 @@
-
----
-
-# 2. `docs/DESIGN_SYSTEM.md`
-
-อันนี้จะเป็นตัวที่ผมอยากให้ Antigravity **ยึดเป็นกฎ Visual โดยตรง** ครับ
-
-```md
 # Broadcast System — Design System
 
-> Version: 1.0
+> Version: 2.0
 > Status: Active
-> Purpose: Visual language and reusable UI component specification
+> Purpose: Visual language, reusable UI component specification, and motion system
+>
+> ## Changelog v2.0 (2026-08-26)
+> - Typography scale redesigned for **elderly-accessible Thai reading** (larger body, taller line-height, 10–11px text eliminated)
+> - Added **Motion System** (duration/easing tokens, per-pattern specs, reduced-motion support)
+> - `text-muted` darkened `#94A3B8` → `#64748B` for WCAG AA contrast
+> - Touch target floor raised to **44px** everywhere including bottom navigation
+> - Framer Motion adopted for page transitions, exit animations, staggered lists
 
 ---
 
@@ -26,16 +25,31 @@ All frontend screens should use:
 - The same border radius
 - The same component behavior
 - The same interaction patterns
+- The same motion language
 
 Do not create one-off visual styles unless there is a strong product reason.
+
+## 1.1 Who we design for
+
+Two audiences, one visual language:
+
+| Audience | Surface | Priority |
+|---|---|---|
+| Village leaders / admins | Web dashboard | Efficiency, clarity |
+| Villagers (incl. elderly) | LINE LIFF (mobile) | Readability, large targets, minimal steps |
+
+**Elderly-first rule:** if a choice benefits elderly villagers without hurting admins, take it. Bigger text, clearer contrast, obvious feedback.
+
+The identity should feel: **Modern + Simple + Friendly + Trustworthy + Community-focused**
 
 ---
 
 # 2. Design Tokens
 
-Design tokens are the source of truth.
+Design tokens are the source of truth. They are implemented in `frontend/tailwind.config.js`.
 
 Do not hardcode random values throughout components.
+Never write `bg-[#2563EB]`, `rounded-[13px]`, `mt-[17px]`, `text-[10px]`.
 
 ---
 
@@ -43,874 +57,461 @@ Do not hardcode random values throughout components.
 
 ## Brand
 
-```css
---color-primary: #2563EB;
---color-primary-hover: #1D4ED8;
---color-primary-active: #1E40AF;
---color-primary-soft: #EFF6FF;
+| Token | Value |
+|---|---|
+| `--color-primary` | `#2563EB` |
+| `--color-primary-hover` | `#1D4ED8` |
+| `--color-primary-active` | `#1E40AF` |
+| `--color-primary-soft` | `#EFF6FF` |
+| `--color-secondary` | `#0F766E` |
+| `--color-secondary-hover` | `#115E59` |
+| `--color-secondary-soft` | `#F0FDFA` |
 
-Secondary
---color-secondary: #0F766E;
---color-secondary-hover: #115E59;
---color-secondary-soft: #F0FDFA;
-Success
---color-success: #16A34A;
---color-success-hover: #15803D;
---color-success-soft: #F0FDF4;
-Warning
---color-warning: #D97706;
---color-warning-hover: #B45309;
---color-warning-soft: #FFFBEB;
-Error
---color-error: #DC2626;
---color-error-hover: #B91C1C;
---color-error-soft: #FEF2F2;
-Neutral
---color-background: #F8FAFC;
---color-surface: #FFFFFF;
+## Semantic
 
+| Token | Value |
+|---|---|
+| `--color-success` | `#16A34A` (`hover #15803D`, `soft #F0FDF4`) |
+| `--color-warning` | `#D97706` (`hover #B45309`, `soft #FFFBEB`) |
+| `--color-error` | `#DC2626` (`hover #B91C1C`, `soft #FEF2F2`) |
 
---color-text-primary: #0F172A;
---color-text-secondary: #475569;
---color-text-muted: #94A3B8;
+## Neutral
 
+| Token | Value |
+|---|---|
+| `--color-background` | `#F8FAFC` |
+| `--color-surface` | `#FFFFFF` |
+| `--color-text-primary` | `#0F172A` |
+| `--color-text-secondary` | `#475569` |
+| `--color-text-muted` | `#64748B` ← **v2.0 (was #94A3B8, failed AA contrast)** |
+| `--color-border` | `#E2E8F0` |
+| `--color-border-strong` | `#CBD5E1` |
 
---color-border: #E2E8F0;
---color-border-strong: #CBD5E1;
-4. Color Usage Rules
+Contrast floors (WCAG AA):
+
+- Text on background/surface: ≥ 4.5:1
+- Large headings (≥ 24px): ≥ 3:1
+- Never use `slate-300`/`slate-400` for user-facing text. Allowed only for disabled states and decorative dividers.
+
+## 4. Color Usage Rules
 
 Use colors according to semantic meaning.
 
-Primary:
+- **Primary** — main actions, active navigation, links, selected controls
+- **Secondary** — supporting actions, community highlights
+- **Success** — completed operations, active states
+- **Warning** — pending states, attention-required information
+- **Error** — failures, validation errors, delete actions
 
-Main actions
-Active navigation
-Links
-Selected controls
+Do not use color only for decoration. Do not communicate meaning by color alone (pair with icon/text).
 
-Secondary:
+---
 
-Supporting actions
-Community-related highlights
+# 5. Typography
 
-Success:
+Primary font: **Noto Sans Thai**
+Fallback: `system-ui, sans-serif`
+Loaded via Google Fonts, weights 400 / 500 / 600 / 700 only.
 
-Successful operations
-Active states
-Completed states
+Thai-specific rules (non-negotiable):
 
-Warning:
+- Line-height for Thai body text: **≥ 1.6** (vowels/tone marks stack above and below)
+- Never set `leading-none` or `leading-tight` on running Thai text (short single-line labels only)
+- Avoid unnecessary weight 800/900
 
-Pending states
-Warnings
-Attention-required information
+## 6. Typography Scale (v2.0 — Elderly Accessible)
 
-Error:
+| Token | Size | Line-height | Weight | Use |
+|---|---|---|---|---|
+| `display` | 36px | 1.25 | 700 | Rarely — hero moments only |
+| `h1` | 28px | 1.35 | 700 | Page titles |
+| `h2` | 22px | 1.4 | 700 | Section titles |
+| `h3` | 19px | 1.5 | 600 | Card titles, sub-sections |
+| `body-lg` | **18px** | 1.7 | 400 | LIFF reading text, important paragraphs |
+| `body` | 16px | 1.7 | 400 | Default body (admin), form labels |
+| `body-sm` | **14px** | 1.6 | 400 | Secondary info, input helper text |
+| `meta` | **12px** | 1.5 | 500 | Timestamps, IDs, non-essential metadata |
 
-Failed operations
-Validation errors
-Delete actions
+Hard floors:
 
-Do not use color only for decoration.
+- **14px** = smallest size for any text the user must read or interact with (labels, nav, buttons, descriptions)
+- **12px** = absolute floor, metadata/timestamps only
+- **10–11px is banned.** All existing instances must be migrated.
 
-5. Typography
+Tailwind classes map to these tokens: `text-display`, `text-h1`, `text-h2`, `text-h3`, `text-body-lg`, `text-body`, `text-body-sm`, `text-meta` (configured in `tailwind.config.js`).
 
-Primary font:
+---
 
-Noto Sans Thai
+# 7. Spacing Tokens
 
-Fallback:
+4px base system:
 
-system-ui, sans-serif
-Font Weights
-Regular: 400
-Medium: 500
-Semibold: 600
-Bold: 700
+```css
+--space-1: 4px;  --space-2: 8px;   --space-3: 12px; --space-4: 16px;
+--space-5: 20px; --space-6: 24px;  --space-8: 32px; --space-10: 40px;
+--space-12: 48px; --space-16: 64px;
+```
 
-Avoid unnecessary use of 800/900.
-
-6. Typography Scale
-Display
-48px
-line-height: 1.15
-font-weight: 700
-
-Use rarely.
-
-H1
-32px
-line-height: 1.25
-font-weight: 700
-H2
-24px
-line-height: 1.3
-font-weight: 700
-H3
-20px
-line-height: 1.4
-font-weight: 600
-Body Large
-18px
-line-height: 1.6
-font-weight: 400
-Body
-16px
-line-height: 1.6
-font-weight: 400
-Body Small
-14px
-line-height: 1.5
-font-weight: 400
-Caption
-12px
-line-height: 1.4
-font-weight: 400
-
-Do not use text below 12px.
-
-7. Spacing Tokens
-
-Use a 4px base spacing system.
-
---space-1: 4px;
---space-2: 8px;
---space-3: 12px;
---space-4: 16px;
---space-5: 20px;
---space-6: 24px;
---space-8: 32px;
---space-10: 40px;
---space-12: 48px;
---space-16: 64px;
-
-Preferred common spacing:
-
-8px
-12px
-16px
-24px
-32px
-
+Preferred common spacing: 8, 12, 16, 24, 32.
 Avoid arbitrary spacing values.
 
-8. Border Radius
---radius-sm: 8px;
---radius-md: 12px;
---radius-lg: 16px;
---radius-xl: 20px;
---radius-full: 9999px;
+# 8. Border Radius
 
-Usage:
-
-Buttons       → 8px
-Inputs        → 8px
-Cards         → 12px
-Containers    → 16px
-Status badges → full
+```css
+--radius-sm: 8px;    /* buttons, inputs */
+--radius-md: 12px;   /* cards */
+--radius-lg: 16px;   /* containers, sheets */
+--radius-xl: 20px;   /* hero surfaces */
+--radius-full: 9999px; /* badges, avatars */
+```
 
 Do not use excessive rounded corners.
 
-9. Shadows
+# 9. Shadows
 
-Use subtle shadows.
-
+```css
 --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.08);
-
-
 --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.10);
-
-
 --shadow-lg: 0 10px 24px rgba(15, 23, 42, 0.12);
+```
 
-Default components should prefer shadow-sm.
+Default components prefer `shadow-sm`. Cards should not look like floating objects everywhere. Hover may elevate `sm → md` (see Motion).
 
-Cards should not look like floating objects everywhere.
+# 10. Borders
 
-10. Borders
+Default: `border: 1px solid var(--color-border)`.
 
-Default:
+Do not combine heavy borders + large shadows + strong backgrounds all at once.
 
-border: 1px solid var(--color-border);
+# 11. Container
 
-Use borders to separate content when necessary.
+- Desktop dashboard: `max-width 1440px`, padding 24–32px
+- Content-heavy pages (news article, forms): `max-width 720px`
+- LIFF content column: full width, horizontal padding 16–20px
 
-Do not combine:
+---
 
-Heavy borders
-Large shadows
-Strong backgrounds
+# 12. Buttons
 
-all at once.
+Variants: `primary` (main action), `secondary` (supporting), `outline`, `ghost`, `danger`, `dangerOutline`.
 
-Keep the visual hierarchy clean.
+Sizes (height × font):
 
-11. Container
-
-Desktop:
-
-max-width: 1440px
-margin: auto
-padding: 24px–32px
-
-Content-heavy pages:
-
-max-width: 720px
-
-Example:
-
-News article:
-
-max-width: 720px
-
-Dashboard:
-
-max-width: 1440px
-12. Buttons
-Primary
-
-Use for the main action.
-
-Example:
-
-[Create News]
-[Send Broadcast]
-[Save]
-
-Visual characteristics:
-
-Primary background
-White text
-8px radius
-Medium font weight
-Clear hover state
-Secondary
-
-Use for supporting actions.
-
-Examples:
-
-[Cancel]
-[Preview]
-[Back]
-
-Use neutral background or outline.
-
-Danger
-
-Use for destructive actions.
-
-Examples:
-
-[Delete]
-[Remove]
-
-Use error color.
-
-Button Height
-
-Recommended:
-
-Small: 36px
-Medium: 40px
-Large: 44px
-
-Minimum touch target:
-
-44px
-13. Input
-
-Default input:
-
-Height: 40px–44px
-Border radius: 8px
-Border: 1px
-Padding: 12px
-
-States:
-
-Default
-Hover
-Focus
-Error
-Disabled
-
-Focus state must be visually obvious.
-
-14. Textarea
-
-Recommended:
-
-min-height: 120px
-resize: vertical
-
-Do not force users to write long content inside very small textareas.
-
-15. Select
-
-Selects must visually match inputs.
-
-Do not create custom select styles unless necessary.
-
-16. Checkbox / Radio
-
-Use native semantics.
-
-Ensure:
-
-Large enough target
-Clear selected state
-Visible focus state
-17. Card
-
-Default card:
-
-Background: white
-Border: 1px solid #E2E8F0
-Radius: 12px
-Padding: 16px–24px
-
-Cards should group related information.
-
-Do not put every piece of information inside a card.
-
-18. News Card
-
-Structure:
-
-┌────────────────────────────┐
-│                            │
-│        Cover Image         │
-│                            │
-├────────────────────────────┤
-│ Category                   │
-│ News Title                 │
-│ Short description...       │
-│                            │
-│ 18 Aug 2026    Read more → │
-└────────────────────────────┘
-
-Recommended:
-
-Radius: 12px
-Image aspect ratio: 16:9
-Consistent card height when displayed in grids
-19. Badge
-
-Use badges for:
-
-Status
-Categories
-Labels
-
-Examples:
-
-Published
-Draft
-Pending
-Important
-
-Badge styles:
-
-Success → green
-Warning → amber
-Error → red
-Neutral → gray
-Primary → blue
-
-Do not use badges for ordinary text.
-
-20. Avatar
-
-Use for:
-
-User profiles
-Administrators
-Villager identity
-
-Recommended sizes:
-
-Small: 32px
-Medium: 40px
-Large: 48px
-21. Table
-
-Tables are primarily for admin interfaces.
+| Size | Height | Font | Use |
+|---|---|---|---|
+| sm | 38px | 14px (body-sm) | Dense tables, secondary rows actions |
+| md | 44px | 16px (body) | Default everywhere |
+| lg | 52px | 18px (body-lg) | LIFF primary actions, login |
 
 Rules:
 
-Clear column headers
-Consistent row height
-Horizontal scrolling on mobile
-Actions grouped in one column
-Avoid excessive columns
+- Radius 8px, font-weight 500
+- Minimum touch target **44px** — use `sm` only inside data tables
+- Micro-interaction: `active:scale-[0.98]` press feedback; hover darkens per token
+- Loading state shows inline spinner, keeps width stable
+- One primary button per view region
 
-Recommended row height:
+# 13. Input
 
-48px–56px
-22. Modal
+- Height 44–48px (v2.0: raised from 40px for easier targeting)
+- Radius 8px, border 1px, padding 12–14px
+- Font 16px minimum (prevents iOS zoom-on-focus)
+- States: default / hover / focus / error / disabled — focus ring must be visually obvious (`focus:ring-2 focus:ring-primary/30`)
+- Label above every input; error message below with role="alert"
 
-Modal structure:
+# 14. Textarea
 
+`min-height: 140px`, `resize: vertical`. Do not force long content into tiny boxes.
+
+# 15. Select
+
+Must visually match inputs. Native semantics first.
+
+# 16. Checkbox / Radio
+
+Native semantics, large touch area (whole label clickable, ≥ 44px row height).
+
+# 17. Card
+
+Background white, border 1px `#E2E8F0`, radius 12px, padding 16–24px.
+Cards group related information. Do not put every piece of information inside a card.
+
+Hover elevation (interactive cards only, desktop): `-translate-y-0.5` + `shadow-md`, transition 180ms.
+
+# 18. News Card
+
+```
+┌────────────────────────────┐
+│        Cover Image 16:9    │
+├────────────────────────────┤
+│ Category badge             │
+│ News Title (h3)            │
+│ Short description...       │
+│ 18 Aug 2026      Read more →│
+└────────────────────────────┘
+```
+
+Radius 12px, image aspect-ratio 16:9 with `object-cover`, consistent height in grids. Entrance: staggered fade-up (see Motion §M6).
+
+# 19. Badge
+
+For status/categories/labels only. Styles: success green, warning amber, error red, neutral gray, primary blue. Minimum font 12px, height ≥ 24px, radius full. Not for ordinary text.
+
+# 20. Avatar
+
+Sizes: small 32px, medium 40px, large 48px.
+
+# 21. Table
+
+Primarily admin interfaces. Clear headers, consistent rows 52–56px tall, horizontal scroll on mobile, actions grouped in one column, avoid excessive columns.
+
+# 22. Modal
+
+```
 ┌──────────────────────────────┐
 │ Title                    ×   │
 ├──────────────────────────────┤
-│                              │
 │ Content                      │
-│                              │
 ├──────────────────────────────┤
 │             [Cancel] [Save]  │
 └──────────────────────────────┘
+```
 
-Use modal for:
+Entrance: backdrop fades (180ms) + panel scales 0.96→1 with 12px rise (240ms, ease-out). Exit reverses (150ms).
+Use for confirmations, short forms, important warnings — not large workflows. Destructive actions require confirmation modal.
 
-Confirmation
-Short forms
-Important warnings
+# 23. Toast
 
-Do not use modal for large workflows.
+Short, clear, temporary (3–5s). Slide+fade from top on desktop, top of safe-area on mobile. Examples: "บันทึกข่าวเรียบร้อยแล้ว". Never for critical information requiring careful reading.
 
-23. Toast
+# 24. Loading Components
 
-Toast should be:
+Spinner, Skeleton, Progress.
 
-Short
-Clear
-Temporary
+- Lists/content-heavy pages: **skeleton with shimmer** matching final layout shape
+- Actions: inline spinner inside button
+- Content appears with fade-up when loaded — never abrupt swap
 
-Examples:
-
-บันทึกข่าวเรียบร้อยแล้ว
-ส่งประกาศเรียบร้อยแล้ว
-
-Recommended duration:
-
-3–5 seconds
-
-Do not use toast for critical information that users must read carefully.
-
-24. Loading Components
-
-Components:
-
-Spinner
-Skeleton
-Progress
-
-Use skeletons for content-heavy lists.
-
-Example:
-
+```
 ┌──────────────────────┐
 │ ███████████████      │
 │ ██████████           │
 │ ████████████████     │
 └──────────────────────┘
-25. Empty State
+```
 
-Structure:
+# 25. Empty State
 
-Icon / Illustration
+Icon → Title → short explanation → optional primary action.
 
-
-Title
-
-
-Short explanation
-
-
-Optional primary action
-
-Example:
-
+```
 📄
-
-
 ยังไม่มีเอกสาร
-
-
 เอกสารที่เผยแพร่จะแสดงที่นี่
-
-
 [เพิ่มเอกสาร]
-26. Error State
+```
 
-Structure:
+# 26. Error State
 
-Error Icon
+Error icon → "ไม่สามารถโหลดข้อมูลได้" → "กรุณาลองใหม่อีกครั้ง" → [ลองใหม่].
+Technical details stay in developer logs.
 
+# 27. Navigation
 
-ไม่สามารถโหลดข้อมูลได้
+Sidebar (desktop admin): width 256px, item height 44px, icon + label, active item = primary soft background + primary text + semibold. Active state transitions smoothly (see Motion §M8).
 
+Header: page context, user profile, notifications. Do not overcrowd.
 
-กรุณาลองใหม่อีกครั้ง
+# 28. Bottom Navigation (LIFF)
 
+Items: Home / News / Documents / Profile (max 5). Height **64px + iOS safe-area inset**, icon 24px, label **14px minimum**, touch target ≥ 44px full-width each. Active tab animates an indicator pill behind the icon (layoutId) and pops the icon subtly.
 
-[ลองใหม่]
+# 29. Iconography
 
-Technical details should remain in developer logs.
+Lucide Icons only. Same stroke style and weight. Icons support labels, never replace them for important actions.
 
-27. Navigation
-Sidebar
+# 30. Images
 
-Recommended width:
+News images 16:9, `object-fit: cover`, mandatory alt text.
 
-240px
+# 31. Responsive Rules
 
-Navigation item height:
+- Mobile < 640px: single column, full-width controls, large touch targets, bottom nav
+- Tablet 640–1024px: 1–2 columns, collapsible sidebar, responsive tables
+- Desktop > 1024px: sidebar, multi-column grids
 
-40px–44px
+Mobile must not be a shrunken desktop layout.
 
-Active item should have:
+# 32. Grid System
 
-Primary color
-Clear background
-Strong text weight
-28. Header
+4px base, 12-column desktop grid. Desktop 4×3, tablet 2×6, mobile 12×1 stacked. Do not force grids where content does not benefit.
 
-Header should contain:
+# 33. Z-Index
 
-Page context
-User profile
-Notifications when applicable
-Important global actions
-
-Do not overcrowd the header.
-
-29. Mobile Navigation
-
-For LIFF/mobile experience:
-
-Use:
-
-Bottom Navigation
-
-Recommended:
-
-Home
-News
-Documents
-Profile
-
-Maximum recommended primary navigation items:
-
-4–5
-30. Iconography
-
-Use one consistent icon library.
-
-Recommended:
-
-Lucide Icons
-
-Rules:
-
-Same stroke style
-Same visual weight
-Do not mix multiple icon libraries
-Icons should support labels, not replace them for important actions
-31. Images
-
-News images should use consistent aspect ratios.
-
-Recommended:
-
-16:9
-
-Use:
-
-object-fit: cover;
-
-when displaying thumbnails.
-
-Images must have:
-
-alt text
-32. Responsive Rules
-Mobile
-< 640px
-
-Use:
-
-Single column
-Full-width controls
-Large touch targets
-Reduced padding
-Bottom navigation where appropriate
-Tablet
-640px–1024px
-
-Use:
-
-1–2 column layouts
-Collapsible sidebar
-Responsive tables
-Desktop
-> 1024px
-
-Use:
-
-Sidebar
-Multi-column grids
-Larger content areas
-33. Grid System
-
-Recommended:
-
-4px base
-12-column desktop grid
-
-Example:
-
-Desktop:
-
-
-[ 3 columns ][ 3 ][ 3 ][ 3 ]
-
-
-Tablet:
-
-
-[ 6 columns ][ 6 ]
-
-
-Mobile:
-
-
-[ 12 columns ]
-
-Do not force grids where content does not benefit from them.
-
-34. Z-Index
-
-Use a predictable hierarchy.
-
---z-base: 0;
---z-dropdown: 1000;
---z-sticky: 1100;
---z-modal: 1200;
---z-toast: 1300;
+```css
+--z-base: 0; --z-dropdown: 1000; --z-sticky: 1100; --z-modal: 1200; --z-toast: 1300;
+```
 
 Avoid random z-index values.
 
-35. Animation
+---
 
-Default transition:
+# M. Motion System (new in v2.0)
 
-transition-duration: 150ms;
+## M1. Principles
 
-Maximum normal UI transition:
+Motion exists to **guide attention and explain change**, never to decorate:
 
-250ms
+1. Every animation answers "what just changed?" — otherwise remove it
+2. Fast and subtle: nothing exceeds 300ms except skeleton loops
+3. Enter with ease-out, exit quickly with ease-in
+4. Respect `prefers-reduced-motion` — always
+5. Max one entrance pattern per view (staggered list **or** page transition, not both competing)
 
-Use:
+## M2. Duration Tokens
 
-ease-out
+| Token | Value | Use |
+|---|---|---|
+| `fast` | 120ms | Hovers, presses, toggles |
+| `base` | 180ms | Fades, color/opacity changes, card lift |
+| `slow` | 280ms | Modals, sheets, page-level entrances |
 
-for entering UI.
+Tailwind: `duration-fast`, `duration-base`, `duration-slow` (extend `transitionDuration`).
 
-Avoid excessive motion.
+## M3. Easing
 
-36. Tailwind Mapping
+| Name | Curve | Use |
+|---|---|---|
+| `enter` | `cubic-bezier(0.16, 1, 0.3, 1)` | Elements entering (decelerate) |
+| `exit` | `cubic-bezier(0.4, 0, 1, 1)` | Elements leaving (accelerate) |
 
-If Tailwind CSS is used, map the design system to Tailwind configuration or CSS variables.
+CSS var: `--ease-enter`, `--ease-exit`. Framer: `easeOut` / `easeIn` presets acceptable.
 
-Do not repeatedly hardcode:
+## M4. Reduced Motion
 
-bg-[#2563EB]
-rounded-[13px]
-mt-[17px]
+Global CSS guard in `index.css`:
 
-Prefer reusable tokens/classes.
+```css
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+```
 
-Example:
+Framer Motion: wrap animated surfaces with `useReducedMotion()` where transform-heavy.
 
-bg-primary
-text-primary
-border-border
-rounded-md
-shadow-sm
-37. Component Architecture
+## M5. Micro-interactions
 
-Recommended:
+- **Button press**: `active:scale-[0.98]`, duration-fast
+- **Card hover** (desktop only): lift −2px + shadow sm→md, duration-base
+- **Nav item hover**: background tint fade, duration-fast
+- **Input focus**: border-color + ring fade-in, duration-fast
+- **Toggle/checkbox**: native where possible; custom ones animate check draw ≤ 180ms
 
-src/
-├── components/
-│   ├── ui/
-│   │   ├── Button.jsx
-│   │   ├── Input.jsx
-│   │   ├── Select.jsx
-│   │   ├── Textarea.jsx
-│   │   ├── Card.jsx
-│   │   ├── Badge.jsx
-│   │   ├── Modal.jsx
-│   │   ├── Toast.jsx
-│   │   ├── Skeleton.jsx
-│   │   └── EmptyState.jsx
-│   │
-│   ├── layout/
-│   │   ├── Header.jsx
-│   │   ├── Sidebar.jsx
-│   │   └── MobileNavigation.jsx
-│   │
-│   └── news/
-│       ├── NewsCard.jsx
-│       ├── NewsList.jsx
-│       └── NewsDetail.jsx
+## M6. List Entrance (stagger)
 
-Components should be reusable.
+Cards/list rows animate once on mount: opacity 0→1 + translateY 12px→0, stagger children 40ms, capped total ~400ms. Implement with a shared framer-motion `variants` object (`FadeStagger` / `FadeItem`) exported from `src/components/motion/`.
 
-Avoid page-specific duplicates when an existing component can be reused.
+Rules: only on initial mount, not on filter/search re-renders (use plain render there); skip if reduced motion.
 
-38. Component Naming
+## M7. Page Transitions
 
-Use clear names.
+Route changes wrapped in `AnimatePresence`: outgoing page fades out (150ms), incoming fades in + rises 8px (240ms). No horizontal slides between unrelated pages.
 
-Good:
+## M8. Navigation Feedback
 
-NewsCard
-NewsList
-NewsForm
-ConfirmDialog
-LoadingState
-EmptyState
+- Sidebar active item: soft-primary background fades in, 2px leading bar grows top→bottom (180ms)
+- Bottom nav active tab: indicator pill moves via `layoutId` spring (stiffness ~400, damping ~30), icon scales 1→1.08 on select
 
-Avoid:
+## M9. Feedback Loops
 
-Box1
-Card2
-NewThing
-CustomThing
-BlueButton
+- Success toast: slide down + fade in (240ms), auto-dismiss with fade out (150ms)
+- Destructive confirm: modal per §22; panel shake is **banned**
+- Broadcast send success: toast + optimistic list prepend with fade-up highlight fading over 2s
 
-Names should describe purpose, not appearance.
-
-39. Design Anti-Patterns
+## M10. Motion Anti-Patterns
 
 Do NOT:
 
-Use more than necessary colors
-Use gradients everywhere
-Use huge rounded containers
-Use excessive shadows
-Use tiny text
-Use excessive animations
-Mix icon libraries
-Create random spacing
-Create random button styles
-Use inconsistent card designs
-Use color without semantic meaning
-Overload dashboards with charts
-Make every section a card
-40. AI Implementation Rules
+- Infinite looping animations on content surfaces (spinners/skeletons excepted)
+- Parallax, scroll-jacking, bouncy overshoot on everything
+- Animating layout properties (width/height/top/left) — use transform/opacity
+- Stagger > 8 items or delay > 50ms/item
+- Animations longer than 300ms for interaction feedback
 
-When AI modifies frontend code:
+---
 
-Step 1
+# 34. Tailwind Mapping
 
-Read:
+Map every token through `tailwind.config.js`. Prefer semantic utility names:
 
-docs/UI_DESIGN.md
-docs/DESIGN_SYSTEM.md
-Step 2
+```
+bg-primary  text-text-secondary  border-border  rounded-md  shadow-sm
+text-h1 … text-meta  duration-fast/base/slow
+animate-fade-up  animate-fade-in  animate-scale-in  animate-shimmer
+```
 
-Inspect existing components.
+Never hardcode hex/px values in JSX.
 
-Step 3
+# 35. Component Architecture
 
-Reuse existing components.
+```
+src/
+├── components/
+│   ├── ui/          # Button, Input, Select, Textarea, Card, Badge,
+│   │                # Modal, Toast, Skeleton, EmptyState, Pagination
+│   ├── motion/      # FadeStagger/FadeItem variants, PageTransition wrapper
+│   ├── layout/      # AdminLayout, LiffLayout, ProtectedRoute
+│   └── news/        # feature components (NewsCard, ...)
+```
 
-Step 4
+Components are reusable. Avoid page-specific duplicates.
 
-Use existing tokens.
+# 36. Component Naming
 
-Step 5
+Descriptive of purpose, not appearance: `NewsCard`, `ConfirmDialog`, `LoadingState`, `EmptyState`.
+Avoid: `Box1`, `BlueButton`, `NewThing`.
 
-Implement responsive behavior.
+# 37. Design Anti-Patterns
 
-Step 6
+Do NOT:
 
-Check:
+- Use more colors than necessary, gradients everywhere
+- Huge rounded containers, excessive shadows
+- Tiny text (< 14px for readable content), cramped line-height for Thai
+- Excessive/infinite animations, mixed icon libraries
+- Random spacing, random button styles, inconsistent cards
+- Color without semantic meaning, chart-overloaded dashboards, everything-is-a-card layouts
 
-Desktop
-Tablet
-Mobile
-Loading
-Empty
-Error
-Success
-Step 7
+# 38. AI Implementation Rules
 
-Do not modify unrelated UI.
+When modifying frontend code:
 
-41. Visual Quality Checklist
+1. Read `docs/UI_DESIGN.md` + this file
+2. Inspect existing components; reuse before creating
+3. Use existing tokens (color/type/spacing/motion)
+4. Implement responsive behavior + loading/empty/error/success states
+5. Check desktop / tablet / mobile
+6. Do not modify unrelated UI; do not change global tokens without updating this file first
+
+# 39. Visual Quality Checklist
 
 Before merging UI changes:
 
-Colors
- Uses design tokens
- Semantic colors are correct
- Contrast is readable
-Typography
- Correct font
- Correct hierarchy
- No text below 12px
-Spacing
- Uses spacing scale
- Consistent gaps
- No arbitrary values
-Components
- Reuses existing components
- Consistent radius
- Consistent shadows
- Consistent states
-Responsive
- Mobile
- Tablet
- Desktop
-Accessibility
- Labels
- Alt text
- Keyboard support
- Focus states
- Touch targets >= 44px
-42. Golden Rule
+- Colors: uses tokens · semantic · contrast AA
+- Typography: correct font/hierarchy · no text < 14px readable · Thai line-height ≥ 1.6
+- Spacing: scale-consistent gaps, no arbitrary values
+- Components: reused · consistent radius/shadow/states
+- Responsive: mobile · tablet · desktop
+- Accessibility: labels · alt text · keyboard · focus visible · touch ≥ 44px
+- Motion: follows M1–M10 · reduced-motion respected · no infinite loops
 
-The Design System is the visual source of truth.
+# 40. Golden Rule
 
-If a new component is needed:
+The goal is not "make every page look impressive."
 
-Check whether an existing component can be reused.
-If not, design the new component using existing tokens.
-Add the component to the reusable UI library.
-Document important new patterns.
+The goal is: **"Make the entire Broadcast System feel like one coherent, modern, friendly product that a 70-year-old villager can read comfortably."**
 
-The goal is not:
-
-"Make every page look impressive."
-
-The goal is:
-
-"Make the entire Broadcast System feel like one coherent, modern product."
-
-43. Product Visual Identity
-
-The final visual identity should communicate:
-
-Modern
-   +
-Simple
-   +
-Friendly
-   +
-Trustworthy
-   +
-Community-focused
-
-The UI should feel appropriate for both:
-
-Village administrators
-        +
-Villagers
-
-without making either audience feel like they are using a complicated system.
+If a new component is needed: reuse → design with existing tokens → add to ui library → document the pattern here.

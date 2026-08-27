@@ -47,7 +47,7 @@ function NewsViewPage() {
           <ArrowLeft className="w-4 h-4" />
         </Button>
         <div>
-          <h1 className="text-xl font-bold text-text-primary">รายละเอียดข่าวสาร</h1>
+          <h1 className="text-h2 text-text-primary">รายละเอียดข่าวสาร</h1>
         </div>
       </div>
 
@@ -63,7 +63,7 @@ function NewsViewPage() {
         <h2 className="text-2xl font-bold text-text-primary leading-snug">{news.news_title}</h2>
 
         {/* Meta Info */}
-        <div className="flex flex-wrap items-center gap-4 text-xs text-text-secondary border-y border-border py-3">
+        <div className="flex flex-wrap items-center gap-4 text-body-sm text-text-secondary border-y border-border py-3">
           <span className="flex items-center gap-1">
             <User className="w-3.5 h-3.5 text-text-muted" />
             <span>สร้างโดย {news.created_by_name || 'Admin'}</span>

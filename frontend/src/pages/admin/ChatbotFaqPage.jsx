@@ -130,7 +130,7 @@ function ChatbotFaqPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-text-primary">ตั้งค่าแชทบอทตอบคำถามอัตโนมัติ</h1>
+          <h1 className="text-h1 text-text-primary">ตั้งค่าแชทบอทตอบคำถามอัตโนมัติ</h1>
           <p className="text-sm text-text-secondary mt-1">
             กำหนดคำค้นหาหลัก (Keyword) และข้อความที่จะตอบกลับลูกบ้านใน LINE OA อัตโนมัติ ({faqs.length} รายการ)
           </p>
@@ -151,7 +151,7 @@ function ChatbotFaqPage() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm text-left">
-              <thead className="bg-slate-50 border-b border-border text-xs text-text-secondary font-semibold uppercase tracking-wider">
+              <thead className="bg-slate-50 border-b border-border text-body-sm text-text-secondary font-semibold">
                 <tr>
                   <th className="px-6 py-3.5">#</th>
                   <th className="px-6 py-3.5">คำค้นหาหลัก (Keyword)</th>
@@ -206,7 +206,7 @@ function ChatbotFaqPage() {
       >
         <form onSubmit={handleSubmit} className="space-y-4">
           {formError && (
-            <div className="p-3 bg-error-soft border border-error/20 rounded-sm text-error text-xs">
+            <div className="p-3 bg-error-soft border border-error/20 rounded-sm text-error text-body-sm">
               {formError}
             </div>
           )}
@@ -229,7 +229,7 @@ function ChatbotFaqPage() {
 
           <div className="pt-4 border-t border-border">
             <h3 className="text-sm font-semibold text-text-primary mb-2">แหล่งข้อมูลสำหรับคัดลอกลิงก์:</h3>
-            <div className="max-h-48 overflow-y-auto space-y-2 text-xs">
+            <div className="max-h-48 overflow-y-auto space-y-2 text-body-sm">
               <div className="font-semibold text-text-secondary">ข่าวสาร (เฉพาะที่อนุมัติแล้ว):</div>
               {news.filter(n => n.news_status === 'Approved').map(n => (
                 <div key={n.news_id} className="flex justify-between items-center bg-slate-50 p-1.5 rounded">

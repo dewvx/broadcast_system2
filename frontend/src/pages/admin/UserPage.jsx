@@ -125,7 +125,7 @@ function UserPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-text-primary">จัดการบัญชีผู้ใช้งาน</h1>
+          <h1 className="text-h1 text-text-primary">จัดการบัญชีผู้ใช้งาน</h1>
           <p className="text-sm text-text-secondary mt-1">
             บัญชีผู้ใหญ่บ้าน (Admin) และ ผู้นำชุมชน/อสม. (Leader) ที่มีสิทธิ์เข้าใช้งานระบบ
           </p>
@@ -155,7 +155,7 @@ function UserPage() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm text-left">
-              <thead className="bg-slate-50 border-b border-border text-xs text-text-secondary font-semibold uppercase tracking-wider">
+              <thead className="bg-slate-50 border-b border-border text-body-sm text-text-secondary font-semibold">
                 <tr>
                   <th className="px-6 py-3.5">ชื่อ-นามสกุล</th>
                   <th className="px-6 py-3.5">ชื่อผู้ใช้งาน (Username)</th>
@@ -234,7 +234,7 @@ function UserPage() {
       >
         <form onSubmit={handleSubmit} className="space-y-4">
           {formError && (
-            <div className="p-3 bg-error-soft border border-error/20 rounded-sm text-error text-xs">
+            <div className="p-3 bg-error-soft border border-error/20 rounded-sm text-error text-body-sm">
               {formError}
             </div>
           )}
@@ -282,7 +282,7 @@ function UserPage() {
 
           {/* ผูกบัญชี LINE สำหรับรับ OTP กู้รหัสผ่าน */}
           <div>
-            <label className="block text-xs font-medium text-text-secondary mb-1">
+            <label className="block text-body-sm font-medium text-text-primary mb-1">
               ผูกบัญชี LINE OA (สำหรับรับ OTP กู้รหัสผ่าน)
             </label>
             <select
@@ -299,7 +299,7 @@ function UserPage() {
                   </option>
                 ))}
             </select>
-            <p className="text-[11px] text-text-muted mt-1">
+            <p className="text-body-sm text-text-muted mt-1">
               * เลือกชื่อบัญชี LINE ของท่านที่เคยลงทะเบียนในระบบ เพื่อให้ระบบสามารถส่ง OTP กู้คืนรหัสผ่านเข้า LINE ได้
             </p>
           </div>

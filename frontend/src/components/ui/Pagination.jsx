@@ -34,7 +34,7 @@ function Pagination({
 
   return (
     <div
-      className={`bg-surface border-t border-border px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-text-secondary ${className}`}
+      className={`bg-surface border-t border-border px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-3 text-body-sm text-text-secondary ${className}`}
     >
       <div>
         <span>
@@ -51,9 +51,10 @@ function Pagination({
             type="button"
             onClick={() => onPageChange(currentPage - 1)}
             disabled={currentPage <= 1}
-            className="px-2.5 py-1.5 rounded-sm border border-border bg-surface text-text-primary hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 transition-colors"
+            aria-label="หน้าก่อนหน้า"
+            className="px-3 h-10 rounded-sm border border-border bg-surface text-text-primary hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 transition-colors duration-fast cursor-pointer"
           >
-            <ChevronLeft className="w-3.5 h-3.5" />
+            <ChevronLeft className="w-4 h-4" />
             <span className="hidden sm:inline">ก่อนหน้า</span>
           </button>
 
@@ -74,9 +75,10 @@ function Pagination({
                   key={page}
                   type="button"
                   onClick={() => onPageChange(page)}
-                  className={`min-w-[32px] h-8 px-2 rounded-sm text-xs font-medium transition-colors ${
+                  aria-current={isCurrent ? 'page' : undefined}
+                  className={`min-w-9 h-9 px-2 rounded-sm text-body-sm font-medium transition-colors duration-fast cursor-pointer ${
                     isCurrent
-                      ? 'bg-primary text-white shadow-xs font-semibold'
+                      ? 'bg-primary text-white shadow-sm font-semibold'
                       : 'border border-border bg-surface text-text-secondary hover:bg-slate-50'
                   }`}
                 >
@@ -91,10 +93,11 @@ function Pagination({
             type="button"
             onClick={() => onPageChange(currentPage + 1)}
             disabled={currentPage >= totalPages}
-            className="px-2.5 py-1.5 rounded-sm border border-border bg-surface text-text-primary hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 transition-colors"
+            aria-label="หน้าถัดไป"
+            className="px-3 h-10 rounded-sm border border-border bg-surface text-text-primary hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 transition-colors duration-fast cursor-pointer"
           >
             <span className="hidden sm:inline">ถัดไป</span>
-            <ChevronRight className="w-3.5 h-3.5" />
+            <ChevronRight className="w-4 h-4" />
           </button>
         </div>
       )}

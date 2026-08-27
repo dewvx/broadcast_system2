@@ -117,7 +117,7 @@ function ActivityPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-text-primary">ปฏิทินกิจกรรม</h1>
+          <h1 className="text-h1 text-text-primary">ปฏิทินกิจกรรม</h1>
           <p className="text-sm text-text-secondary mt-1">กิจกรรมและงานสำคัญที่จัดขึ้นในชุมชน</p>
         </div>
         <Button icon={Plus} variant="primary" onClick={openCreate}>
@@ -127,7 +127,7 @@ function ActivityPage() {
 
       {/* Upcoming Activities Section */}
       <section className="space-y-3">
-        <h2 className="text-xs font-semibold text-text-secondary uppercase tracking-wider">
+        <h2 className="text-h3 font-bold text-text-primary">
           กิจกรรมที่กำลังจะมาถึง ({upcoming.length})
         </h2>
         {upcoming.length === 0 ? (
@@ -155,7 +155,7 @@ function ActivityPage() {
       {/* Past Activities Section */}
       {past.length > 0 && (
         <section className="space-y-3 pt-4 border-t border-border">
-          <h2 className="text-xs font-semibold text-text-muted uppercase tracking-wider">
+          <h2 className="text-h3 font-bold text-text-secondary">
             กิจกรรมที่ผ่านมาแล้ว ({past.length})
           </h2>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 opacity-75">
@@ -240,14 +240,14 @@ function ActivityCard({ item, isAdmin, onEdit, onDelete, upcoming }) {
           <p className={`text-xl font-bold leading-none ${upcoming ? 'text-primary' : 'text-text-muted'}`}>
             {dayNum}
           </p>
-          <p className="text-[10px] font-semibold text-text-secondary mt-0.5">
+          <p className="text-meta font-semibold text-text-secondary mt-0.5">
             {monthStr} {yearStr}
           </p>
         </div>
         <div className="flex-1 min-w-0">
           <p className="font-semibold text-text-primary truncate">{item.act_title}</p>
           {item.act_location && (
-            <p className="text-xs text-text-secondary flex items-center gap-1 mt-1 truncate">
+            <p className="text-body-sm text-text-secondary flex items-center gap-1 mt-1 truncate">
               <MapPin className="w-3.5 h-3.5 text-text-muted shrink-0" />
               <span>{item.act_location}</span>
             </p>

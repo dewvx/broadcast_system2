@@ -127,7 +127,7 @@ function EditVillagerModal({ villager, onClose, onSaved }) {
           </label>
 
           {error && (
-            <p className="text-xs text-error bg-error-soft/30 border border-error/30 rounded-sm px-3 py-2">{error}</p>
+            <p className="text-body-sm text-error bg-error-soft/30 border border-error/30 rounded-sm px-3 py-2" role="alert">{error}</p>
           )}
 
           <div className="flex gap-2 pt-1">
@@ -175,7 +175,7 @@ function DeleteConfirmModal({ villager, onClose, onConfirmed }) {
             </strong>{' '}
             ออกจากระบบหรือไม่?
             <br />
-            <span className="text-xs text-error mt-1 block">ลูกบ้านต้องลงทะเบียนใหม่เมื่อกลับมาใช้งาน</span>
+            <span className="text-body-sm text-error mt-1 block">ลูกบ้านต้องลงทะเบียนใหม่เมื่อกลับมาใช้งาน</span>
           </p>
           <div className="flex gap-2 pt-1">
             <Button variant="outline" size="sm" fullWidth onClick={onClose} disabled={deleting}>
@@ -291,7 +291,7 @@ function VillagerPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-text-primary">ข้อมูลลูกบ้าน</h1>
+            <h1 className="text-h1 text-text-primary">ข้อมูลลูกบ้าน</h1>
             <p className="text-sm text-text-secondary mt-1">
               ลูกบ้านที่ลงทะเบียนผ่าน LINE ทั้งหมด{' '}
               <strong className="text-text-primary">{villagers.length}</strong> คน
@@ -344,7 +344,7 @@ function VillagerPage() {
             <div>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm text-left">
-                  <thead className="bg-slate-50 border-b border-border text-xs text-text-secondary font-semibold uppercase tracking-wider">
+                  <thead className="bg-slate-50 border-b border-border text-body-sm text-text-secondary font-semibold">
                     <tr>
                       <th className="px-6 py-3.5">#</th>
                       <th className="px-6 py-3.5">ชื่อ-นามสกุล</th>

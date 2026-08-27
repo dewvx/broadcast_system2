@@ -86,3 +86,33 @@
 - [x] ปิด auto-reply/greeting message default ใน LINE OA Manager
 - [x] รัน schema.sql สร้างฐานข้อมูลจริง
 - [x] เขียน middleware auth (JWT) + role check
+
+## 4.0 UI/UX Refresh — Design System v2.0 (2026-08-26)
+
+> Spec อยู่ที่ `docs/DESIGN_SYSTEM.md` (v2.0) + `docs/UI_DESIGN.md` (v2.0) — typography ขยายสำหรับผู้สูงวัย,
+> motion system (fade-up/stagger/page transition/modal scale-in/toast), touch target ≥44px
+
+### Foundation
+- [x] Typography tokens ใหม่ใน `tailwind.config.js` (`text-h1…text-meta`, body LIFF 18px) — ลบ text 10–11px ทั้งระบบ
+- [x] Motion tokens (`duration-fast/base/slow`, ease-enter/exit) + keyframes (fade-up/fade-in/scale-in/shimmer)
+- [x] `index.css`: Thai line-height 1.7, focus-visible ring, prefers-reduced-motion guard, safe-bottom utility
+- [x] ติดตั้ง framer-motion (page transition / stagger / modal / bottom-nav indicator)
+
+### Components
+- [x] Button/Input/Select/Textarea/Card/Badge/Modal/EmptyState/Skeleton/Pagination ยกโฉมตาม v2.0 (Input/Select 48px, font 16px+)
+- [x] เพิ่ม Toast system (`toast.success/error/info` + `<Toaster />` ใน App) พร้อม slide/fade animation
+- [x] Motion helpers: `FadeStagger` / `FadeItem` / `PageTransition` (`components/motion/`)
+- [x] Modal ใช้ AnimatePresence (backdrop fade + panel scale-in), ปุ่มปิด 36px+
+
+### Layout
+- [x] AdminLayout: sidebar 256px + animated active pill (layoutId), **mobile drawer** (hamburger + slide-in) สำหรับ <lg
+- [x] EditProfileModal แยกไฟล์ + refactor ใช้ ui Modal/Input/Button + toast
+- [x] LiffLayout bottom nav: สูง 64px, label 14px, icon pop + moving indicator pill, safe-area inset
+- [x] Page transition ระดับ layout ฝั่ง admin (motion.div keyed by pathname)
+
+### Pages
+- [x] LIFF ทั้งหมด: Home, NewsList, NewsDetail, ActivityList, ActivityDetail, DocumentList, Profile, Register (typography ใหญ่ + stagger + hoverable cards)
+- [x] Login (split-brand layout desktop + show password), ForgotPassword (OTP tracking-[0.4em], step transition)
+- [x] Dashboard: stat cards hover lift + FadeStagger
+- [x] Admin pages ที่เหลือ: normalize page title → `text-h1`, table header → `text-body-sm`, error box/helper → `text-body-sm`
+

@@ -2,8 +2,18 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useLiff } from '../../context/LiffContext';
 import { checkOrLogin, updateSelfProfile } from '../../api/villager.api';
-import { Card, Button, Badge, LoadingSpinner } from '../../components/ui';
-import { User, Phone, MapPin, ShieldCheck, UserCheck, AlertTriangle, Building, PhoneCall, Calendar, Pencil, X, Check } from 'lucide-react';
+import { Card, Button, Badge, Input, LoadingSpinner, toast } from '../../components/ui';
+import { FadeStagger, FadeItem } from '../../components/motion';
+import {
+  User,
+  Phone,
+  UserCheck,
+  AlertTriangle,
+  Building,
+  PhoneCall,
+  Pencil,
+  X,
+} from 'lucide-react';
 
 function ProfilePage() {
   const { liff, isLiffReady, idToken } = useLiff();
@@ -14,7 +24,6 @@ function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
-  const [saveSuccess, setSaveSuccess] = useState(false);
   const [form, setForm] = useState({
     firstName: '',
     lastName: '',
@@ -55,7 +64,6 @@ function ProfilePage() {
       zoneName: villager.zone_name || '',
     });
     setSaveError('');
-    setSaveSuccess(false);
     setIsEditing(true);
   }
 
@@ -67,7 +75,6 @@ function ProfilePage() {
   async function handleSaveProfile(e) {
     e.preventDefault();
     setSaveError('');
-    setSaveSuccess(false);
 
     if (!form.firstName.trim() || !form.lastName.trim() || !form.houseNumber.trim()) {
       setSaveError('กรุณากรอกชื่อ นามสกุล และบ้านเลขที่ให้ครบ');
@@ -90,11 +97,8 @@ function ProfilePage() {
         zoneName: zoneName || null,
       });
       setVillager(res.data.villager);
-      setSaveSuccess(true);
-      setTimeout(() => {
-        setIsEditing(false);
-        setSaveSuccess(false);
-      }, 1500);
+      setIsEditing(false);
+      toast.success('บันทึกข้อมูลเรียบร้อยแล้ว');
     } catch (err) {
       setSaveError(err?.response?.data?.message || 'เกิดข้อผิดพลาด กรุณาลองใหม่');
     } finally {
@@ -105,37 +109,40 @@ function ProfilePage() {
   if (loading) return <LoadingSpinner text="กำลังโหลดข้อมูลส่วนตัว..." className="min-h-screen" />;
 
   return (
-    <div className="p-4 space-y-6">
+    <FadeStagger className="p-4 pt-5 space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-xl font-bold text-text-primary">ฉันและติดต่อชุมชน</h1>
-        <p className="text-xs text-text-secondary mt-0.5">จัดการข้อมูลส่วนตัวและช่องทางติดต่อผู้นำชุมชน</p>
-      </div>
+      <FadeItem>
+        <div>
+          <h1 className="text-h2 text-text-primary">ฉันและติดต่อชุมชน</h1>
+          <p className="text-body-sm text-text-secondary mt-1">จัดการข้อมูลส่วนตัวและช่องทางติดต่อผู้นำชุมชน</p>
+        </div>
+      </FadeItem>
 
       {/* User Info / Profile Card */}
-      {villager ? (
-        <>
-          {/* Profile Display Card */}
-          {!isEditing ? (
-            <Card padding="md" className="space-y-4 border-primary/30 shadow-xs">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-primary-soft text-primary flex items-center justify-center font-bold text-lg shrink-0">
+      <FadeItem>
+        {villager ? (
+          !isEditing ? (
+            <Card padding="md" className="space-y-4 border-primary/25 shadow-sm">
+              <div className="flex items-center gap-3.5">
+                <div className="w-14 h-14 rounded-full bg-primary-soft text-primary flex items-center justify-center font-bold text-h2 shrink-0">
                   {villager.first_name?.charAt(0) || 'V'}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h2 className="font-bold text-text-primary text-base truncate">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h2 className="font-bold text-text-primary text-h3 truncate">
                       {villager.first_name} {villager.last_name}
                     </h2>
-                    <Badge variant="success">ลงทะเบียนแล้ว</Badge>
+                    <Badge variant="success" withDot>
+                      ลงทะเบียนแล้ว
+                    </Badge>
                   </div>
-                  <p className="text-xs text-text-secondary mt-0.5">
+                  <p className="text-body-sm text-text-secondary mt-1">
                     บ้านเลขที่ {villager.house_number} {villager.zone_name ? `• ${villager.zone_name}` : ''}
                   </p>
                 </div>
               </div>
 
-              <div className="bg-slate-50 p-3 rounded-sm border border-border text-xs space-y-1.5 text-text-secondary">
+              <div className="bg-slate-50 p-3.5 rounded-md border border-border text-body-sm space-y-2 text-text-secondary">
                 <div className="flex items-center justify-between">
                   <span>วันที่ลงทะเบียนระบบ:</span>
                   <span className="font-semibold text-text-primary">
@@ -148,203 +155,165 @@ function ProfilePage() {
                 </div>
               </div>
 
-              <Button
-                variant="outline"
-                size="sm"
-                fullWidth
-                icon={Pencil}
-                onClick={openEditForm}
-              >
+              <Button variant="outline" fullWidth icon={Pencil} onClick={openEditForm}>
                 แก้ไขข้อมูลส่วนตัว
               </Button>
             </Card>
           ) : (
             /* Edit Form Card */
-            <Card padding="md" className="space-y-4 border-primary/30 shadow-xs">
+            <Card padding="md" className="space-y-4 border-primary/25 shadow-sm">
               <div className="flex items-center justify-between">
-                <h2 className="font-bold text-text-primary text-sm">แก้ไขข้อมูลส่วนตัว</h2>
+                <h2 className="font-bold text-text-primary text-h3">แก้ไขข้อมูลส่วนตัว</h2>
                 <button
                   onClick={() => setIsEditing(false)}
-                  className="text-text-muted hover:text-text-primary"
+                  aria-label="ยกเลิกการแก้ไข"
+                  className="w-9 h-9 -mr-2 flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-slate-100 rounded-full transition-colors cursor-pointer"
                 >
-                  <X className="w-4 h-4" />
+                  <X className="w-5 h-5" />
                 </button>
               </div>
 
-              <form onSubmit={handleSaveProfile} className="space-y-3">
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="block text-xs font-medium text-text-secondary mb-1">ชื่อจริง</label>
-                    <input
-                      type="text"
-                      name="firstName"
-                      value={form.firstName}
-                      onChange={handleFormChange}
-                      required
-                      className="w-full text-sm px-3 py-2 border border-border rounded-sm focus:outline-none focus:border-primary bg-white"
-                      placeholder="ชื่อ"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-text-secondary mb-1">นามสกุล</label>
-                    <input
-                      type="text"
-                      name="lastName"
-                      value={form.lastName}
-                      onChange={handleFormChange}
-                      required
-                      className="w-full text-sm px-3 py-2 border border-border rounded-sm focus:outline-none focus:border-primary bg-white"
-                      placeholder="นามสกุล"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-text-secondary mb-1">บ้านเลขที่</label>
-                  <input
-                    type="text"
-                    name="houseNumber"
-                    value={form.houseNumber}
+              <form onSubmit={handleSaveProfile} className="space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <Input
+                    label="ชื่อจริง"
+                    name="firstName"
+                    value={form.firstName}
                     onChange={handleFormChange}
                     required
-                    className="w-full text-sm px-3 py-2 border border-border rounded-sm focus:outline-none focus:border-primary bg-white"
-                    placeholder="เช่น 123/4"
+                    placeholder="ชื่อ"
+                  />
+                  <Input
+                    label="นามสกุล"
+                    name="lastName"
+                    value={form.lastName}
+                    onChange={handleFormChange}
+                    required
+                    placeholder="นามสกุล"
                   />
                 </div>
 
-                <div>
-                  <label className="block text-xs font-medium text-text-secondary mb-1">
-                    หมู่บ้าน / โซน <span className="text-text-muted font-normal">(กรอกเฉพาะตัวเลขหมู่ เช่น 4)</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="zoneName"
-                    value={form.zoneName}
-                    onChange={handleFormChange}
-                    className="w-full text-sm px-3 py-2 border border-border rounded-sm focus:outline-none focus:border-primary bg-white"
-                    placeholder="เช่น 4 (ระบบจะแปลงเป็น หมู่ 4)"
-                  />
-                </div>
+                <Input
+                  label="บ้านเลขที่"
+                  name="houseNumber"
+                  value={form.houseNumber}
+                  onChange={handleFormChange}
+                  required
+                  placeholder="เช่น 123/4"
+                />
+
+                <Input
+                  label="หมู่บ้าน / โซน"
+                  name="zoneName"
+                  value={form.zoneName}
+                  onChange={handleFormChange}
+                  helperText="กรอกเฉพาะตัวเลขหมู่ เช่น 4 (ระบบจะแปลงเป็น หมู่ 4)"
+                  placeholder="เช่น 4"
+                />
 
                 {saveError && (
-                  <p className="text-xs text-error bg-error-soft/30 border border-error/30 rounded-sm px-3 py-2">
+                  <p className="text-body-sm text-error bg-error-soft border border-error/20 rounded-sm px-3 py-2.5" role="alert">
                     {saveError}
-                  </p>
-                )}
-                {saveSuccess && (
-                  <p className="text-xs text-success bg-success-soft/30 border border-success/30 rounded-sm px-3 py-2 flex items-center gap-1.5">
-                    <Check className="w-3.5 h-3.5" /> บันทึกข้อมูลเรียบร้อยแล้ว
                   </p>
                 )}
 
                 <div className="flex gap-2 pt-1">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    fullWidth
-                    onClick={() => setIsEditing(false)}
-                    disabled={saving}
-                  >
+                  <Button type="button" variant="secondary" fullWidth onClick={() => setIsEditing(false)} disabled={saving}>
                     ยกเลิก
                   </Button>
-                  <Button
-                    type="submit"
-                    variant="primary"
-                    size="sm"
-                    fullWidth
-                    disabled={saving}
-                  >
+                  <Button type="submit" fullWidth loading={saving}>
                     {saving ? 'กำลังบันทึก...' : 'บันทึก'}
                   </Button>
                 </div>
               </form>
             </Card>
-          )}
-        </>
-      ) : (
-        <Card padding="md" className="text-center space-y-3 border-warning/30 bg-warning-soft/30">
-          <div className="w-10 h-10 rounded-full bg-warning-soft text-warning mx-auto flex items-center justify-center">
-            <UserCheck className="w-5 h-5" />
-          </div>
-          <div>
-            <h2 className="font-bold text-text-primary text-sm">ยังไม่ได้ลงทะเบียนลูกบ้าน</h2>
-            <p className="text-xs text-text-secondary mt-0.5">
-              ลงทะเบียนเพื่อบันทึกข้อมูลและรับประกาศสำคัญจากผู้ใหญ่บ้าน
-            </p>
-          </div>
-          <Link to="/liff/register" className="block w-full">
-            <Button variant="primary" fullWidth size="sm">
-              ลงทะเบียนข้อมูลลูกบ้าน
-            </Button>
-          </Link>
-        </Card>
-      )}
+          )
+        ) : (
+          <Card padding="md" className="text-center space-y-3.5 border-warning/30 bg-warning-soft/40">
+            <div className="w-14 h-14 rounded-full bg-warning-soft text-warning mx-auto flex items-center justify-center">
+              <UserCheck className="w-7 h-7" />
+            </div>
+            <div>
+              <h2 className="font-bold text-text-primary text-h3">ยังไม่ได้ลงทะเบียนลูกบ้าน</h2>
+              <p className="text-body-sm text-text-secondary mt-1">
+                ลงทะเบียนเพื่อบันทึกข้อมูลและรับประกาศสำคัญจากผู้ใหญ่บ้าน
+              </p>
+            </div>
+            <Link to="/liff/register" className="block w-full">
+              <Button variant="primary" fullWidth>
+                ลงทะเบียนข้อมูลลูกบ้าน
+              </Button>
+            </Link>
+          </Card>
+        )}
+      </FadeItem>
 
       {/* Community Contact Info & Emergency Phone Numbers */}
-      <section className="space-y-3">
-        <h2 className="text-xs font-bold text-text-secondary uppercase tracking-wider flex items-center gap-1.5">
-          <Phone className="w-4 h-4 text-primary" />
-          <span>ช่องทางติดต่อผู้นำชุมชน & เบอร์ฉุกเฉิน</span>
-        </h2>
+      <FadeItem>
+        <section className="space-y-3">
+          <h2 className="text-h3 font-bold text-text-primary flex items-center gap-2">
+            <Phone className="w-5 h-5 text-primary" />
+            <span>ติดต่อผู้นำชุมชน & เบอร์ฉุกเฉิน</span>
+          </h2>
 
-        <div className="space-y-2 text-xs">
-          {/* Village Leader */}
-          <Card padding="sm" className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-full bg-primary-soft text-primary flex items-center justify-center shrink-0">
-                <Building className="w-4 h-4" />
+          <div className="space-y-2.5 text-body-sm">
+            {/* Village Leader */}
+            <Card padding="sm" className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-10 h-10 rounded-full bg-primary-soft text-primary flex items-center justify-center shrink-0">
+                  <Building className="w-5 h-5" />
+                </div>
+                <div className="min-w-0">
+                  <p className="font-semibold text-text-primary truncate">ที่ทำการผู้ใหญ่บ้าน</p>
+                  <p className="text-body-sm text-text-muted">ติดต่อร้องเรียน / สอบถามเอกสาร</p>
+                </div>
               </div>
-              <div>
-                <p className="font-semibold text-text-primary">ที่ทำการผู้ใหญ่บ้าน</p>
-                <p className="text-text-muted">ติดต่อร้องเรียน / สอบถามเอกสาร</p>
-              </div>
-            </div>
-            <a href="tel:0812345678" className="shrink-0">
-              <Button size="sm" variant="outline" icon={PhoneCall}>
-                โทร
-              </Button>
-            </a>
-          </Card>
+              <a href="tel:0812345678" className="shrink-0">
+                <Button size="sm" variant="outline" icon={PhoneCall}>
+                  โทร
+                </Button>
+              </a>
+            </Card>
 
-          {/* OSM / Health Center */}
-          <Card padding="sm" className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-full bg-secondary-soft text-secondary flex items-center justify-center shrink-0">
-                <Phone className="w-4 h-4" />
+            {/* OSM / Health Center */}
+            <Card padding="sm" className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-10 h-10 rounded-full bg-secondary-soft text-secondary flex items-center justify-center shrink-0">
+                  <Phone className="w-5 h-5" />
+                </div>
+                <div className="min-w-0">
+                  <p className="font-semibold text-text-primary leading-snug">โรงพยาบาลส่งเสริมสุขภาพตำบล (รพ.สต.)</p>
+                  <p className="text-body-sm text-text-muted">สอบถามงานอนามัย / อสม.</p>
+                </div>
               </div>
-              <div>
-                <p className="font-semibold text-text-primary">โรงพยาบาลส่งเสริมสุขภาพตำบล (รพ.สต.)</p>
-                <p className="text-text-muted">สอบถามงานอนามัย / อสม.</p>
-              </div>
-            </div>
-            <a href="tel:0898765432" className="shrink-0">
-              <Button size="sm" variant="outline" icon={PhoneCall}>
-                โทร
-              </Button>
-            </a>
-          </Card>
+              <a href="tel:0898765432" className="shrink-0">
+                <Button size="sm" variant="outline" icon={PhoneCall}>
+                  โทร
+                </Button>
+              </a>
+            </Card>
 
-          {/* Emergency Ambulance */}
-          <Card padding="sm" className="flex items-center justify-between gap-3 border-error/30 bg-error-soft/30">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-full bg-error text-white flex items-center justify-center shrink-0">
-                <AlertTriangle className="w-4 h-4" />
+            {/* Emergency Ambulance */}
+            <Card padding="sm" className="flex items-center justify-between gap-3 border-error/30 bg-error-soft/40">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-10 h-10 rounded-full bg-error text-white flex items-center justify-center shrink-0">
+                  <AlertTriangle className="w-5 h-5" />
+                </div>
+                <div className="min-w-0">
+                  <p className="font-bold text-error leading-snug">หน่วยกู้ชีพฉุกเฉิน (เจ็บป่วยฉุกเฉิน)</p>
+                  <p className="text-body-sm text-text-secondary">โทรฟรี 24 ชั่วโมง</p>
+                </div>
               </div>
-              <div>
-                <p className="font-bold text-error">หน่วยกู้ชีพฉุกเฉิน (เจ็บป่วยฉุกเฉิน)</p>
-                <p className="text-text-secondary">โทรฟรี 24 ชั่วโมง</p>
-              </div>
-            </div>
-            <a href="tel:1669" className="shrink-0">
-              <Button size="sm" variant="danger" icon={PhoneCall}>
-                1669
-              </Button>
-            </a>
-          </Card>
-        </div>
-      </section>
-    </div>
+              <a href="tel:1669" className="shrink-0">
+                <Button size="sm" variant="danger" icon={PhoneCall}>
+                  1669
+                </Button>
+              </a>
+            </Card>
+          </div>
+        </section>
+      </FadeItem>
+    </FadeStagger>
   );
 }
 

@@ -71,6 +71,7 @@ CREATE TABLE tb_news (
   created_by INT NOT NULL,
   approved_by INT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  is_deleted TINYINT(1) NOT NULL DEFAULT 0,
   FOREIGN KEY (category_id) REFERENCES tb_category(category_id),
   FOREIGN KEY (created_by) REFERENCES tb_user(user_id),
   FOREIGN KEY (approved_by) REFERENCES tb_user(user_id)
