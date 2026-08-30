@@ -43,7 +43,8 @@
 | house_number | varchar(50) | - | ใช้ยืนยันตัวตน |
 | zone_name | varchar(100) | - | คุ้ม/กลุ่มเป้าหมาย (NULL ได้) |
 | pdpa_consent_at | timestamp | - | เวลาที่ยินยอม PDPA (NULL = ลงทะเบียนก่อนมีฟีเจอร์นี้) |
-| is_active | tinyint(1) | - | 1 = ติดตาม/ใช้งานปกติ, 0 = เลิกติดตาม/บล็อก |
+| is_active | tinyint(1) | - | 1 = ติดตาม/ใช้งานปกติ, 0 = เลิกติดตาม/บล็อก (จาก Webhook follow/unfollow) |
+| is_deleted | tinyint(1) | - | 0 = ปกติ, 1 = ถูก Admin ลบออกจากระบบ (Soft Delete เพื่อรักษาสถิติ tb_view_log) |
 | join_date | timestamp | - | default CURRENT_TIMESTAMP |
 
 ### tb_category

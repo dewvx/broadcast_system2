@@ -65,9 +65,9 @@
 - [x] ลูกบ้านลงทะเบียนครั้งแรกผ่าน LINE LIFF (Registration Guard)
 - [x] ลูกบ้านแก้ไขข้อมูลตัวเองได้ผ่านหน้า ProfilePage (`POST /api/villager/update-profile` ต้อง verify idToken)
 - [x] Admin แก้ไขข้อมูลลูกบ้านแทนได้ผ่านหน้า VillagerPage Modal (`PUT /api/villager/:id`)
-- [x] Admin ลบลูกบ้านออกจากระบบได้ (`DELETE /api/villager/:id`) — ลูกบ้านต้องลงทะเบียนใหม่
+- [x] Admin ลบลูกบ้านออกจากระบบได้ (`DELETE /api/villager/:id`) — ใช้ Soft Delete (`is_deleted = 1`) เพื่อรักษาสถิติการอ่านข่าวใน `tb_view_log` และเมื่อเปิด LIFF ใหม่จะเข้าสู่หน้าลงทะเบียนใหม่
 - [x] แสดงสถานะ Active/Inactive บนตาราง VillagerPage พร้อม Filter
-- [x] คอลัมน์ `is_active` ใน `tb_villager` (1 = ปกติ, 0 = เลิกติดตาม/บล็อก)
+- [x] คอลัมน์ `is_active` ใน `tb_villager` (1 = ปกติ, 0 = เลิกติดตาม/บล็อก) แยกจาก `is_deleted` (0 = ปกติ, 1 = Admin ลบ)
 - [x] Webhook Event `unfollow` → mark `is_active = 0` (ไม่ลบ record เก็บประวัติไว้)
 - [x] Webhook Event `follow` → mark `is_active = 1` (เมื่อแอดกลับมา restore สถานะทันที)
 

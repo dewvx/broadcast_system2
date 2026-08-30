@@ -147,7 +147,7 @@ function RegisterPage() {
               <strong>บ้านเลขที่:</strong> {registeredVillager.house_number}
             </p>
             <p>
-              <strong>หมู่บ้าน / โซน:</strong> {registeredVillager.zone_name || '—'}
+              <strong>หมู่:</strong> {registeredVillager.zone_name || '—'}
             </p>
           </div>
 
@@ -206,8 +206,8 @@ function RegisterPage() {
           />
 
           <Input
-            label="หมู่บ้าน / โซน"
-            helperText='หากพิมพ์เฉพาะตัวเลข "4" ระบบจะบันทึกเป็น "หมู่ 4" ให้อัตโนมัติ'
+            label="หมู่"
+            helperText='โปรดพิมพ์แค่ตัวเลข เช่น ""4"" ระบบจะบันทึกเป็น ""หมู่ 4"" โดยอัตโนมัติ'
             placeholder="ระบุตัวเลขหมู่ เช่น 4"
             value={zoneName}
             onChange={(e) => setZoneName(e.target.value)}

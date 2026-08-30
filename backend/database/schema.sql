@@ -50,6 +50,7 @@ CREATE TABLE tb_villager (
   zone_name VARCHAR(100) NULL,
   pdpa_consent_at TIMESTAMP NULL,
   is_active TINYINT(1) DEFAULT 1,
+  is_deleted TINYINT(1) NOT NULL DEFAULT 0,
   join_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
