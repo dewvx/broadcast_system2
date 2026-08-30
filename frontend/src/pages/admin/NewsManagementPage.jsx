@@ -410,19 +410,19 @@ function NewsManagementPage() {
           )}
 
           <Select
-            label="เลือกกลุ่มเป้าหมาย (โซน/หมู่บ้าน)"
+            label="เลือกกลุ่มเป้าหมาย (ซอย / คุ้ม)"
             value={broadcastData.zoneName}
             onChange={(e) => setBroadcastData({ ...broadcastData, zoneName: e.target.value })}
           >
-            <option value="">ทั้งหมด (ลูกบ้านทุกคนทุกโซน)</option>
+            <option value="">ทั้งหมด (ลูกบ้านทุกคนทุกซอย/คุ้ม)</option>
             {zones.map((z) => (
               <option key={z} value={z}>
-                {z.startsWith('หมู่') ? z : `หมู่ ${z}`}
+                {z}
               </option>
             ))}
           </Select>
           <p className="text-body-sm text-text-muted">
-            * ดึงรายชื่อโซนเฉพาะที่มีลูกบ้านลงทะเบียนจริงในระบบ
+            * ดึงรายชื่อซอย/คุ้มเฉพาะที่มีลูกบ้านลงทะเบียนจริงในระบบ
           </p>
         </div>
       </Modal>

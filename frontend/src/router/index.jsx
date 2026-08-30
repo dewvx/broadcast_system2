@@ -22,6 +22,7 @@ import UserPage from '../pages/admin/UserPage';
 import ActivityPage from '../pages/admin/ActivityPage';
 import DocumentPage from '../pages/admin/DocumentPage';
 import CategoryPage from '../pages/admin/CategoryPage';
+import ZonePage from '../pages/admin/ZonePage';
 import ChatbotFaqPage from '../pages/admin/ChatbotFaqPage';
 import ChatbotLogPage from '../pages/admin/ChatbotLogPage';
 
@@ -79,6 +80,7 @@ const router = createBrowserRouter([
               { path: 'news/edit/:id', element: <NewsFormPage /> },
               { path: 'news/view/:id', element: <NewsViewPage /> },
               { path: 'categories', element: <CategoryPage /> },
+              { path: 'zones', element: <ZonePage /> },
               { path: 'activities', element: <ActivityPage /> },
               { path: 'documents', element: <DocumentPage /> },
               { path: 'villagers', element: <VillagerPage /> },

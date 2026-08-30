@@ -8,6 +8,10 @@ export function getRoles() {
   return axiosClient.get('/api/user/roles');
 }
 
+export function getPublicContacts() {
+  return axiosClient.get('/api/user/public/contacts');
+}
+
 export function createUser(data) {
   return axiosClient.post('/api/user', data);
 }

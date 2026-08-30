@@ -13,7 +13,15 @@ INSERT INTO tb_category (category_name) VALUES
   ('กิจกรรมชุมชน'),
   ('เอกสารราชการ');
 
+-- ซอย/คุ้มตัวอย่างเริ่มต้น
+INSERT INTO tb_zone (zone_name) VALUES
+  ('ซอย 1'),
+  ('ซอย 2'),
+  ('ซอย 3'),
+  ('ซอย 4');
+
 -- หมายเหตุ: user admin ตัวอย่าง ให้ hash password ด้วย bcrypt ก่อน insert จริง
 -- ตัวอย่าง (password: "admin1234" -> ต้อง hash ก่อนใช้งานจริง ห้าม insert plain text)
--- INSERT INTO tb_user (username, password, full_name, role_id)
--- VALUES ('admin', '<bcrypt_hash_here>', 'ผู้ใหญ่บ้านทดสอบ', 1);
+-- INSERT INTO tb_user (username, password, full_name, phone_number, position_title, role_id)
+-- VALUES ('admin', '<bcrypt_hash_here>', 'ผู้ใหญ่บ้านทดสอบ', '0812345678', 'ผู้ใหญ่บ้าน', 1);
+

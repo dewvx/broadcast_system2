@@ -1,10 +1,21 @@
 const villagerModel = require('../models/villager.model');
+const zoneModel = require('../models/zone.model');
 const { verifyLiffIdToken } = require('./liffAuth.service');
 
 function throwError(message, statusCode) {
   const err = new Error(message);
   err.statusCode = statusCode;
   throw err;
+}
+
+async function validateZone(zoneName) {
+  if (!zoneName || !zoneName.trim()) return null;
+  const trimmed = zoneName.trim();
+  const zone = await zoneModel.findByName(trimmed);
+  if (!zone) {
+    throwError('ซอย/คุ้มที่เลือกไม่ถูกต้อง', 400);
+  }
+  return trimmed;
 }
 
 /**
@@ -48,13 +59,15 @@ async function registerVillager(idToken, { firstName, lastName, houseNumber, zon
     throwError('กรุณากรอกชื่อ นามสกุล และบ้านเลขที่ให้ครบ', 400);
   }
 
+  const validZone = await validateZone(zoneName);
+
   const villagerId = await villagerModel.create({
     lineUserId,
     displayName,
-    firstName,
-    lastName,
-    houseNumber,
-    zoneName,
+    firstName: firstName.trim(),
+    lastName: lastName.trim(),
+    houseNumber: houseNumber.trim(),
+    zoneName: validZone,
     pdpaConsentAt: new Date(), // บันทึก server-side timestamp เพื่อกันปลอม
   });
 
@@ -83,11 +96,13 @@ async function updateSelfProfile(idToken, { firstName, lastName, houseNumber, zo
     throwError('กรุณากรอกชื่อ นามสกุล และบ้านเลขที่ให้ครบ', 400);
   }
 
+  const validZone = await validateZone(zoneName);
+
   await villagerModel.updateByLineUserId(lineUserId, {
     firstName: firstName.trim(),
     lastName: lastName.trim(),
     houseNumber: houseNumber.trim(),
-    zoneName: zoneName ? zoneName.trim() : null,
+    zoneName: validZone,
   });
 
   return villagerModel.findByLineUserId(lineUserId);
@@ -106,11 +121,13 @@ async function updateVillagerByAdmin(villagerId, { firstName, lastName, houseNum
     throwError('กรุณากรอกชื่อ นามสกุล และบ้านเลขที่ให้ครบ', 400);
   }
 
+  const validZone = await validateZone(zoneName);
+
   await villagerModel.updateByAdmin(villagerId, {
     firstName: firstName.trim(),
     lastName: lastName.trim(),
     houseNumber: houseNumber.trim(),
-    zoneName: zoneName ? zoneName.trim() : null,
+    zoneName: validZone,
     isActive: isActive !== undefined ? Number(isActive) : existing.is_active,
   });
 
