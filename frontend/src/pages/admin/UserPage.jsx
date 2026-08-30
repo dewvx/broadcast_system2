@@ -3,9 +3,17 @@ import { useAuth } from '../../context/AuthContext';
 import { getUsers, getRoles, createUser, updateUser, deleteUser } from '../../api/user.api';
 import { getAllVillagers } from '../../api/admin-villager.api';
 import { Button, Input, Select, Modal, Badge, EmptyState, LoadingSpinner } from '../../components/ui';
-import { Users, Plus, Edit2, Trash2, Key, AlertCircle, MessageSquare, Check, X } from 'lucide-react';
+import { Users, Plus, Edit2, Trash2, Key, AlertCircle, Phone, Award, Check } from 'lucide-react';
 
-const EMPTY_FORM = { username: '', password: '', fullName: '', roleId: '', lineUserId: '' };
+const EMPTY_FORM = {
+  username: '',
+  password: '',
+  fullName: '',
+  phoneNumber: '',
+  positionTitle: '',
+  roleId: '',
+  lineUserId: '',
+};
 
 function UserPage() {
   const { user: currentUser } = useAuth();
@@ -64,6 +72,8 @@ function UserPage() {
       username: item.username || '',
       password: '', // ปล่อยว่างถ้าไม่ต้องการเปลี่ยน password
       fullName: item.full_name || '',
+      phoneNumber: item.phone_number || '',
+      positionTitle: item.position_title || '',
       roleId: item.role_id || '',
       lineUserId: item.line_user_id || '',
     });
@@ -157,7 +167,8 @@ function UserPage() {
             <table className="w-full text-sm text-left">
               <thead className="bg-slate-50 border-b border-border text-body-sm text-text-secondary font-semibold">
                 <tr>
-                  <th className="px-6 py-3.5">ชื่อ-นามสกุล</th>
+                  <th className="px-6 py-3.5">ชื่อ-นามสกุล / ตำแหน่ง</th>
+                  <th className="px-6 py-3.5">เบอร์โทรติดต่อ</th>
                   <th className="px-6 py-3.5">ชื่อผู้ใช้งาน (Username)</th>
                   <th className="px-6 py-3.5">สิทธิ์การใช้งาน (Role)</th>
                   <th className="px-6 py-3.5">ผูกบัญชี LINE (รับ OTP)</th>
@@ -171,10 +182,28 @@ function UserPage() {
                   return (
                     <tr key={item.user_id} className="hover:bg-slate-50/80 transition-colors">
                       <td className="px-6 py-4 font-medium text-text-primary">
-                        <div className="flex items-center gap-2">
-                          <span>{item.full_name}</span>
-                          {isSelf && <Badge variant="primary">บัญชีของคุณ</Badge>}
+                        <div className="flex flex-col gap-0.5">
+                          <div className="flex items-center gap-2">
+                            <span>{item.full_name}</span>
+                            {isSelf && <Badge variant="primary">บัญชีของคุณ</Badge>}
+                          </div>
+                          {item.position_title && (
+                            <span className="text-body-sm text-text-muted flex items-center gap-1 font-normal">
+                              <Award className="w-3.5 h-3.5 text-primary shrink-0" />
+                              {item.position_title}
+                            </span>
+                          )}
                         </div>
+                      </td>
+                      <td className="px-6 py-4 text-text-secondary">
+                        {item.phone_number ? (
+                          <div className="flex items-center gap-1 text-text-primary font-mono text-xs">
+                            <Phone className="w-3.5 h-3.5 text-text-muted shrink-0" />
+                            <span>{item.phone_number}</span>
+                          </div>
+                        ) : (
+                          <span className="text-text-muted text-xs">—</span>
+                        )}
                       </td>
                       <td className="px-6 py-4 text-text-secondary font-mono text-xs">{item.username}</td>
                       <td className="px-6 py-4">
@@ -242,10 +271,28 @@ function UserPage() {
           <Input
             label="ชื่อ-นามสกุลจริง"
             required
-            placeholder="เช่น ผู้ใหญ่สมศักดิ์ รุ่งเรือง"
+            placeholder="เช่น นายสมศักดิ์ รุ่งเรือง"
             value={form.fullName}
             onChange={(e) => setForm({ ...form, fullName: e.target.value })}
           />
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Input
+              label="ตำแหน่งแสดงผล (Position)"
+              placeholder="เช่น ผู้ใหญ่บ้าน, อสม., ผู้ช่วยฯ"
+              helperText="แสดงในการ์ดติดต่อผู้นำชุมชน"
+              value={form.positionTitle}
+              onChange={(e) => setForm({ ...form, positionTitle: e.target.value })}
+            />
+
+            <Input
+              label="เบอร์โทรติดต่อ"
+              placeholder="เช่น 0812345678"
+              helperText="ใช้แสดงในการ์ดเพื่อให้ลูกบ้านโทรติดต่อ"
+              value={form.phoneNumber}
+              onChange={(e) => setForm({ ...form, phoneNumber: e.target.value })}
+            />
+          </div>
 
           <Input
             label="ชื่อผู้ใช้งาน (Username สำหรับเข้าสู่ระบบ)"

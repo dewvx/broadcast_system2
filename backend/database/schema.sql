@@ -21,6 +21,8 @@ CREATE TABLE tb_user (
   username VARCHAR(50) NOT NULL UNIQUE,
   password VARCHAR(255) NOT NULL,        -- hashed password (bcrypt)
   full_name VARCHAR(100) NOT NULL,
+  phone_number VARCHAR(20) NULL,         -- เบอร์โทรสำหรับแสดงในการ์ดติดต่อผู้นำชุมชน (Dynamic contacts)
+  position_title VARCHAR(100) NULL,      -- ตำแหน่งสำหรับแสดงผล เช่น ผู้ใหญ่บ้าน, ผู้ช่วยผู้ใหญ่บ้าน, อสม.
   line_user_id VARCHAR(100) NULL,        -- ผูกบัญชี LINE สำหรับรับ OTP กู้คืนรหัสผ่าน
   role_id INT NOT NULL,
   FOREIGN KEY (role_id) REFERENCES tb_role(role_id)
@@ -39,6 +41,13 @@ CREATE TABLE tb_password_reset (
   FOREIGN KEY (user_id) REFERENCES tb_user(user_id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- ตารางข้อมูลซอย/คุ้มในชุมชน (Zone)
+CREATE TABLE tb_zone (
+  zone_id INT AUTO_INCREMENT PRIMARY KEY,
+  zone_name VARCHAR(100) NOT NULL UNIQUE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- ตารางที่ 3.3 ข้อมูลลูกบ้านและผู้ใช้ LINE
 CREATE TABLE tb_villager (
   villager_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -47,9 +56,10 @@ CREATE TABLE tb_villager (
   first_name VARCHAR(100) NOT NULL,
   last_name VARCHAR(100) NOT NULL,
   house_number VARCHAR(50) NOT NULL,
-  zone_name VARCHAR(100) NULL,
+  zone_name VARCHAR(100) NULL,           -- อ้างอิงชื่อซอย/คุ้มจาก tb_zone
   pdpa_consent_at TIMESTAMP NULL,
   is_active TINYINT(1) DEFAULT 1,
+  is_deleted TINYINT(1) NOT NULL DEFAULT 0,
   join_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 

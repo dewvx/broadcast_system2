@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getAllVillagers, updateVillager, deleteVillager } from '../../api/admin-villager.api';
+import { getAllZones } from '../../api/zone.api';
 import { Button, Select, Badge, EmptyState, LoadingSpinner, Pagination } from '../../components/ui';
 import { Users, Search, ShieldAlert, Pencil, Trash2, X, UserCheck, UserX } from 'lucide-react';
 
@@ -7,6 +8,7 @@ const ITEMS_PER_PAGE = 10;
 
 /* ---------- Edit Modal ---------- */
 function EditVillagerModal({ villager, onClose, onSaved }) {
+  const [zones, setZones] = useState([]);
   const [form, setForm] = useState({
     firstName: villager.first_name || '',
     lastName: villager.last_name || '',
@@ -16,6 +18,18 @@ function EditVillagerModal({ villager, onClose, onSaved }) {
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    async function loadZones() {
+      try {
+        const res = await getAllZones();
+        setZones(res.data.data || []);
+      } catch (err) {
+        console.error('Failed to fetch zones:', err);
+      }
+    }
+    loadZones();
+  }, []);
 
   function handleChange(e) {
     const { name, value, type, checked } = e.target;
@@ -29,17 +43,14 @@ function EditVillagerModal({ villager, onClose, onSaved }) {
       setError('กรุณากรอกชื่อ นามสกุล และบ้านเลขที่ให้ครบ');
       return;
     }
-    let zoneName = form.zoneName.trim();
-    if (zoneName && /^\d+$/.test(zoneName)) {
-      zoneName = `หมู่ ${zoneName}`;
-    }
+
     try {
       setSaving(true);
       const res = await updateVillager(villager.villager_id, {
         firstName: form.firstName.trim(),
         lastName: form.lastName.trim(),
         houseNumber: form.houseNumber.trim(),
-        zoneName: zoneName || null,
+        zoneName: form.zoneName || null,
         isActive: form.isActive,
       });
       onSaved(res.data.villager);
@@ -103,16 +114,21 @@ function EditVillagerModal({ villager, onClose, onSaved }) {
 
           <div>
             <label className="block text-xs font-medium text-text-secondary mb-1">
-              หมู่บ้าน / โซน <span className="text-text-muted font-normal">(ตัวเลขหมู่หรือชื่อโซน)</span>
+              ซอย / คุ้ม
             </label>
-            <input
-              type="text"
+            <select
               name="zoneName"
               value={form.zoneName}
               onChange={handleChange}
-              className="w-full text-sm px-3 py-2 border border-border rounded-sm focus:outline-none focus:border-primary"
-              placeholder="เช่น 4 หรือ หมู่ 4"
-            />
+              className="w-full text-sm px-3 py-2 border border-border rounded-sm focus:outline-none focus:border-primary bg-surface"
+            >
+              <option value="">-- ไม่ระบุซอย/คุ้ม --</option>
+              {zones.map((z) => (
+                <option key={z.zone_id} value={z.zone_name}>
+                  {z.zone_name}
+                </option>
+              ))}
+            </select>
           </div>
 
           <label className="flex items-center gap-2 text-sm cursor-pointer">
@@ -162,36 +178,32 @@ function DeleteConfirmModal({ villager, onClose, onConfirmed }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-sm">
-        <div className="p-5 text-center space-y-3">
-          <div className="w-12 h-12 rounded-full bg-error-soft text-error flex items-center justify-center mx-auto">
-            <Trash2 className="w-5 h-5" />
-          </div>
-          <h2 className="font-bold text-text-primary">ยืนยันการลบ</h2>
-          <p className="text-sm text-text-secondary">
-            คุณต้องการลบ{' '}
-            <strong className="text-text-primary">
-              {villager.first_name} {villager.last_name}
-            </strong>{' '}
-            ออกจากระบบหรือไม่?
-            <br />
-            <span className="text-body-sm text-error mt-1 block">ลูกบ้านต้องลงทะเบียนใหม่เมื่อกลับมาใช้งาน</span>
-          </p>
-          <div className="flex gap-2 pt-1">
-            <Button variant="outline" size="sm" fullWidth onClick={onClose} disabled={deleting}>
-              ยกเลิก
-            </Button>
-            <Button variant="danger" size="sm" fullWidth onClick={handleConfirm} disabled={deleting}>
-              {deleting ? 'กำลังลบ...' : 'ลบออกจากระบบ'}
-            </Button>
-          </div>
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-sm p-4 space-y-4">
+        <div className="flex items-center gap-3 text-error">
+          <ShieldAlert className="w-6 h-6 shrink-0" />
+          <h2 className="font-bold text-text-primary">ยืนยันการลบลูกบ้าน</h2>
+        </div>
+        <p className="text-sm text-text-secondary">
+          คุณแน่ใจหรือไม่ว่าต้องการลบข้อมูลลูกบ้าน{' '}
+          <strong className="text-text-primary">
+            {villager.first_name} {villager.last_name}
+          </strong>{' '}
+          ออกจากระบบ?
+        </p>
+        <div className="flex gap-2 justify-end">
+          <Button variant="outline" size="sm" onClick={onClose} disabled={deleting}>
+            ยกเลิก
+          </Button>
+          <Button variant="danger" size="sm" onClick={handleConfirm} disabled={deleting}>
+            {deleting ? 'กำลังลบ...' : 'ลบข้อมูล'}
+          </Button>
         </div>
       </div>
     </div>
   );
 }
 
-/* ---------- Main Page ---------- */
+/* ---------- Main VillagerPage ---------- */
 function VillagerPage() {
   const [villagers, setVillagers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -315,9 +327,9 @@ function VillagerPage() {
               className="w-full h-10 pl-10 pr-4 text-sm bg-surface border border-border rounded-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
             />
           </div>
-          <div className="w-full sm:w-40">
+          <div className="w-full sm:w-44">
             <Select value={filterZone} onChange={(e) => setFilterZone(e.target.value)}>
-              <option value="">ทุกโซน</option>
+              <option value="">ทุกซอย / คุ้ม</option>
               {zones.map((z) => (
                 <option key={z} value={z}>{z}</option>
               ))}
@@ -350,7 +362,7 @@ function VillagerPage() {
                       <th className="px-6 py-3.5">ชื่อ-นามสกุล</th>
                       <th className="px-6 py-3.5">ชื่อ LINE</th>
                       <th className="px-6 py-3.5">บ้านเลขที่</th>
-                      <th className="px-6 py-3.5">โซน</th>
+                      <th className="px-6 py-3.5">ซอย / คุ้ม</th>
                       <th className="px-6 py-3.5">สถานะ</th>
                       <th className="px-6 py-3.5">วันที่ลงทะเบียน</th>
                       <th className="px-6 py-3.5 text-center">จัดการ</th>

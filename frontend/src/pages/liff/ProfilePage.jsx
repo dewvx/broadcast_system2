@@ -2,7 +2,9 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useLiff } from '../../context/LiffContext';
 import { checkOrLogin, updateSelfProfile } from '../../api/villager.api';
-import { Card, Button, Badge, Input, LoadingSpinner, toast } from '../../components/ui';
+import { getAllZones } from '../../api/zone.api';
+import { getPublicContacts } from '../../api/user.api';
+import { Card, Button, Badge, Input, Select, LoadingSpinner, toast } from '../../components/ui';
 import { FadeStagger, FadeItem } from '../../components/motion';
 import {
   User,
@@ -13,11 +15,14 @@ import {
   PhoneCall,
   Pencil,
   X,
+  UserCircle2,
 } from 'lucide-react';
 
 function ProfilePage() {
   const { liff, isLiffReady, idToken } = useLiff();
   const [villager, setVillager] = useState(null);
+  const [zones, setZones] = useState([]);
+  const [contacts, setContacts] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Edit mode state
@@ -32,11 +37,17 @@ function ProfilePage() {
   });
 
   useEffect(() => {
-    async function loadProfile() {
+    async function loadData() {
       try {
         setLoading(true);
-        const token = idToken || (liff?.getIDToken ? liff.getIDToken() : null);
+        const [zonesRes, contactsRes] = await Promise.all([
+          getAllZones().catch(() => ({ data: { data: [] } })),
+          getPublicContacts().catch(() => ({ data: { data: [] } })),
+        ]);
+        setZones(zonesRes.data?.data || []);
+        setContacts(contactsRes.data?.data || []);
 
+        const token = idToken || (liff?.getIDToken ? liff.getIDToken() : null);
         if (token) {
           const res = await checkOrLogin(token);
           if (!res.data.isNewUser) {
@@ -44,14 +55,14 @@ function ProfilePage() {
           }
         }
       } catch (err) {
-        console.error('Failed to check villager profile:', err);
+        console.error('Failed to load profile data:', err);
       } finally {
         setLoading(false);
       }
     }
 
     if (isLiffReady) {
-      loadProfile();
+      loadData();
     }
   }, [isLiffReady, liff, idToken]);
 
@@ -81,12 +92,6 @@ function ProfilePage() {
       return;
     }
 
-    // แปลงตัวเลขหมู่เป็น "หมู่ X"
-    let zoneName = form.zoneName.trim();
-    if (zoneName && /^\d+$/.test(zoneName)) {
-      zoneName = `หมู่ ${zoneName}`;
-    }
-
     try {
       setSaving(true);
       const token = idToken || (liff?.getIDToken ? liff.getIDToken() : null);
@@ -94,7 +99,7 @@ function ProfilePage() {
         firstName: form.firstName.trim(),
         lastName: form.lastName.trim(),
         houseNumber: form.houseNumber.trim(),
-        zoneName: zoneName || null,
+        zoneName: form.zoneName || null,
       });
       setVillager(res.data.villager);
       setIsEditing(false);
@@ -202,14 +207,19 @@ function ProfilePage() {
                   placeholder="เช่น 123/4"
                 />
 
-                <Input
-                  label="หมู่บ้าน / โซน"
+                <Select
+                  label="ซอย/คุ้ม"
                   name="zoneName"
                   value={form.zoneName}
                   onChange={handleFormChange}
-                  helperText="กรอกเฉพาะตัวเลขหมู่ เช่น 4 (ระบบจะแปลงเป็น หมู่ 4)"
-                  placeholder="เช่น 4"
-                />
+                >
+                  <option value="">-- เลือกซอย/คุ้ม (ไม่ระบุ) --</option>
+                  {zones.map((z) => (
+                    <option key={z.zone_id} value={z.zone_name}>
+                      {z.zone_name}
+                    </option>
+                  ))}
+                </Select>
 
                 {saveError && (
                   <p className="text-body-sm text-error bg-error-soft border border-error/20 rounded-sm px-3 py-2.5" role="alert">
@@ -257,43 +267,31 @@ function ProfilePage() {
           </h2>
 
           <div className="space-y-2.5 text-body-sm">
-            {/* Village Leader */}
-            <Card padding="sm" className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="w-10 h-10 rounded-full bg-primary-soft text-primary flex items-center justify-center shrink-0">
-                  <Building className="w-5 h-5" />
+            {/* Dynamic Community Leader Contacts */}
+            {contacts.map((contact, idx) => (
+              <Card key={idx} padding="sm" className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-10 h-10 rounded-full bg-primary-soft text-primary flex items-center justify-center shrink-0">
+                    <UserCircle2 className="w-5 h-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-semibold text-text-primary truncate">
+                      {contact.full_name}
+                    </p>
+                    <p className="text-body-sm text-text-muted truncate">
+                      {contact.position_title || 'ผู้นำชุมชน'} • {contact.phone_number}
+                    </p>
+                  </div>
                 </div>
-                <div className="min-w-0">
-                  <p className="font-semibold text-text-primary truncate">ที่ทำการผู้ใหญ่บ้าน</p>
-                  <p className="text-body-sm text-text-muted">ติดต่อร้องเรียน / สอบถามเอกสาร</p>
-                </div>
-              </div>
-              <a href="tel:0812345678" className="shrink-0">
-                <Button size="sm" variant="outline" icon={PhoneCall}>
-                  โทร
-                </Button>
-              </a>
-            </Card>
+                <a href={`tel:${contact.phone_number.replace(/\s+/g, '')}`} className="shrink-0">
+                  <Button size="sm" variant="outline" icon={PhoneCall}>
+                    โทร
+                  </Button>
+                </a>
+              </Card>
+            ))}
 
-            {/* OSM / Health Center */}
-            <Card padding="sm" className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="w-10 h-10 rounded-full bg-secondary-soft text-secondary flex items-center justify-center shrink-0">
-                  <Phone className="w-5 h-5" />
-                </div>
-                <div className="min-w-0">
-                  <p className="font-semibold text-text-primary leading-snug">โรงพยาบาลส่งเสริมสุขภาพตำบล (รพ.สต.)</p>
-                  <p className="text-body-sm text-text-muted">สอบถามงานอนามัย / อสม.</p>
-                </div>
-              </div>
-              <a href="tel:0898765432" className="shrink-0">
-                <Button size="sm" variant="outline" icon={PhoneCall}>
-                  โทร
-                </Button>
-              </a>
-            </Card>
-
-            {/* Emergency Ambulance */}
+            {/* Emergency Ambulance 1669 */}
             <Card padding="sm" className="flex items-center justify-between gap-3 border-error/30 bg-error-soft/40">
               <div className="flex items-center gap-3 min-w-0">
                 <div className="w-10 h-10 rounded-full bg-error text-white flex items-center justify-center shrink-0">

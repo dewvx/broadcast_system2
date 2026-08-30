@@ -2,7 +2,7 @@
 
 ระบบใช้ MySQL จัดการผ่าน phpMyAdmin ไฟล์ SQL จริงอยู่ที่ `backend/database/schema.sql`
 
-## ตารางทั้งหมด (10 ตาราง)
+## ตารางทั้งหมด (11 ตาราง)
 
 ### tb_role
 | Field | Type | Key | Note |
@@ -18,6 +18,8 @@
 | username | varchar(50) | - | NOT NULL, unique |
 | password | varchar(255) | - | bcrypt hash |
 | full_name | varchar(100) | - | NOT NULL |
+| phone_number | varchar(20) | - | เบอร์โทรสำหรับแสดงในการ์ดติดต่อผู้นำชุมชน (NULL ได้) |
+| position_title | varchar(100) | - | ตำแหน่งสำหรับแสดงผล เช่น ผู้ใหญ่บ้าน, ผู้ช่วยฯ, อสม. (NULL ได้) |
 | line_user_id | varchar(100) | - | ผูกบัญชี LINE สำหรับรับ OTP กู้คืนรหัสผ่าน (NULL ได้) |
 | role_id | int | FK | อ้าง tb_role |
 
@@ -33,6 +35,13 @@
 | expires_at | datetime | - | เวลาหมดอายุ (10 นาที) |
 | created_at | timestamp | - | default CURRENT_TIMESTAMP |
 
+### tb_zone
+| Field | Type | Key | Note |
+|---|---|---|---|
+| zone_id | int | PK | Auto Increment |
+| zone_name | varchar(100) | - | NOT NULL, Unique (ชื่อซอย/คุ้มในชุมชน) |
+| created_at | timestamp | - | default CURRENT_TIMESTAMP |
+
 ### tb_villager
 | Field | Type | Key | Note |
 |---|---|---|---|
@@ -41,9 +50,10 @@
 | display_name | varchar(255) | - | ชื่อโปรไฟล์ LINE |
 | first_name / last_name | varchar(100) | - | กรอกตอนลงทะเบียนครั้งแรก |
 | house_number | varchar(50) | - | ใช้ยืนยันตัวตน |
-| zone_name | varchar(100) | - | คุ้ม/กลุ่มเป้าหมาย (NULL ได้) |
+| zone_name | varchar(100) | - | ซอย/คุ้มที่อยู่อาศัย (อ้างอิงชื่อจาก tb_zone, NULL ได้) |
 | pdpa_consent_at | timestamp | - | เวลาที่ยินยอม PDPA (NULL = ลงทะเบียนก่อนมีฟีเจอร์นี้) |
-| is_active | tinyint(1) | - | 1 = ติดตาม/ใช้งานปกติ, 0 = เลิกติดตาม/บล็อก |
+| is_active | tinyint(1) | - | 1 = ติดตาม/ใช้งานปกติ, 0 = เลิกติดตาม/บล็อก (จาก Webhook follow/unfollow) |
+| is_deleted | tinyint(1) | - | 0 = ปกติ, 1 = ถูก Admin ลบออกจากระบบ (Soft Delete เพื่อรักษาสถิติ tb_view_log) |
 | join_date | timestamp | - | default CURRENT_TIMESTAMP |
 
 ### tb_category

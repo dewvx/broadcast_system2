@@ -15,8 +15,12 @@ async function getAllRoles() {
   return userModel.findAllRoles();
 }
 
+async function getPublicContacts() {
+  return userModel.findPublicContacts();
+}
+
 async function createUser(data) {
-  const { username, password, fullName, roleId, lineUserId } = data;
+  const { username, password, fullName, phoneNumber, positionTitle, roleId, lineUserId } = data;
 
   if (!username || !password || !fullName || !roleId) {
     throwError('กรุณากรอกข้อมูลให้ครบถ้วน (username, password, full_name, role_id)', 400);
@@ -32,6 +36,8 @@ async function createUser(data) {
     username: username.trim(),
     hashedPassword,
     fullName: fullName.trim(),
+    phoneNumber: phoneNumber ? phoneNumber.trim() : null,
+    positionTitle: positionTitle ? positionTitle.trim() : null,
     roleId,
     lineUserId: lineUserId ? lineUserId.trim() : null,
   });
@@ -49,6 +55,8 @@ async function updateUser(userId, data, currentUser) {
   }
 
   const fullName = data.fullName ? data.fullName.trim() : user.full_name;
+  const phoneNumber = data.phoneNumber !== undefined ? (data.phoneNumber ? data.phoneNumber.trim() : null) : user.phone_number;
+  const positionTitle = data.positionTitle !== undefined ? (data.positionTitle ? data.positionTitle.trim() : null) : user.position_title;
   const roleId = currentUser.roleName === 'Admin' && data.roleId ? data.roleId : user.role_id;
   const lineUserId = data.lineUserId !== undefined ? (data.lineUserId ? data.lineUserId.trim() : null) : user.line_user_id;
 
@@ -57,7 +65,7 @@ async function updateUser(userId, data, currentUser) {
     hashedPassword = await bcrypt.hash(data.password.trim(), 10);
   }
 
-  await userModel.update(userId, { fullName, roleId, hashedPassword, lineUserId });
+  await userModel.update(userId, { fullName, phoneNumber, positionTitle, roleId, hashedPassword, lineUserId });
   return userModel.findById(userId);
 }
 
@@ -79,6 +87,7 @@ async function deleteUser(userId, currentUser) {
 module.exports = {
   getAllUsers,
   getAllRoles,
+  getPublicContacts,
   createUser,
   updateUser,
   deleteUser,

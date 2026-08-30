@@ -17,7 +17,7 @@ async function countNewsByStatus() {
 }
 
 async function countTotalVillagers() {
-  const [rows] = await pool.query(`SELECT COUNT(*) AS total FROM tb_villager`);
+  const [rows] = await pool.query(`SELECT COUNT(*) AS total FROM tb_villager WHERE is_deleted = 0`);
   return rows[0].total;
 }
 

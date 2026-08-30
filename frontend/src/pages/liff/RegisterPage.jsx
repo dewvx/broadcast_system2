@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLiff } from '../../context/LiffContext';
 import { checkOrLogin, registerVillager } from '../../api/villager.api';
-import { Button, Input, Card, LoadingSpinner } from '../../components/ui';
+import { getAllZones } from '../../api/zone.api';
+import { Button, Input, Select, Card, LoadingSpinner } from '../../components/ui';
 import { PageTransition } from '../../components/motion';
 import { CheckCircle, ArrowRight, ShieldCheck } from 'lucide-react';
 
@@ -18,11 +19,24 @@ function RegisterPage() {
   const [lastName, setLastName] = useState('');
   const [houseNumber, setHouseNumber] = useState('');
   const [zoneName, setZoneName] = useState('');
+  const [zones, setZones] = useState([]);
   const [pdpaConsent, setPdpaConsent] = useState(false);
 
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [redirectTarget, setRedirectTarget] = useState(null);
+
+  useEffect(() => {
+    async function loadZones() {
+      try {
+        const res = await getAllZones();
+        setZones(res.data.data || []);
+      } catch (err) {
+        console.error('Failed to load zones:', err);
+      }
+    }
+    loadZones();
+  }, []);
 
   useEffect(() => {
     if (!isLiffReady) return;
@@ -75,17 +89,11 @@ function RegisterPage() {
     try {
       setSubmitting(true);
 
-      // ปรับรูปแบบชื่อโซน หากผู้ใช้ใส่แค่ตัวเลข เช่น "4" ให้บันทึกเป็น "หมู่ 4" เพื่อความเป็นมาตรฐาน
-      let finalZone = zoneName.trim();
-      if (/^\d+$/.test(finalZone)) {
-        finalZone = `หมู่ ${finalZone}`;
-      }
-
       const res = await registerVillager(idToken, {
         firstName: firstName.trim(),
         lastName: lastName.trim(),
         houseNumber: houseNumber.trim(),
-        zoneName: finalZone,
+        zoneName: zoneName || null,
         pdpaConsent: true, // ส่งหลังผ่าน client validation แล้ว — backend ยังคง enforce อีกรอบอยู่ดี
       });
 
@@ -147,7 +155,7 @@ function RegisterPage() {
               <strong>บ้านเลขที่:</strong> {registeredVillager.house_number}
             </p>
             <p>
-              <strong>หมู่บ้าน / โซน:</strong> {registeredVillager.zone_name || '—'}
+              <strong>ซอย/คุ้ม:</strong> {registeredVillager.zone_name || '—'}
             </p>
           </div>
 
@@ -205,13 +213,18 @@ function RegisterPage() {
             onChange={(e) => setHouseNumber(e.target.value)}
           />
 
-          <Input
-            label="หมู่บ้าน / โซน"
-            helperText='หากพิมพ์เฉพาะตัวเลข "4" ระบบจะบันทึกเป็น "หมู่ 4" ให้อัตโนมัติ'
-            placeholder="ระบุตัวเลขหมู่ เช่น 4"
+          <Select
+            label="ซอย/คุ้ม"
             value={zoneName}
             onChange={(e) => setZoneName(e.target.value)}
-          />
+          >
+            <option value="">-- เลือกซอย/คุ้ม (ไม่บังคับ) --</option>
+            {zones.map((z) => (
+              <option key={z.zone_id} value={z.zone_name}>
+                {z.zone_name}
+              </option>
+            ))}
+          </Select>
 
           {/* PDPA Consent Checkbox */}
           <div className="bg-slate-50 border border-border rounded-md p-4 space-y-3">
@@ -220,7 +233,7 @@ function RegisterPage() {
               <p className="text-body-sm leading-relaxed">
                 <strong className="text-text-primary">นโยบายความเป็นส่วนตัว (PDPA)</strong>
                 <br />
-                ระบบหอกระจายข่าวชุมชนจะจัดเก็บข้อมูลส่วนบุคคลของท่าน ได้แก่ ชื่อ-นามสกุล บ้านเลขที่ และหมู่บ้าน
+                ระบบหอกระจายข่าวชุมชนจะจัดเก็บข้อมูลส่วนบุคคลของท่าน ได้แก่ ชื่อ-นามสกุล บ้านเลขที่ และซอย/คุ้ม
                 เพื่อวัตถุประสงค์ในการส่งข่าวสารและการติดต่อประชาสัมพันธ์ของชุมชนเท่านั้น
                 ข้อมูลจะไม่ถูกเปิดเผยหรือส่งต่อให้บุคคลภายนอก
               </p>

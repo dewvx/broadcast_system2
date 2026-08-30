@@ -9,7 +9,7 @@ async function getVillagerLineIds(zoneName) {
   if (!zoneName || !zoneName.trim()) {
     const [rows] = await pool.query(
       `SELECT line_user_id FROM tb_villager 
-       WHERE line_user_id IS NOT NULL AND line_user_id != '' AND is_active = 1`
+       WHERE line_user_id IS NOT NULL AND line_user_id != '' AND is_active = 1 AND is_deleted = 0`
     );
     return rows.map((row) => row.line_user_id);
   }
@@ -17,7 +17,7 @@ async function getVillagerLineIds(zoneName) {
   const cleanZone = zoneName.trim();
   const [rows] = await pool.query(
     `SELECT line_user_id FROM tb_villager 
-     WHERE line_user_id IS NOT NULL AND line_user_id != '' AND is_active = 1
+     WHERE line_user_id IS NOT NULL AND line_user_id != '' AND is_active = 1 AND is_deleted = 0
        AND (TRIM(zone_name) = ? OR zone_name LIKE ?)`,
     [cleanZone, `%${cleanZone}%`]
   );
@@ -25,13 +25,13 @@ async function getVillagerLineIds(zoneName) {
 }
 
 /**
- * ดึงรายชื่อโซนทั้งหมดที่มีลูกบ้านอยู่จริง (ไม่เอาค่า NULL หรือ ค่าว่าง)
+ * ดึงรายชื่อโซนทั้งหมดที่มีลูกบ้านอยู่จริง (ไม่เอาค่า NULL หรือ ค่าว่าง และยังไม่ถูกลบ)
  */
 async function getAllZones() {
   const [rows] = await pool.query(
     `SELECT DISTINCT zone_name 
      FROM tb_villager 
-     WHERE zone_name IS NOT NULL AND TRIM(zone_name) != '' 
+     WHERE zone_name IS NOT NULL AND TRIM(zone_name) != '' AND is_deleted = 0
      ORDER BY zone_name`
   );
   return rows.map((row) => row.zone_name);

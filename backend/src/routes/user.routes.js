@@ -4,6 +4,9 @@ const userController = require('../controllers/user.controller');
 const authMiddleware = require('../middlewares/auth.middleware');
 const roleMiddleware = require('../middlewares/role.middleware');
 
+// ดึงรายชื่อผู้ติดต่อผู้นำชุมชนสำหรับแสดงในหน้าลูกบ้าน (LIFF) - Public (ไม่ต้อง login)
+router.get('/public/contacts', userController.getPublicContacts);
+
 // ดึงสิทธิ์ role ทั้งหมด (Admin)
 router.get('/roles', authMiddleware, roleMiddleware(['Admin']), userController.getRoles);
 

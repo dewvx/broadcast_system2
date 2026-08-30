@@ -18,6 +18,15 @@ async function getRoles(req, res, next) {
   }
 }
 
+async function getPublicContacts(req, res, next) {
+  try {
+    const contacts = await userService.getPublicContacts();
+    res.json({ success: true, data: contacts });
+  } catch (err) {
+    next(err);
+  }
+}
+
 async function create(req, res, next) {
   try {
     const user = await userService.createUser(req.body);
@@ -48,6 +57,7 @@ async function remove(req, res, next) {
 module.exports = {
   getAll,
   getRoles,
+  getPublicContacts,
   create,
   update,
   remove,
