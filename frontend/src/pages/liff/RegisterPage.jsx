@@ -81,6 +81,11 @@ function RegisterPage() {
       return;
     }
 
+    if (!zoneName.trim()) {
+      setErrorMsg('กรุณาเลือกซอย/คุ้มที่อยู่อาศัย');
+      return;
+    }
+
     if (!pdpaConsent) {
       setErrorMsg('กรุณายินยอมให้เก็บข้อมูลส่วนบุคคลก่อนลงทะเบียน');
       return;
@@ -93,7 +98,7 @@ function RegisterPage() {
         firstName: firstName.trim(),
         lastName: lastName.trim(),
         houseNumber: houseNumber.trim(),
-        zoneName: zoneName || null,
+        zoneName: zoneName.trim(),
         pdpaConsent: true, // ส่งหลังผ่าน client validation แล้ว — backend ยังคง enforce อีกรอบอยู่ดี
       });
 
@@ -215,10 +220,11 @@ function RegisterPage() {
 
           <Select
             label="ซอย/คุ้ม"
+            required
             value={zoneName}
             onChange={(e) => setZoneName(e.target.value)}
           >
-            <option value="">-- เลือกซอย/คุ้ม (ไม่บังคับ) --</option>
+            <option value="">-- กรุณาเลือกซอย/คุ้มที่อยู่อาศัย --</option>
             {zones.map((z) => (
               <option key={z.zone_id} value={z.zone_name}>
                 {z.zone_name}
@@ -252,7 +258,15 @@ function RegisterPage() {
             </label>
           </div>
 
-          <Button type="submit" variant="primary" size="lg" fullWidth loading={submitting} disabled={!pdpaConsent} className="mt-2">
+          <Button
+            type="submit"
+            variant="primary"
+            size="lg"
+            fullWidth
+            loading={submitting}
+            disabled={!pdpaConsent || !zoneName.trim()}
+            className="mt-2"
+          >
             ยืนยันการลงทะเบียน
           </Button>
         </form>

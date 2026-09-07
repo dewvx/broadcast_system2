@@ -2,7 +2,12 @@ const pool = require('../config/db');
 
 async function findAll() {
   const [rows] = await pool.query(
-    `SELECT category_id, category_name, created_at FROM tb_category ORDER BY category_id ASC`
+    `SELECT c.category_id, c.category_name, c.created_at,
+            COUNT(CASE WHEN n.is_deleted = 0 THEN n.news_id END) AS news_count
+     FROM tb_category c
+     LEFT JOIN tb_news n ON c.category_id = n.category_id
+     GROUP BY c.category_id, c.category_name, c.created_at
+     ORDER BY c.category_id ASC`
   );
   return rows;
 }

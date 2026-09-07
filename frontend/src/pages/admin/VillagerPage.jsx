@@ -122,7 +122,7 @@ function EditVillagerModal({ villager, onClose, onSaved }) {
               onChange={handleChange}
               className="w-full text-sm px-3 py-2 border border-border rounded-sm focus:outline-none focus:border-primary bg-surface"
             >
-              <option value="">-- ไม่ระบุซอย/คุ้ม --</option>
+              <option value="">-- กรุณาเลือกซอย/คุ้ม --</option>
               {zones.map((z) => (
                 <option key={z.zone_id} value={z.zone_name}>
                   {z.zone_name}
@@ -243,7 +243,10 @@ function VillagerPage() {
       searchTerm === '' ||
       fullName.includes(searchTerm.toLowerCase()) ||
       v.house_number?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchZone = filterZone === '' || v.zone_name === filterZone;
+    const matchZone =
+      filterZone === '' ||
+      (filterZone === 'unassigned' && !v.zone_name) ||
+      v.zone_name === filterZone;
     const matchStatus =
       filterStatus === 'all' ||
       (filterStatus === 'active' && v.is_active) ||
@@ -281,6 +284,7 @@ function VillagerPage() {
 
   const activeCount = villagers.filter((v) => v.is_active).length;
   const inactiveCount = villagers.length - activeCount;
+  const unassignedZoneCount = villagers.filter((v) => !v.zone_name).length;
 
   return (
     <>
@@ -311,6 +315,12 @@ function VillagerPage() {
               <span className="text-success">Active {activeCount}</span>
               {' · '}
               <span className="text-text-muted">Inactive {inactiveCount}</span>
+              {unassignedZoneCount > 0 && (
+                <>
+                  {' · '}
+                  <span className="text-warning font-medium">ยังไม่ระบุซอย {unassignedZoneCount} คน</span>
+                </>
+              )}
             </p>
           </div>
         </div>
@@ -327,12 +337,15 @@ function VillagerPage() {
               className="w-full h-10 pl-10 pr-4 text-sm bg-surface border border-border rounded-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
             />
           </div>
-          <div className="w-full sm:w-44">
+          <div className="w-full sm:w-48">
             <Select value={filterZone} onChange={(e) => setFilterZone(e.target.value)}>
               <option value="">ทุกซอย / คุ้ม</option>
               {zones.map((z) => (
                 <option key={z} value={z}>{z}</option>
               ))}
+              {unassignedZoneCount > 0 && (
+                <option value="unassigned">⚠️ ยังไม่ระบุซอย ({unassignedZoneCount})</option>
+              )}
             </Select>
           </div>
           <div className="w-full sm:w-40">
@@ -386,7 +399,9 @@ function VillagerPage() {
                           {v.zone_name ? (
                             <Badge variant="primary">{v.zone_name}</Badge>
                           ) : (
-                            <span className="text-text-muted">—</span>
+                            <Badge variant="warning" withDot>
+                              ยังไม่ระบุซอย
+                            </Badge>
                           )}
                         </td>
                         <td className="px-6 py-4">
