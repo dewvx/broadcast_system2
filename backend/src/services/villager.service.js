@@ -8,8 +8,13 @@ function throwError(message, statusCode) {
   throw err;
 }
 
-async function validateZone(zoneName) {
-  if (!zoneName || !zoneName.trim()) return null;
+async function validateZone(zoneName, required = true) {
+  if (!zoneName || !zoneName.trim()) {
+    if (required) {
+      throwError('กรุณาเลือกซอย/คุ้มที่อยู่อาศัย', 400);
+    }
+    return null;
+  }
   const trimmed = zoneName.trim();
   const zone = await zoneModel.findByName(trimmed);
   if (!zone) {

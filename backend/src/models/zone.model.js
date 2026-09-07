@@ -2,7 +2,12 @@ const pool = require('../config/db');
 
 async function findAll() {
   const [rows] = await pool.query(
-    `SELECT zone_id, zone_name, created_at FROM tb_zone ORDER BY zone_id ASC`
+    `SELECT z.zone_id, z.zone_name, z.created_at,
+            COUNT(v.villager_id) AS villager_count
+     FROM tb_zone z
+     LEFT JOIN tb_villager v ON z.zone_name = v.zone_name AND v.is_deleted = 0
+     GROUP BY z.zone_id, z.zone_name, z.created_at
+     ORDER BY z.zone_id ASC`
   );
   return rows;
 }

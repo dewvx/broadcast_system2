@@ -92,6 +92,11 @@ function ProfilePage() {
       return;
     }
 
+    if (!form.zoneName || !form.zoneName.trim()) {
+      setSaveError('กรุณาเลือกซอย/คุ้มที่อยู่อาศัย');
+      return;
+    }
+
     try {
       setSaving(true);
       const token = idToken || (liff?.getIDToken ? liff.getIDToken() : null);
@@ -99,7 +104,7 @@ function ProfilePage() {
         firstName: form.firstName.trim(),
         lastName: form.lastName.trim(),
         houseNumber: form.houseNumber.trim(),
-        zoneName: form.zoneName || null,
+        zoneName: form.zoneName.trim(),
       });
       setVillager(res.data.villager);
       setIsEditing(false);
@@ -142,10 +147,31 @@ function ProfilePage() {
                     </Badge>
                   </div>
                   <p className="text-body-sm text-text-secondary mt-1">
-                    บ้านเลขที่ {villager.house_number} {villager.zone_name ? `• ${villager.zone_name}` : ''}
+                    บ้านเลขที่ {villager.house_number} • {villager.zone_name ? villager.zone_name : <span className="text-warning font-medium">ยังไม่ระบุซอย</span>}
                   </p>
                 </div>
               </div>
+
+              {/* Banner เตือนลูกบ้านที่ยังไม่ได้ระบุซอย/คุ้ม */}
+              {!villager.zone_name && (
+                <div className="bg-warning-soft/70 border border-warning/30 rounded-md p-3.5 flex items-start gap-3">
+                  <AlertTriangle className="w-5 h-5 text-warning shrink-0 mt-0.5" />
+                  <div className="flex-1 min-w-0 text-body-sm">
+                    <p className="font-semibold text-text-primary">ยังไม่ได้ระบุซอย / คุ้ม</p>
+                    <p className="text-text-secondary mt-0.5">
+                      กรุณาระบุซอย/คุ้มที่อยู่อาศัย เพื่อให้ได้รับข่าวสารและประกาศเฉพาะพื้นที่ของท่านได้อย่างทั่วถึง
+                    </p>
+                    <button
+                      type="button"
+                      onClick={openEditForm}
+                      className="mt-2 text-primary font-semibold hover:underline inline-flex items-center gap-1 cursor-pointer"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                      ระบุซอย/คุ้มตอนนี้
+                    </button>
+                  </div>
+                </div>
+              )}
 
               <div className="bg-slate-50 p-3.5 rounded-md border border-border text-body-sm space-y-2 text-text-secondary">
                 <div className="flex items-center justify-between">
@@ -212,8 +238,9 @@ function ProfilePage() {
                   name="zoneName"
                   value={form.zoneName}
                   onChange={handleFormChange}
+                  required
                 >
-                  <option value="">-- เลือกซอย/คุ้ม (ไม่ระบุ) --</option>
+                  <option value="">-- กรุณาเลือกซอย/คุ้มที่อยู่อาศัย --</option>
                   {zones.map((z) => (
                     <option key={z.zone_id} value={z.zone_name}>
                       {z.zone_name}
