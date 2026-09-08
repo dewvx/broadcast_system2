@@ -92,6 +92,13 @@
 - [x] ช่องกรอกเบอร์โทรและตำแหน่งบนหน้าจัดการผู้ใช้ Admin (`/admin/users`)
 - [x] ปุ่มติดต่อหน่วยกู้ชีพฉุกเฉินมาตรฐาน 1669
 
+## 3.15 ระบบยืนยัน OTP ผ่าน LINE ก่อนลงทะเบียนลูกบ้าน (Villager Registration OTP)
+> **หมายเหตุความปลอดภัย:** OTP นี้เป็นกลไก Defense-in-depth เพื่อยืนยันว่าผู้กรอกฟอร์มเป็นเจ้าของบัญชี LINE ที่ใช้งานจริงเพิ่มเติมจาก LINE ID Token Verification ไม่ใช่การยืนยันความถูกต้องของข้อมูลชื่อ/บ้านเลขที่
+- [x] ตาราง `tb_villager_otp` จัดเก็บ OTP, สถานะการใช้งาน, จำนวนครั้งที่ผิด, และเวลาหมดอายุ
+- [x] Backend Service `sendRegistrationOtp`: สุ่ม OTP 6 หลัก, อายุ 5 นาที, Cooldown 60 วินาที, ส่ง Push Message ผ่าน LINE Messaging API
+- [x] Backend Verification ใน `registerVillager`: ตรวจสอบความถูกต้อง, ล็อคทันทีหากผิดครบ 5 ครั้ง, ป้องกันการข้ามขั้นตอน
+- [x] Frontend 2-Step Wizard ใน RegisterPage: กรอกข้อมูล -> ขอ OTP -> ยืนยัน OTP พร้อมเวลานับถอยหลัง 60 วิ และปุ่มแก้ไขข้อมูล
+
 ---
 
 ## Infrastructure / Setup (ทำก่อนเริ่มฟีเจอร์ด้านบน)

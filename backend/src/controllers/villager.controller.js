@@ -18,9 +18,24 @@ async function checkOrLogin(req, res, next) {
   }
 }
 
+async function sendRegistrationOtp(req, res, next) {
+  try {
+    const { idToken } = req.body;
+
+    if (!idToken) {
+      return res.status(400).json({ success: false, message: 'ไม่พบ idToken' });
+    }
+
+    const result = await villagerService.sendRegistrationOtp(idToken);
+    res.json({ success: true, ...result });
+  } catch (err) {
+    next(err);
+  }
+}
+
 async function register(req, res, next) {
   try {
-    const { idToken, firstName, lastName, houseNumber, zoneName, pdpaConsent } = req.body;
+    const { idToken, firstName, lastName, houseNumber, zoneName, pdpaConsent, otpCode } = req.body;
 
     if (!idToken) {
       return res.status(400).json({ success: false, message: 'ไม่พบ idToken' });
@@ -32,6 +47,7 @@ async function register(req, res, next) {
       houseNumber,
       zoneName,
       pdpaConsent: pdpaConsent === true, // ensure boolean
+      otpCode,
     });
 
     res.status(201).json({ success: true, villager });
@@ -126,6 +142,7 @@ async function getNews(req, res, next) {
 
 module.exports = {
   checkOrLogin,
+  sendRegistrationOtp,
   register,
   updateSelfProfile,
   getAll,

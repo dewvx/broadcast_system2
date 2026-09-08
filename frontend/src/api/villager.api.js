@@ -4,6 +4,10 @@ export function checkOrLogin(idToken) {
   return axiosClient.post('/api/villager/check', { idToken });
 }
 
+export function sendRegistrationOtp(idToken) {
+  return axiosClient.post('/api/villager/send-otp', { idToken });
+}
+
 export function registerVillager(idToken, formData) {
   return axiosClient.post('/api/villager/register', { idToken, ...formData });
 }

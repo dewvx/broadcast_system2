@@ -63,6 +63,17 @@ CREATE TABLE tb_villager (
   join_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- ตารางยืนยัน OTP ก่อนลงทะเบียนลูกบ้านผ่าน LINE
+CREATE TABLE tb_villager_otp (
+  otp_id INT AUTO_INCREMENT PRIMARY KEY,
+  line_user_id VARCHAR(100) NOT NULL,
+  otp_code VARCHAR(6) NOT NULL,
+  attempts_count INT NOT NULL DEFAULT 0,
+  is_used TINYINT(1) NOT NULL DEFAULT 0,
+  expires_at DATETIME NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- ตารางที่ 3.10 ข้อมูลหมวดหมู่ข่าวสาร
 CREATE TABLE tb_category (
   category_id INT AUTO_INCREMENT PRIMARY KEY,
