@@ -56,6 +56,17 @@
 | is_deleted | tinyint(1) | - | 0 = ปกติ, 1 = ถูก Admin ลบออกจากระบบ (Soft Delete เพื่อรักษาสถิติ tb_view_log) |
 | join_date | timestamp | - | default CURRENT_TIMESTAMP |
 
+### tb_villager_otp
+| Field | Type | Key | Note |
+|---|---|---|---|
+| otp_id | int | PK | Auto Increment |
+| line_user_id | varchar(100) | - | บัญชี LINE ที่ขอรับ OTP |
+| otp_code | varchar(6) | - | รหัส OTP 6 หลัก |
+| attempts_count | int | - | จำนวนครั้งกรอก OTP ผิด (default 0, ครบ 5 = invalid) |
+| is_used | tinyint(1) | - | 1 = ใช้แล้ว, 0 = ยังไม่ใช้ (default 0) |
+| expires_at | datetime | - | เวลาหมดอายุ (5 นาที) |
+| created_at | timestamp | - | default CURRENT_TIMESTAMP |
+
 ### tb_category
 | Field | Type | Key | Note |
 |---|---|---|---|

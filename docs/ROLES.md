@@ -32,3 +32,6 @@
 
 - ใช้ `middlewares/role.middleware.js` เช็คสิทธิ์ทุก route ฝั่ง Admin/Leader โดยดึง `role_id` จาก JWT payload แล้วเทียบกับ `tb_role`
 - เงื่อนไข "เฉพาะข่าวตนเองที่ยังไม่อนุมัติ" ของ Leader ต้องเช็คทั้ง `role_id` และ `created_by === req.user.id` และ `news_status !== 'Approved'` ในระดับ controller (ไม่ใช่แค่ middleware)
+
+## Security & Defense-in-Depth Note
+- **การยืนยัน OTP ก่อนลงทะเบียนลูกบ้าน (Villager OTP):** เป็นกลไก Defense-in-depth เพิ่มเติมจาก LINE ID Token Verification ที่มีอยู่แล้ว เพื่อยืนยันว่าผู้กรอกฟอร์มเป็นเจ้าของบัญชี LINE ที่ใช้งานจริงและสามารถรับข้อความจาก LINE OA ได้ โดยระบบจำกัดจำนวนครั้งการกรอกผิด (ไม่เกิน 5 ครั้ง) และมี Cooldown กันสแปม (60 วินาที) ทั้งนี้ OTP ไม่ใช่การรับรองความถูกต้องของข้อมูลชื่อ/บ้านเลขที่ที่ผู้ใช้กรอกลงในฟอร์ม

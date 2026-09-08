@@ -6,6 +6,7 @@ const roleMiddleware = require('../middlewares/role.middleware');
 const liffAuthMiddleware = require('../middlewares/liffAuth.middleware');
 
 router.post('/check', villagerController.checkOrLogin);
+router.post('/send-otp', villagerController.sendRegistrationOtp);
 router.post('/register', villagerController.register);
 router.post('/update-profile', liffAuthMiddleware({ optional: false }), villagerController.updateSelfProfile);
 
