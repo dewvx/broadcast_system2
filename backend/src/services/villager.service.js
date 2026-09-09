@@ -64,19 +64,16 @@ async function sendRegistrationOtp(idToken) {
     throwError('LINE บัญชีนี้ลงทะเบียนไปแล้ว', 400);
   }
 
-  // Cooldown 60 วินาที/ครั้ง กันขอ OTP รัว
-  if (await villagerOtpModel.hasRecentOtp(lineUserId, RESEND_COOLDOWN_SECONDS)) {
-    throwError('คุณเพิ่งขอรหัส OTP ไปเมื่อสักครู่ กรุณารอประมาณ 1 นาทีแล้วลองใหม่อีกครั้ง', 429);
-  }
-
   // สร้าง OTP 6 หลัก (CSPRNG)
   const otpCode = crypto.randomInt(100000, 1000000).toString();
   const expiresAt = new Date(Date.now() + OTP_EXPIRATION_MINUTES * 60 * 1000);
 
-  await villagerOtpModel.create({
+  // สร้าง OTP พร้อมตรวจสอบ Cooldown ภายใต้ Atomic Lock (ป้องกัน Race Condition จาก Concurrent Requests)
+  await villagerOtpModel.createWithLock({
     lineUserId,
     otpCode,
     expiresAt,
+    cooldownSeconds: RESEND_COOLDOWN_SECONDS,
   });
 
   // ส่ง OTP เข้า LINE ของผู้ใช้โดยตรง
