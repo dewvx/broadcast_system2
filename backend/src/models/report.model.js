@@ -5,7 +5,7 @@ const pool = require('../config/db');
  */
 async function countNewsByStatus() {
   const [rows] = await pool.query(
-    `SELECT news_status, COUNT(*) AS total FROM tb_news GROUP BY news_status`
+    `SELECT news_status, COUNT(*) AS total FROM tb_news WHERE is_deleted = 0 GROUP BY news_status`
   );
 
   // เติมสถานะที่ไม่มีข้อมูลเลยให้เป็น 0 (กัน frontend ต้องมาเช็ค undefined เอง)
@@ -39,6 +39,7 @@ async function getTopViewedNews(limit) {
     `SELECT n.news_id, n.news_title, n.news_status, COUNT(v.view_id) AS view_count
      FROM tb_news n
      LEFT JOIN tb_view_log v ON n.news_id = v.news_id
+     WHERE n.is_deleted = 0
      GROUP BY n.news_id
      ORDER BY view_count DESC
      LIMIT ?`,
