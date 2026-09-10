@@ -2,7 +2,7 @@
 
 ระบบใช้ MySQL จัดการผ่าน phpMyAdmin ไฟล์ SQL จริงอยู่ที่ `backend/database/schema.sql`
 
-## ตารางทั้งหมด (11 ตาราง)
+## ตารางทั้งหมด (15 ตาราง)
 
 ### tb_role
 | Field | Type | Key | Note |
@@ -50,7 +50,7 @@
 | display_name | varchar(255) | - | ชื่อโปรไฟล์ LINE |
 | first_name / last_name | varchar(100) | - | กรอกตอนลงทะเบียนครั้งแรก |
 | house_number | varchar(50) | - | ใช้ยืนยันตัวตน |
-| zone_name | varchar(100) | - | ซอย/คุ้มที่อยู่อาศัย (อ้างอิงชื่อจาก tb_zone, NULL ได้) |
+| zone_name | varchar(100) | - | ซอย/คุ้มที่อยู่อาศัย (อ้างอิงชื่อจาก tb_zone, บังคับเลือกตอนลงทะเบียน) |
 | pdpa_consent_at | timestamp | - | เวลาที่ยินยอม PDPA (NULL = ลงทะเบียนก่อนมีฟีเจอร์นี้) |
 | is_active | tinyint(1) | - | 1 = ติดตาม/ใช้งานปกติ, 0 = เลิกติดตาม/บล็อก (จาก Webhook follow/unfollow) |
 | is_deleted | tinyint(1) | - | 0 = ปกติ, 1 = ถูก Admin ลบออกจากระบบ (Soft Delete เพื่อรักษาสถิติ tb_view_log) |
@@ -115,6 +115,16 @@
 | answer_text | text | - | ข้อความตอบกลับอัตโนมัติ |
 | created_by | int | FK | อ้าง tb_user |
 
+### tb_chatbot_log
+| Field | Type | Key | Note |
+|---|---|---|---|
+| log_id | int | PK | Auto Increment |
+| line_user_id | varchar(100) | - | บัญชี LINE ของผู้ส่งข้อความ |
+| message_text | text | - | ข้อความคำถามที่ลูกบ้านพิมพ์เข้ามา |
+| response_text | text | - | ข้อความตอบกลับที่ระบบส่งออกไป |
+| is_matched | tinyint(1) | - | 1 = ตอบตรง FAQ, 0 = ไม่ตรง (Fallback Quick Reply Menu) |
+| created_at | timestamp | - | default CURRENT_TIMESTAMP |
+
 ### tb_broadcast_log
 | Field | Type | Key | Note |
 |---|---|---|---|
@@ -135,19 +145,20 @@
 | status | enum | - | Pending / Sending / Sent / Failed / Cancelled, default Pending |
 | error_message | text | - | เหตุผลถ้า Failed |
 | created_at | timestamp | - | default CURRENT_TIMESTAMP |
-| updated_at | timestamp | - | ON UPDATE CURRENT_TIMESTAMP (ใช้เช็คงาน Sending ค้างจาก crash) | |
+| updated_at | timestamp | - | ON UPDATE CURRENT_TIMESTAMP (ใช้เช็คงาน Sending ค้างจาก crash) |
 
 ### tb_view_log
 | Field | Type | Key | Note |
 |---|---|---|---|
 | view_id | int | PK | Auto Increment |
 | news_id | int | FK | อ้าง tb_news |
-| villager_id | int | FK | อ้าง tb_villager |
+| villager_id | int | FK | อ้าง tb_villager (ใช้ Soft Delete ที่ tb_villager เพื่อรักษาสถิติยอดอ่าน) |
 | view_timestamp | timestamp | - | default CURRENT_TIMESTAMP |
 
 ## Relationship สรุป
 ```
 tb_role 1---N tb_user
+tb_user 1---N tb_password_reset
 tb_user 1---N tb_news (created_by, approved_by)
 tb_category 1---N tb_news
 tb_user 1---N tb_activity
@@ -158,4 +169,5 @@ tb_user 1---N tb_broadcast_log
 tb_scheduled_broadcast N---1 tb_news, tb_user
 tb_news 1---N tb_view_log
 tb_villager 1---N tb_view_log
+tb_zone 1---N tb_villager (logical relation ผ่าน zone_name)
 ```

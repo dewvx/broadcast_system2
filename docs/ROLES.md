@@ -10,7 +10,10 @@
 | Action | Admin | Leader | Villager |
 |---|---|---|---|
 | Login/Logout (Web Dashboard) | ✅ | ✅ | ❌ (ใช้ LIFF auto-verify แทน) |
-| จัดการบัญชีผู้ใช้งาน (user CRUD) | ✅ | ❌ | ❌ |
+| ดูรายชื่อผู้ใช้งานระบบ (User List) | ✅ | ⚠️ ดูอย่างเดียว (Read-only) | ❌ |
+| สร้างบัญชีผู้ใช้งานใหม่ | ✅ | ❌ | ❌ |
+| แก้ไขข้อมูลผู้ใช้งาน | ✅ (ทุกบัญชี) | ⚠️ เฉพาะบัญชีตนเอง (ชื่อ/เบอร์/ตำแหน่ง/รหัสผ่าน) | ❌ |
+| ลบบัญชีผู้ใช้งาน | ⚠️ ลบได้ทุกคน ยกเว้นตนเอง และต้องไม่มีเนื้อหาผูกอยู่ | ❌ | ❌ |
 | เพิ่ม/ร่างข่าว | ✅ | ✅ (รออนุมัติ) | ❌ |
 | แก้ไขข่าว | ✅ (ทุกข่าว) | ⚠️ เฉพาะข่าวตนเองที่ยังไม่อนุมัติ | ❌ |
 | ลบข่าว | ✅ | ❌ | ❌ |
@@ -31,7 +34,16 @@
 ## Implementation Note
 
 - ใช้ `middlewares/role.middleware.js` เช็คสิทธิ์ทุก route ฝั่ง Admin/Leader โดยดึง `role_id` จาก JWT payload แล้วเทียบกับ `tb_role`
-- เงื่อนไข "เฉพาะข่าวตนเองที่ยังไม่อนุมัติ" ของ Leader ต้องเช็คทั้ง `role_id` และ `created_by === req.user.id` และ `news_status !== 'Approved'` ในระดับ controller (ไม่ใช่แค่ middleware)
+- **เงื่อนไข "เฉพาะข่าวตนเองที่ยังไม่อนุมัติ" ของ Leader:** ต้องเช็คทั้ง `role_id` และ `created_by === req.user.id` และ `news_status !== 'Approved'` ในระดับ controller/service (ไม่ใช่แค่ middleware)
+- **เงื่อนไขการจัดการบัญชีผู้ใช้งาน (`user.service.js`):**
+  - **Leader:** ดูรายชื่อผู้ใช้ทั้งหมดได้ (Read-only) และแก้ไขได้**เฉพาะบัญชีตนเอง**เท่านั้น (`PUT /api/user/:id` ตรวจสอบ `currentUser.roleName !== 'Admin' && currentUser.userId !== Number(userId)` เพื่อห้ามแก้ไขบัญชีอื่น)
+  - **Admin:** สามารถสร้าง, แก้ไขบัญชีของทุกคนได้ และลบผู้ใช้ได้โดยมีเงื่อนไขป้องกัน 2 ข้อ:
+    1. ห้ามลบบัญชีตนเองที่กำลังล็อกอินอยู่ (`currentUser.userId === Number(userId)`)
+    2. ห้ามลบผู้ใช้ที่เคยมีประวัติสร้างเนื้อหาในระบบ (ข่าว, กิจกรรม, เอกสาร, FAQ, รายการ Broadcast) เพื่อป้องกัน Foreign Key Constraint Error (`tb_user` ป้องกันข้อผิดพลาด DB Crash ด้วย `countUserContent`)
 
 ## Security & Defense-in-Depth Note
+- **Rate Limit บน Endpoint สาธารณะ:**
+  - `POST /api/auth/login`: จำกัด 5 ครั้ง / 15 นาที ต่อ IP โดยตั้งค่า `skipSuccessfulRequests: true` เพื่อนับเฉพาะครั้งที่รหัสผ่านผิด (ป้องกัน Brute Force โดยไม่บล็อกผู้ใช้ที่ล็อกอิน-ออกจากระบบบ่อย)
+  - `POST /api/villager/send-otp`: จำกัด 10 ครั้ง / 15 นาที ต่อ IP (ป้องกันสแปมขอรหัส OTP โดยไม่กระทบคนแชร์ WiFi ในบ้านเดียวกัน)
+  - `POST /api/auth/forgot-password` & `/reset-password`: จำกัด 5 ครั้ง / 15 นาที ต่อ IP
 - **การยืนยัน OTP ก่อนลงทะเบียนลูกบ้าน (Villager OTP):** เป็นกลไก Defense-in-depth เพิ่มเติมจาก LINE ID Token Verification ที่มีอยู่แล้ว เพื่อยืนยันว่าผู้กรอกฟอร์มเป็นเจ้าของบัญชี LINE ที่ใช้งานจริงและสามารถรับข้อความจาก LINE OA ได้ โดยระบบจำกัดจำนวนครั้งการกรอกผิด (ไม่เกิน 5 ครั้ง) และมี Cooldown กันสแปม (60 วินาที) ทั้งนี้ OTP ไม่ใช่การรับรองความถูกต้องของข้อมูลชื่อ/บ้านเลขที่ที่ผู้ใช้กรอกลงในฟอร์ม

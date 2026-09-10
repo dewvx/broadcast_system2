@@ -49,45 +49,45 @@ VITE_LIFF_ID=               # แท็บ LIFF ของ LINE Login channel เ
 
 ## Flow การทำงาน
 
-### ลูกบ้าน (Villager) — LIFF Register [ทำเสร็จแล้ว]
+### ลูกบ้าน (Villager) — LIFF Register + OTP [ทำเสร็จแล้ว]
 1. เปิด LIFF ผ่าน LINE app → `LiffContext.jsx` เรียก `liff.init()` + `liff.getIDToken()`
 2. Frontend (`RegisterPage.jsx`) ส่ง `idToken` ไป `POST /api/villager/check`
 3. Backend (`villager.service.js`) verify token กับ LINE (`api.line.me/oauth2/v2.1/verify`) ได้ `line_user_id` ที่เชื่อถือได้
-4. เช็คใน `tb_villager` — ไม่พบ → โชว์ฟอร์มลงทะเบียน → submit ไป `POST /api/villager/register` (verify token ซ้ำอีกรอบ) → insert
-5. พบแล้ว → เข้าใช้งานทันที ไม่ต้องกรอกฟอร์มซ้ำ
+4. เช็คใน `tb_villager`:
+   - **พบแล้ว:** เข้าสู่ระบบทันที (redirect ไปหน้า `/liff/home`)
+   - **ไม่พบ:** แสดงฟอร์มลงทะเบียน (ชื่อ, นามสกุล, บ้านเลขที่, ซอย/คุ้ม) พร้อมปุ่มกดขอรหัสยืนยัน OTP
+5. **ขอ OTP:** Frontend ส่ง `idToken` ไป `POST /api/villager/send-otp` (มี IP Rate Limit 10 ครั้ง/15 นาที) → Backend สุ่ม OTP 6 หลัก บันทึกลง `tb_villager_otp` แล้วส่งหาลูกบ้านทาง **LINE Push Message** ทันที (มี Cooldown 60 วินาที, หมดอายุใน 5 นาที)
+6. **ยืนยันการลงทะเบียน:** ส่งข้อมูลพร้อม `otpCode` และ `pdpaConsent: true` ไป `POST /api/villager/register`
+   - Backend ตรวจสอบ OTP ถูกต้อง (จำกัดกรอกผิดไม่เกิน 5 ครั้ง)
+   - บันทึกลง `tb_villager` (บังคับเลือกซอย/คุ้ม) สำเร็จ
 
-ทดสอบผ่านจริงบนมือถือแล้ว มี villager_id: 1 อยู่ใน DB
+### Webhook Event Handler (Unfollow / Block) [ทำเสร็จแล้ว]
+- เมื่อลูกบ้านกดบล็อกหรือยกเลิกติดตาม LINE OA → LINE ส่ง Webhook event `unfollow` เข้ามา
+- Controller ใน `webhook.controller.js` จะปรับ `is_active = 0` ใน `tb_villager` อัตโนมัติ เพื่อระงับการส่ง Push Message / Broadcast หาผู้ใช้คนนั้นตามข้อกำหนด PDPA
 
 ### Admin — Broadcast ข่าว [ทำเสร็จแล้ว]
 1. เลือกข่าวที่ `news_status = Approved` (บังคับเช็คใน `broadcast.service.js`)
 2. เลือกโซนผู้รับได้ (`zoneName` ใน request body) หรือปล่อยว่าง = ส่งหาลูกบ้านทั้งหมด — ดูรายชื่อโซนที่มีจริงได้จาก `GET /api/broadcast/zones`
-3. Backend สร้าง **Flex Message** (`buildNewsFlexMessage`) — การ์ดมี hero image (ถ้าข่าวมีรูป), หัวข้อ, เนื้อหาย่อ, ปุ่ม "ดูรายละเอียด"
-4. เรียก `lineClient.multicast()` ส่งครั้งเดียวหาทุกคนใน list (ไม่ loop ทีละคน)
+3. Backend สร้าง **Flex Message** (`buildNewsFlexMessage`) — การ์ดมี hero image (ถ้าข่าวมีรูป), หัวข้อ, เนื้อหาย่อ, ปุ่ม "ดูรายละเอียด" ชี้ไปที่ `https://liff.line.me/${LIFF_ID}/news/${news_id}`
+4. เรียก `lineClient.pushMessage()` หรือส่งตามรายชื่อลูกบ้านที่ `is_active = 1` และ `is_deleted = 0`
 5. บันทึกผลลง `tb_broadcast_log` (จำนวนผู้รับ, ผู้ส่ง, เวลา)
 
-ทดสอบส่งจริงถึงมือถือแล้ว เห็นการ์ด Flex Message จริง
+### Chatbot ถาม-ตอบอัตโนมัติ [ทำเสร็จแล้ว]
+1. Event `message` เข้า webhook → ตรวจสอบข้อความกับตาราง `tb_chatbot_faq` (ค้นหาตรงตัว หรือตรวจ Keyword ในคำถาม)
+2. **พบคำตอบ:** ตอบกลับข้อความทันทีด้วยคำตอบที่ตั้งไว้ พร้อมบันทึก `is_matched = 1` ลง `tb_chatbot_log`
+3. **ไม่พบคำตอบ:** ส่ง Flex Message เป็นเมนูด่วน (Quick Reply Card) แนะนำบริการ เช่น เมนูข่าวสาร, ปฏิทินกิจกรรม, แบบฟอร์มเอกสาร, เบอร์ติดต่อฉุกเฉิน และบันทึก `is_matched = 0` ลง `tb_chatbot_log` เพื่อให้ Admin นำไปปรับปรุง FAQ ต่อไป
 
-### Chatbot [ยังไม่ทำ]
-1. Event `message` เข้า webhook → ค้นหา keyword ใน `tb_chatbot_faq`
-2. เจอ → reply อัตโนมัติ / ไม่เจอ → แจ้ง "ไม่พบข้อมูล" + notify Admin ให้ตอบ 1-on-1
-
-## TODO ที่ค้างอยู่ (สำคัญ อย่าลืม)
-
-1. **[แก้ไขแล้ว] `liff.init()` ค้างที่ `isLiffReady: false`** — ปรับปรุง `LiffContext.jsx` และ `NewsDetailPage.jsx` ให้จัดการ Token และ Login Redirect ปลอดภัย มี UI fallback ชัดเจน
-
-2. **`PUBLIC_APP_URL` ต้องอัปเดตมือทุกครั้งที่ ngrok restart** — เจอปัญหานี้ซ้ำหลายรอบระหว่าง debug วันนี้ พิจารณาทำ script เช็ค/แจ้งเตือนอัตโนมัติทีหลัง
-3. **[ทำแล้ว] ตั้งเวลาส่งข่าวล่วงหน้า (3.7)** — ใช้ `node-cron` เช็ค `tb_scheduled_broadcast` ทุกนาที (`src/jobs/broadcastScheduler.job.js`) งาน overdue จาก server ดับจะถูกส่งตอน startup / รอบถัดไป, งาน 'Sending' ค้างเกิน 10 นาทีโยนกลับ Pending
-4. **Chatbot** ยังไม่มี logic เลย มีแค่ webhook รับ event ทั่วไปเฉยๆ
-
-## Progress ปัจจุบัน
+## สรุปสถานะฟังก์ชันที่ทำเสร็จแล้ว
 - [x] สร้าง Messaging API Channel + LIFF Channel + link เข้า provider เดียวกัน
 - [x] Webhook verify ผ่าน + response settings ปิด auto-reply ครบ
-- [x] LIFF register ลูกบ้าน (ทดสอบผ่านมือถือจริงแล้ว)
+- [x] LIFF register ลูกบ้าน พร้อมยืนยัน OTP ผ่าน LINE Push Message (ทดสอบผ่านมือถือจริงแล้ว)
 - [x] Broadcast ส่งข่าวผ่าน Flex Message + filter โซนได้ (ทดสอบส่งจริงแล้ว)
 - [x] หน้า NewsDetailPage สำหรับปุ่มลิงก์ใน Flex Message
 - [x] หน้า ActivityListPage (`/liff/activities`) และ DocumentListPage (`/liff/documents`) ฝั่งลูกบ้าน
-- [x] Chatbot ตอบอัตโนมัติ (เชื่อมต่อ LINE Webhook + `tb_chatbot_faq` Keyword matching)
-- [x] ตั้งเวลาส่งข่าวล่วงหน้า (node-cron + `tb_scheduled_broadcast`)
+- [x] Chatbot ตอบอัตโนมัติ (เชื่อมต่อ LINE Webhook + `tb_chatbot_faq` Keyword matching + Quick Reply Card fallback)
+- [x] บันทึกประวัติคำถามแชทบอทลง `tb_chatbot_log` พร้อมหน้า Dashboard จัดการ FAQ และดู Log
+- [x] ตั้งเวลาส่งข่าวล่วงหน้า (node-cron + `tb_scheduled_broadcast` พร้อม Startup Recovery)
+- [x] Webhook Unfollow Handler ปรับ `is_active = 0` เมื่อลูกบ้านบล็อก OA ตามกฎ PDPA
 
 ## API เกี่ยวกับ Broadcast
 

@@ -111,6 +111,32 @@ async function remove(userId) {
   await pool.query(`DELETE FROM tb_user WHERE user_id = ?`, [userId]);
 }
 
+/**
+ * นับจำนวนเนื้อหาและข้อมูลในระบบที่ผูกกับ user_id นี้
+ * (ข่าว, กิจกรรม, เอกสาร, FAQ, รายการบรอดแคสต์) เพื่อป้องกัน FK constraint error ก่อนลบ
+ */
+async function countUserContent(userId) {
+  const [rows] = await pool.query(
+    `SELECT
+       (SELECT COUNT(*) FROM tb_news WHERE created_by = ? OR approved_by = ?) AS news_count,
+       (SELECT COUNT(*) FROM tb_activity WHERE created_by = ?) AS activity_count,
+       (SELECT COUNT(*) FROM tb_document WHERE created_by = ?) AS document_count,
+       (SELECT COUNT(*) FROM tb_chatbot_faq WHERE created_by = ?) AS faq_count,
+       (SELECT COUNT(*) FROM tb_broadcast_log WHERE sent_by = ?) AS broadcast_count,
+       (SELECT COUNT(*) FROM tb_scheduled_broadcast WHERE sent_by = ?) AS schedule_count`,
+    [userId, userId, userId, userId, userId, userId, userId]
+  );
+  const row = rows[0];
+  const total =
+    Number(row.news_count) +
+    Number(row.activity_count) +
+    Number(row.document_count) +
+    Number(row.faq_count) +
+    Number(row.broadcast_count) +
+    Number(row.schedule_count);
+  return { ...row, total };
+}
+
 module.exports = {
   findAll,
   findAllRoles,
@@ -121,4 +147,5 @@ module.exports = {
   update,
   updatePassword,
   remove,
+  countUserContent,
 };

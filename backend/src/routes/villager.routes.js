@@ -4,9 +4,10 @@ const villagerController = require('../controllers/villager.controller');
 const authMiddleware = require('../middlewares/auth.middleware');
 const roleMiddleware = require('../middlewares/role.middleware');
 const liffAuthMiddleware = require('../middlewares/liffAuth.middleware');
+const { villagerOtpLimiter } = require('../middlewares/rateLimit.middleware');
 
 router.post('/check', villagerController.checkOrLogin);
-router.post('/send-otp', villagerController.sendRegistrationOtp);
+router.post('/send-otp', villagerOtpLimiter, villagerController.sendRegistrationOtp);
 router.post('/register', villagerController.register);
 router.post('/update-profile', liffAuthMiddleware({ optional: false }), villagerController.updateSelfProfile);
 
