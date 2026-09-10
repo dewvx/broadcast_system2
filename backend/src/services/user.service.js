@@ -81,6 +81,11 @@ async function deleteUser(userId, currentUser) {
   const user = await userModel.findById(userId);
   if (!user) throwError('ไม่พบผู้ใช้นี้ในระบบ', 404);
 
+  const contentCount = await userModel.countUserContent(userId);
+  if (contentCount.total > 0) {
+    throwError('ไม่สามารถลบผู้ใช้นี้ได้ เนื่องจากมีข่าว/กิจกรรม/เอกสารที่สร้างไว้อยู่ในระบบ', 400);
+  }
+
   await userModel.remove(userId);
 }
 
