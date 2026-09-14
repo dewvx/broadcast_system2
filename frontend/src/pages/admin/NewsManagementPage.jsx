@@ -163,7 +163,8 @@ function NewsManagementPage() {
     const matchSearch =
       searchTerm === '' ||
       item.news_title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (item.category_name && item.category_name.toLowerCase().includes(searchTerm.toLowerCase()));
+      (item.category_name && item.category_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (item.created_by_name && item.created_by_name.toLowerCase().includes(searchTerm.toLowerCase()));
     return matchFilter && matchSearch;
   });
 
@@ -195,7 +196,7 @@ function NewsManagementPage() {
           <Search className="w-4 h-4 text-text-muted absolute left-3.5 top-3" />
           <input
             type="text"
-            placeholder="ค้นหาหัวข้อข่าว หรือหมวดหมู่..."
+            placeholder="ค้นหาหัวข้อข่าว, หมวดหมู่, หรือผู้สร้าง..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full h-10 pl-10 pr-4 text-sm bg-surface border border-border rounded-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
@@ -230,6 +231,7 @@ function NewsManagementPage() {
                   <tr>
                     <th className="px-6 py-3.5">หัวข้อข่าว</th>
                     <th className="px-6 py-3.5">หมวดหมู่</th>
+                    <th className="px-6 py-3.5">สร้างโดย</th>
                     <th className="px-6 py-3.5">สถานะ</th>
                     <th className="px-6 py-3.5">ยอดดู</th>
                     <th className="px-6 py-3.5">วันที่สร้าง</th>
@@ -243,6 +245,9 @@ function NewsManagementPage() {
                         {item.news_title}
                       </td>
                       <td className="px-6 py-4 text-text-secondary">{item.category_name || '—'}</td>
+                      <td className="px-6 py-4 text-text-secondary whitespace-nowrap">
+                        {item.created_by_name || '—'}
+                      </td>
                       <td className="px-6 py-4">
                         <Badge status={item.news_status} />
                       </td>
