@@ -5,7 +5,7 @@ import {
   updateZone,
   deleteZone,
 } from '../../api/zone.api';
-import { Button, Input, Modal, Badge, EmptyState, LoadingSpinner } from '../../components/ui';
+import { Button, Input, Modal, Badge, EmptyState, LoadingSpinner, toast, useConfirm } from '../../components/ui';
 import {
   MapPin,
   Plus,
@@ -18,7 +18,9 @@ import {
 } from 'lucide-react';
 
 function ZonePage() {
+  const confirm = useConfirm();
   const [zones, setZones] = useState([]);
+
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
@@ -77,13 +79,17 @@ function ZonePage() {
       setSubmitting(true);
       if (editTarget) {
         await updateZone(editTarget.zone_id, { zoneName: zoneName.trim() });
+        toast.success('บันทึกการแก้ไขซอย/คุ้มเรียบร้อยแล้ว');
       } else {
         await createZone({ zoneName: zoneName.trim() });
+        toast.success('เพิ่มซอย/คุ้มใหม่เรียบร้อยแล้ว');
       }
       closeModal();
       fetchZones();
     } catch (err) {
-      setFormError(err.response?.data?.message || 'บันทึกไม่สำเร็จ');
+      const msg = err.response?.data?.message || 'บันทึกไม่สำเร็จ';
+      setFormError(msg);
+      toast.error(msg);
     } finally {
       setSubmitting(false);
     }
@@ -91,19 +97,28 @@ function ZonePage() {
 
   async function handleDelete(zone) {
     if (zone.villager_count > 0) {
-      alert(`ไม่สามารถลบ "${zone.zone_name}" ได้ เนื่องจากมีลูกบ้าน ${zone.villager_count} คน อยู่ในซอย/คุ้มนี้`);
+      toast.warning(`ไม่สามารถลบ "${zone.zone_name}" ได้ เนื่องจากมีลูกบ้าน ${zone.villager_count} คน อยู่ในซอย/คุ้มนี้`);
       return;
     }
 
-    if (!window.confirm(`ยืนยันลบซอย/คุ้ม "${zone.zone_name}" ออกจากระบบ?`)) return;
+    const confirmed = await confirm({
+      title: 'ยืนยันลบซอย/คุ้ม',
+      message: `คุณแน่ใจหรือไม่ว่าต้องการลบซอย/คุ้ม "${zone.zone_name}" ออกจากระบบ?`,
+      confirmText: 'ลบซอย/คุ้ม',
+      cancelText: 'ยกเลิก',
+      variant: 'danger',
+    });
+    if (!confirmed) return;
 
     try {
       await deleteZone(zone.zone_id);
+      toast.success('ลบซอย/คุ้มเรียบร้อยแล้ว');
       fetchZones();
     } catch (err) {
-      alert(err.response?.data?.message || 'ลบไม่สำเร็จ');
+      toast.error(err.response?.data?.message || 'ลบไม่สำเร็จ');
     }
   }
+
 
   // คัดกรองตามช่องค้นหา
   const filteredZones = useMemo(() => {

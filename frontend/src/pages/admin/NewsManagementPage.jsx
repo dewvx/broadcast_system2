@@ -9,7 +9,18 @@ import {
   cancelScheduledBroadcast,
 } from '../../api/broadcast.api';
 import { useAuth } from '../../context/AuthContext';
-import { Button, Badge, Modal, Select, EmptyState, LoadingSpinner, Pagination } from '../../components/ui';
+import {
+  Button,
+  Badge,
+  Modal,
+  Select,
+  EmptyState,
+  LoadingSpinner,
+  Pagination,
+  toast,
+  useConfirm,
+} from '../../components/ui';
+
 import {
   Plus,
   Eye,
@@ -27,7 +38,9 @@ const ITEMS_PER_PAGE = 8;
 
 function NewsManagementPage() {
   const { user } = useAuth();
+  const confirm = useConfirm();
   const [news, setNews] = useState([]);
+
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
@@ -86,28 +99,39 @@ function NewsManagementPage() {
   async function handleApprove(id) {
     try {
       await approveNews(id);
+      toast.success('อนุมัติข่าวสารเรียบร้อยแล้ว');
       fetchNews();
     } catch (err) {
-      alert(err.response?.data?.message || 'อนุมัติไม่สำเร็จ');
+      toast.error(err.response?.data?.message || 'อนุมัติไม่สำเร็จ');
     }
   }
 
   async function handleReject(id) {
     try {
       await rejectNews(id);
+      toast.success('ปฏิเสธข่าวสารเรียบร้อยแล้ว');
       fetchNews();
     } catch (err) {
-      alert(err.response?.data?.message || 'ปฏิเสธไม่สำเร็จ');
+      toast.error(err.response?.data?.message || 'ปฏิเสธไม่สำเร็จ');
     }
   }
 
   async function handleDelete(id) {
-    if (!window.confirm('ยืนยันลบข่าวนี้? การลบไม่สามารถย้อนคืนได้')) return;
+    const confirmed = await confirm({
+      title: 'ยืนยันการลบข่าวสาร',
+      message: 'คุณแน่ใจหรือไม่ว่าต้องการลบข่าวนี้? การลบไม่สามารถย้อนคืนได้',
+      confirmText: 'ลบข่าวสาร',
+      cancelText: 'ยกเลิก',
+      variant: 'danger',
+    });
+    if (!confirmed) return;
+
     try {
       await deleteNews(id);
+      toast.success('ลบข่าวสารเรียบร้อยแล้ว');
       fetchNews();
     } catch (err) {
-      alert(err.response?.data?.message || 'ลบไม่สำเร็จ');
+      toast.error(err.response?.data?.message || 'ลบไม่สำเร็จ');
     }
   }
 
@@ -116,7 +140,7 @@ function NewsManagementPage() {
       setSendingBroadcast(true);
       if (broadcastData.mode === 'schedule') {
         if (!broadcastData.scheduledAt) {
-          alert('กรุณาเลือกวันและเวลาที่ต้องการส่ง');
+          toast.warning('กรุณาเลือกวันและเวลาที่ต้องการส่ง');
           return;
         }
         const res = await scheduleBroadcast(
@@ -125,29 +149,39 @@ function NewsManagementPage() {
           broadcastData.scheduledAt
         );
         setBroadcastData({ newsId: null, zoneName: '', mode: 'now', scheduledAt: '' });
-        alert(res.data?.message || 'ตั้งเวลาส่งข่าวสำเร็จ');
+        toast.success(res.data?.message || 'ตั้งเวลาส่งข่าวสำเร็จ');
         fetchScheduled();
       } else {
         const res = await broadcastNews(broadcastData.newsId, broadcastData.zoneName);
         setBroadcastData({ newsId: null, zoneName: '', mode: 'now', scheduledAt: '' });
-        alert(res.data?.message || 'ส่งข่าวผ่าน LINE เรียบร้อยแล้ว');
+        toast.success(res.data?.message || 'ส่งข่าวผ่าน LINE เรียบร้อยแล้ว');
       }
     } catch (err) {
-      alert(err.response?.data?.message || 'ส่งข่าวไม่สำเร็จ');
+      toast.error(err.response?.data?.message || 'ส่งข่าวไม่สำเร็จ');
     } finally {
       setSendingBroadcast(false);
     }
   }
 
   async function handleCancelSchedule(scheduleId) {
-    if (!window.confirm('ยืนยันยกเลิกตารางส่งข่าวนี้?')) return;
+    const confirmed = await confirm({
+      title: 'ยืนยันยกเลิกตารางส่งข่าว',
+      message: 'คุณแน่ใจหรือไม่ว่าต้องการยกเลิกการส่งข่าวตามตารางนี้?',
+      confirmText: 'ยกเลิกตารางส่ง',
+      cancelText: 'ย้อนกลับ',
+      variant: 'danger',
+    });
+    if (!confirmed) return;
+
     try {
       await cancelScheduledBroadcast(scheduleId);
+      toast.success('ยกเลิกตารางส่งข่าวเรียบร้อยแล้ว');
       fetchScheduled();
     } catch (err) {
-      alert(err.response?.data?.message || 'ยกเลิกไม่สำเร็จ');
+      toast.error(err.response?.data?.message || 'ยกเลิกไม่สำเร็จ');
     }
   }
+
 
   function closeBroadcastModal() {
     setBroadcastData({ newsId: null, zoneName: '', mode: 'now', scheduledAt: '' });

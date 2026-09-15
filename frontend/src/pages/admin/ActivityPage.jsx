@@ -6,14 +6,16 @@ import {
   updateActivity,
   deleteActivity,
 } from '../../api/activity.api';
-import { Button, Input, Textarea, Modal, Card, EmptyState, LoadingSpinner } from '../../components/ui';
+import { Button, Input, Textarea, Modal, Card, EmptyState, LoadingSpinner, toast, useConfirm } from '../../components/ui';
 import { Calendar as CalendarIcon, Plus, MapPin, Edit2, Trash2, AlertCircle } from 'lucide-react';
 
 const EMPTY_FORM = { actTitle: '', actContent: '', actDate: '', actLocation: '' };
 
 function ActivityPage() {
   const { user } = useAuth();
+  const confirm = useConfirm();
   const [activities, setActivities] = useState([]);
+
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
   const [showModal, setShowModal] = useState(false);
@@ -74,27 +76,41 @@ function ActivityPage() {
       setSubmitting(true);
       if (editTarget) {
         await updateActivity(editTarget.act_id, form);
+        toast.success('บันทึกการแก้ไขกิจกรรมเรียบร้อยแล้ว');
       } else {
         await createActivity(form);
+        toast.success('เพิ่มกิจกรรมใหม่เรียบร้อยแล้ว');
       }
       closeModal();
       fetchActivities();
     } catch (err) {
-      setFormError(err.response?.data?.message || 'บันทึกไม่สำเร็จ');
+      const msg = err.response?.data?.message || 'บันทึกไม่สำเร็จ';
+      setFormError(msg);
+      toast.error(msg);
     } finally {
       setSubmitting(false);
     }
   }
 
   async function handleDelete(id) {
-    if (!window.confirm('ยืนยันลบกิจกรรมนี้?')) return;
+    const confirmed = await confirm({
+      title: 'ยืนยันลบกิจกรรม',
+      message: 'คุณแน่ใจหรือไม่ว่าต้องการลบกิจกรรมนี้ออกจากระบบ?',
+      confirmText: 'ลบกิจกรรม',
+      cancelText: 'ยกเลิก',
+      variant: 'danger',
+    });
+    if (!confirmed) return;
+
     try {
       await deleteActivity(id);
+      toast.success('ลบกิจกรรมเรียบร้อยแล้ว');
       fetchActivities();
     } catch (err) {
-      alert(err.response?.data?.message || 'ลบไม่สำเร็จ');
+      toast.error(err.response?.data?.message || 'ลบไม่สำเร็จ');
     }
   }
+
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
