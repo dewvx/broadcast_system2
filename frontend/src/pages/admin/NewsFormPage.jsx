@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { getNewsById, createNews, updateNews, uploadNewsImage } from '../../api/news.api';
 import { getCategories } from '../../api/category.api';
-import { Button, Input, Select, Textarea, Card, LoadingSpinner } from '../../components/ui';
+import { Button, Input, Select, Textarea, Card, LoadingSpinner, toast } from '../../components/ui';
 import { ArrowLeft, Save, Upload, Image as ImageIcon, AlertCircle } from 'lucide-react';
 
 function NewsFormPage() {
@@ -79,9 +79,11 @@ function NewsFormPage() {
 
       if (isEdit) {
         await updateNews(id, { newsTitle, newsContent, categoryId });
+        toast.success('บันทึกการแก้ไขข่าวสารเรียบร้อยแล้ว');
       } else {
         const res = await createNews({ newsTitle, newsContent, categoryId });
         targetNewsId = res.data?.data?.news_id || res.data?.data?.newsId || res.data?.data;
+        toast.success('เพิ่มข่าวสารใหม่เรียบร้อยแล้ว');
       }
 
       if (imageFile && targetNewsId) {
@@ -90,10 +92,13 @@ function NewsFormPage() {
 
       navigate('/admin/news');
     } catch (err) {
-      setErrorMsg(err.response?.data?.message || 'บันทึกข่าวไม่สำเร็จ');
+      const msg = err.response?.data?.message || 'บันทึกข่าวไม่สำเร็จ';
+      setErrorMsg(msg);
+      toast.error(msg);
     } finally {
       setSubmitting(false);
     }
+
   }
 
   if (loading) return <LoadingSpinner text="กำลังโหลดข้อมูลข่าว..." />;

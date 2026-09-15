@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { getUsers, getRoles, createUser, updateUser, deleteUser } from '../../api/user.api';
 import { getAllVillagers } from '../../api/admin-villager.api';
-import { Button, Input, Select, Modal, Badge, EmptyState, LoadingSpinner } from '../../components/ui';
+import { Button, Input, Select, Modal, Badge, EmptyState, LoadingSpinner, toast, useConfirm } from '../../components/ui';
 import { Users, Plus, Edit2, Trash2, Key, AlertCircle, Phone, Award, Check } from 'lucide-react';
 
 const EMPTY_FORM = {
@@ -17,7 +17,9 @@ const EMPTY_FORM = {
 
 function UserPage() {
   const { user: currentUser } = useAuth();
+  const confirm = useConfirm();
   const [users, setUsers] = useState([]);
+
   const [roles, setRoles] = useState([]);
   const [villagers, setVillagers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -106,27 +108,41 @@ function UserPage() {
       setSubmitting(true);
       if (editTarget) {
         await updateUser(editTarget.user_id, form);
+        toast.success('บันทึกข้อมูลผู้ใช้งานเรียบร้อยแล้ว');
       } else {
         await createUser(form);
+        toast.success('เพิ่มผู้ใช้งานใหม่เรียบร้อยแล้ว');
       }
       closeModal();
       fetchUsers();
     } catch (err) {
-      setFormError(err.response?.data?.message || 'บันทึกข้อมูลผู้ใช้ไม่สำเร็จ');
+      const msg = err.response?.data?.message || 'บันทึกข้อมูลผู้ใช้ไม่สำเร็จ';
+      setFormError(msg);
+      toast.error(msg);
     } finally {
       setSubmitting(false);
     }
   }
 
   async function handleDelete(id) {
-    if (!window.confirm('ยืนยันลบผู้ใช้งานนี้?')) return;
+    const confirmed = await confirm({
+      title: 'ยืนยันลบผู้ใช้งาน',
+      message: 'คุณแน่ใจหรือไม่ว่าต้องการลบผู้ใช้งานนี้ออกจากระบบ? การกระทำนี้ไม่สามารถย้อนคืนได้',
+      confirmText: 'ลบผู้ใช้งาน',
+      cancelText: 'ยกเลิก',
+      variant: 'danger',
+    });
+    if (!confirmed) return;
+
     try {
       await deleteUser(id);
+      toast.success('ลบผู้ใช้งานเรียบร้อยแล้ว');
       fetchUsers();
     } catch (err) {
-      alert(err.response?.data?.message || 'ลบไม่สำเร็จ');
+      toast.error(err.response?.data?.message || 'ลบไม่สำเร็จ');
     }
   }
+
 
   if (loading) return <LoadingSpinner text="กำลังโหลดรายการผู้ใช้งานระบบ..." />;
 

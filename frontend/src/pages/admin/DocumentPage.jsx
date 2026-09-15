@@ -1,14 +1,16 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { getAllDocuments, uploadDocument, deleteDocument } from '../../api/document.api';
-import { Button, Input, Modal, Badge, EmptyState, LoadingSpinner, Pagination } from '../../components/ui';
+import { Button, Input, Modal, Badge, EmptyState, LoadingSpinner, Pagination, toast, useConfirm } from '../../components/ui';
 import { FileText, Upload, Download, Trash2, FileCode, File, AlertCircle } from 'lucide-react';
 
 const ITEMS_PER_PAGE = 8;
 
 function DocumentPage() {
   const { user } = useAuth();
+  const confirm = useConfirm();
   const [documents, setDocuments] = useState([]);
+
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
   const [uploading, setUploading] = useState(false);
@@ -54,26 +56,39 @@ function DocumentPage() {
       setUploading(true);
       setUploadError('');
       await uploadDocument(formData);
+      toast.success('อัปโหลดเอกสารเรียบร้อยแล้ว');
       setDocName('');
       if (fileRef.current) fileRef.current.value = '';
       setShowUploadModal(false);
       fetchDocuments();
     } catch (err) {
-      setUploadError(err.response?.data?.message || 'อัปโหลดไม่สำเร็จ');
+      const msg = err.response?.data?.message || 'อัปโหลดไม่สำเร็จ';
+      setUploadError(msg);
+      toast.error(msg);
     } finally {
       setUploading(false);
     }
   }
 
   async function handleDelete(id) {
-    if (!window.confirm('ยืนยันลบเอกสารนี้?')) return;
+    const confirmed = await confirm({
+      title: 'ยืนยันลบเอกสาร',
+      message: 'คุณแน่ใจหรือไม่ว่าต้องการลบเอกสารนี้ออกจากระบบ?',
+      confirmText: 'ลบเอกสาร',
+      cancelText: 'ยกเลิก',
+      variant: 'danger',
+    });
+    if (!confirmed) return;
+
     try {
       await deleteDocument(id);
+      toast.success('ลบเอกสารเรียบร้อยแล้ว');
       fetchDocuments();
     } catch (err) {
-      alert(err.response?.data?.message || 'ลบไม่สำเร็จ');
+      toast.error(err.response?.data?.message || 'ลบไม่สำเร็จ');
     }
   }
+
 
   function getFileIcon(filePath = '') {
     const ext = filePath.split('.').pop()?.toLowerCase();

@@ -7,11 +7,13 @@ import {
 } from '../../api/chatbotfaq.api';
 import { getAllNews } from '../../api/news.api';
 import { getAllDocuments } from '../../api/document.api';
-import { Button, Input, Textarea, Modal, Card, EmptyState, LoadingSpinner } from '../../components/ui';
+import { Button, Input, Textarea, Modal, Card, EmptyState, LoadingSpinner, toast, useConfirm } from '../../components/ui';
 import { Bot, Plus, Edit2, Trash2, AlertCircle, MessageSquare } from 'lucide-react';
 
 function ChatbotFaqPage() {
+  const confirm = useConfirm();
   const [faqs, setFaqs] = useState([]);
+
   const [news, setNews] = useState([]);
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -89,30 +91,44 @@ function ChatbotFaqPage() {
           questionKey: questionKey.trim(),
           answerText: answerText.trim(),
         });
+        toast.success('บันทึกการแก้ไขคำถาม-คำตอบเรียบร้อยแล้ว');
       } else {
         await createFaq({
           questionKey: questionKey.trim(),
           answerText: answerText.trim(),
         });
+        toast.success('เพิ่มคำถาม-คำตอบใหม่เรียบร้อยแล้ว');
       }
       closeModal();
       fetchFaqs();
     } catch (err) {
-      setFormError(err.response?.data?.message || 'บันทึกไม่สำเร็จ');
+      const msg = err.response?.data?.message || 'บันทึกไม่สำเร็จ';
+      setFormError(msg);
+      toast.error(msg);
     } finally {
       setSubmitting(false);
     }
   }
 
   async function handleDelete(id) {
-    if (!window.confirm('ยืนยันลบคำถาม-คำตอบนี้?')) return;
+    const confirmed = await confirm({
+      title: 'ยืนยันลบคำถาม-คำตอบ',
+      message: 'คุณแน่ใจหรือไม่ว่าต้องการลบคำถาม-คำตอบนี้ออกจากระบบ?',
+      confirmText: 'ลบข้อมูล',
+      cancelText: 'ยกเลิก',
+      variant: 'danger',
+    });
+    if (!confirmed) return;
+
     try {
       await deleteFaq(id);
+      toast.success('ลบคำถาม-คำตอบเรียบร้อยแล้ว');
       fetchFaqs();
     } catch (err) {
-      alert(err.response?.data?.message || 'ลบไม่สำเร็จ');
+      toast.error(err.response?.data?.message || 'ลบไม่สำเร็จ');
     }
   }
+
 
   if (loading) return <LoadingSpinner text="กำลังโหลดข้อมูลแชทบอทตอบคำถามอัตโนมัติ..." />;
 

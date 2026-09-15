@@ -5,7 +5,7 @@ import {
   updateCategory,
   deleteCategory,
 } from '../../api/category.api';
-import { Button, Input, Modal, Badge, EmptyState, LoadingSpinner } from '../../components/ui';
+import { Button, Input, Modal, Badge, EmptyState, LoadingSpinner, toast, useConfirm } from '../../components/ui';
 import {
   Tag,
   Plus,
@@ -18,7 +18,9 @@ import {
 } from 'lucide-react';
 
 function CategoryPage() {
+  const confirm = useConfirm();
   const [categories, setCategories] = useState([]);
+
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
@@ -77,13 +79,17 @@ function CategoryPage() {
       setSubmitting(true);
       if (editTarget) {
         await updateCategory(editTarget.category_id, { categoryName: categoryName.trim() });
+        toast.success('บันทึกการแก้ไขหมวดหมู่เรียบร้อยแล้ว');
       } else {
         await createCategory({ categoryName: categoryName.trim() });
+        toast.success('เพิ่มหมวดหมู่ใหม่เรียบร้อยแล้ว');
       }
       closeModal();
       fetchCategories();
     } catch (err) {
-      setFormError(err.response?.data?.message || 'บันทึกไม่สำเร็จ');
+      const msg = err.response?.data?.message || 'บันทึกไม่สำเร็จ';
+      setFormError(msg);
+      toast.error(msg);
     } finally {
       setSubmitting(false);
     }
@@ -91,19 +97,28 @@ function CategoryPage() {
 
   async function handleDelete(cat) {
     if (cat.news_count > 0) {
-      alert(`ไม่สามารถลบหมวดหมู่ "${cat.category_name}" ได้ เนื่องจากมีข่าวสาร ${cat.news_count} รายการผูกอยู่`);
+      toast.warning(`ไม่สามารถลบหมวดหมู่ "${cat.category_name}" ได้ เนื่องจากมีข่าวสาร ${cat.news_count} รายการผูกอยู่`);
       return;
     }
 
-    if (!window.confirm(`ยืนยันลบหมวดหมู่ "${cat.category_name}" ออกจากระบบ?`)) return;
+    const confirmed = await confirm({
+      title: 'ยืนยันลบหมวดหมู่',
+      message: `คุณแน่ใจหรือไม่ว่าต้องการลบหมวดหมู่ "${cat.category_name}" ออกจากระบบ?`,
+      confirmText: 'ลบหมวดหมู่',
+      cancelText: 'ยกเลิก',
+      variant: 'danger',
+    });
+    if (!confirmed) return;
 
     try {
       await deleteCategory(cat.category_id);
+      toast.success('ลบหมวดหมู่เรียบร้อยแล้ว');
       fetchCategories();
     } catch (err) {
-      alert(err.response?.data?.message || 'ลบไม่สำเร็จ');
+      toast.error(err.response?.data?.message || 'ลบไม่สำเร็จ');
     }
   }
+
 
   // คัดกรองตามช่องค้นหา
   const filteredCategories = useMemo(() => {

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getAllVillagers, updateVillager, deleteVillager } from '../../api/admin-villager.api';
 import { getAllZones } from '../../api/zone.api';
-import { Button, Select, Badge, EmptyState, LoadingSpinner, Pagination } from '../../components/ui';
+import { Button, Select, Badge, EmptyState, LoadingSpinner, Pagination, toast } from '../../components/ui';
 import { Users, Search, ShieldAlert, Pencil, Trash2, X, UserCheck, UserX } from 'lucide-react';
 
 const ITEMS_PER_PAGE = 10;
@@ -53,7 +53,9 @@ function EditVillagerModal({ villager, onClose, onSaved }) {
         zoneName: form.zoneName || null,
         isActive: form.isActive,
       });
+      toast.success('บันทึกข้อมูลลูกบ้านเรียบร้อยแล้ว');
       onSaved(res.data.villager);
+
     } catch (err) {
       setError(err?.response?.data?.message || 'เกิดข้อผิดพลาด กรุณาลองใหม่');
     } finally {
