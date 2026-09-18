@@ -8,7 +8,12 @@ const { startBroadcastScheduler } = require('./src/jobs/broadcastScheduler.job')
 
 const app = express();
 
+// ตั้งค่า trust proxy เพื่อรองรับการรันผ่าน ngrok, cloudflare, หรือ reverse proxy
+// ทำให้ express-rate-limit และ req.ip อ่าน client IP จาก X-Forwarded-For ได้ถูกต้อง
+app.set('trust proxy', 1);
+
 app.use(cors());
+
 
 // สำคัญ: mount /webhook ก่อน express.json()
 // เพราะ line.middleware() ต้องอ่าน raw body เองเพื่อตรวจ signature

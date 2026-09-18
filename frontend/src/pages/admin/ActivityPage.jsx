@@ -7,7 +7,7 @@ import {
   deleteActivity,
 } from '../../api/activity.api';
 import { Button, Input, Textarea, Modal, Card, EmptyState, LoadingSpinner, toast, useConfirm } from '../../components/ui';
-import { Calendar as CalendarIcon, Plus, MapPin, Edit2, Trash2, AlertCircle } from 'lucide-react';
+import { Calendar as CalendarIcon, Plus, MapPin, Edit2, Trash2, AlertCircle, User } from 'lucide-react';
 
 const EMPTY_FORM = { actTitle: '', actContent: '', actDate: '', actLocation: '' };
 
@@ -266,6 +266,12 @@ function ActivityCard({ item, isAdmin, onEdit, onDelete, upcoming }) {
             <p className="text-body-sm text-text-secondary flex items-center gap-1 mt-1 truncate">
               <MapPin className="w-3.5 h-3.5 text-text-muted shrink-0" />
               <span>{item.act_location}</span>
+            </p>
+          )}
+          {item.created_by_name && (
+            <p className="text-meta text-text-muted flex items-center gap-1 mt-1 truncate">
+              <User className="w-3.5 h-3.5 text-text-muted shrink-0" />
+              <span>สร้างโดย: {item.created_by_name}</span>
             </p>
           )}
         </div>

@@ -20,6 +20,7 @@ import {
   Menu,
   X,
   History,
+  Send,
 } from 'lucide-react';
 
 const navItems = [
@@ -32,8 +33,11 @@ const navItems = [
   { to: '/admin/villagers', label: 'ข้อมูลลูกบ้าน', icon: Users, adminOnly: true },
   { to: '/admin/users', label: 'จัดการผู้ใช้งานระบบ', icon: UserCog },
   { to: '/admin/chatbot-faq', label: 'แชทบอทตอบอัตโนมัติ', icon: Bot, adminOnly: true },
+  { to: '/admin/broadcast-history', label: 'ประวัติการส่งข่าวสาร', icon: Send },
   { to: '/admin/chatbot-logs', label: 'ประวัติการสอบถาม', icon: History, adminOnly: true },
 ];
+
+
 
 function SidebarContent({ user, pendingNewsCount, onEditProfile, onLogout }) {
   const visibleNav = navItems.filter(

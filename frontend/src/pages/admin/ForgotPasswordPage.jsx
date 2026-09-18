@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { forgotPassword, resetPassword } from '../../api/auth.api';
 import { Button, Input } from '../../components/ui';
 import { PageTransition } from '../../components/motion';
-import { CheckCircle, ArrowLeft, ArrowRight, MessageSquare, AlertCircle, ShieldCheck } from 'lucide-react';
+import { CheckCircle, ArrowLeft, ArrowRight, MessageSquare, AlertCircle, ShieldCheck, Eye, EyeOff } from 'lucide-react';
 
 function ForgotPasswordPage() {
   const navigate = useNavigate();
@@ -13,6 +13,9 @@ function ForgotPasswordPage() {
   const [otp, setOtp] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
 
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -160,23 +163,44 @@ function ForgotPasswordPage() {
 
               <Input
                 label="รหัสผ่านใหม่"
-                type="password"
+                type={showNewPassword ? 'text' : 'password'}
                 required
                 autoComplete="new-password"
                 placeholder="ความยาวอย่างน้อย 6 ตัวอักษร"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
+                rightElement={
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    aria-label={showNewPassword ? 'ซ่อนรหัสผ่าน' : 'แสดงรหัสผ่าน'}
+                    className="p-1.5 text-text-muted hover:text-text-primary rounded-full hover:bg-slate-100 transition-colors cursor-pointer"
+                  >
+                    {showNewPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                }
               />
 
               <Input
                 label="ยืนยันรหัสผ่านใหม่"
-                type="password"
+                type={showConfirmPassword ? 'text' : 'password'}
                 required
                 autoComplete="new-password"
                 placeholder="กรอกรหัสผ่านใหม่อีกครั้ง"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
+                rightElement={
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    aria-label={showConfirmPassword ? 'ซ่อนรหัสผ่าน' : 'แสดงรหัสผ่าน'}
+                    className="p-1.5 text-text-muted hover:text-text-primary rounded-full hover:bg-slate-100 transition-colors cursor-pointer"
+                  >
+                    {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                }
               />
+
 
               <Button type="submit" variant="primary" size="lg" fullWidth loading={loading} className="mt-1">
                 ยืนยันการเปลี่ยนรหัสผ่าน

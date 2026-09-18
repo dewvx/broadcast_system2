@@ -49,20 +49,61 @@ async function getTopViewedNews(limit) {
 }
 
 /**
- * ประวัติการส่งข่าวล่าสุด (ย้อนหลัง)
+ * ประวัติการส่งข่าวล่าสุด (ย้อนหลัง) พร้อมระบบแบ่งหน้าและค้นหา
  */
-async function getRecentBroadcasts(limit) {
+async function getBroadcastLogs({ page = 1, limit = 10, search = '' } = {}) {
+  const safePage = Math.max(1, Number(page) || 1);
+  const safeLimit = Math.max(1, Number(limit) || 10);
+  const offset = (safePage - 1) * safeLimit;
+
+  let whereClause = '';
+  const countParams = [];
+  const dataParams = [];
+
+  if (search && search.trim()) {
+    whereClause = 'WHERE (n.news_title LIKE ? OR u.full_name LIKE ?)';
+    const term = `%${search.trim()}%`;
+    countParams.push(term, term);
+    dataParams.push(term, term);
+  }
+
+  const [countRows] = await pool.query(
+    `SELECT COUNT(*) AS total
+     FROM tb_broadcast_log bl
+     JOIN tb_news n ON bl.news_id = n.news_id
+     JOIN tb_user u ON bl.sent_by = u.user_id
+     ${whereClause}`,
+    countParams
+  );
+  const total = countRows[0].total;
+
+  dataParams.push(safeLimit, offset);
   const [rows] = await pool.query(
-    `SELECT bl.log_id, bl.news_id, n.news_title, bl.sent_by, u.full_name AS sent_by_name,
+    `SELECT bl.log_id, bl.news_id, n.news_title, n.news_image, c.category_name,
+            bl.sent_by, u.full_name AS sent_by_name, u.username AS sent_by_username,
             bl.total_received, bl.sent_at
      FROM tb_broadcast_log bl
      JOIN tb_news n ON bl.news_id = n.news_id
      JOIN tb_user u ON bl.sent_by = u.user_id
+     LEFT JOIN tb_category c ON n.category_id = c.category_id
+     ${whereClause}
      ORDER BY bl.sent_at DESC
-     LIMIT ?`,
-    [limit]
+     LIMIT ? OFFSET ?`,
+    dataParams
   );
-  return rows;
+
+  return {
+    rows,
+    total,
+    page: safePage,
+    limit: safeLimit,
+    totalPages: Math.ceil(total / safeLimit) || 1,
+  };
+}
+
+async function getRecentBroadcasts(limit) {
+  const res = await getBroadcastLogs({ page: 1, limit });
+  return res.rows;
 }
 
 module.exports = {
@@ -72,4 +113,5 @@ module.exports = {
   sumTotalViews,
   getTopViewedNews,
   getRecentBroadcasts,
-};
+  getBroadcastLogs,
+};

@@ -131,12 +131,21 @@ function DashboardPage() {
           {/* Recent Broadcast History */}
           <Card
             header={
-              <span className="flex items-center gap-2.5">
-                <Send className="w-[18px] h-[18px] text-success" />
-                ประวัติการส่งข่าวล่าสุด
-              </span>
+              <div className="flex items-center justify-between w-full">
+                <span className="flex items-center gap-2.5">
+                  <Send className="w-[18px] h-[18px] text-success" />
+                  ประวัติการส่งข่าวล่าสุด
+                </span>
+                <Link
+                  to="/admin/broadcast-history"
+                  className="text-body-sm font-medium text-primary hover:text-primary-hover transition-colors"
+                >
+                  ดูทั้งหมด →
+                </Link>
+              </div>
             }
           >
+
             {history.length === 0 ? (
               <p className="text-text-muted text-body-sm py-4 text-center">ยังไม่เคยส่งข่าวผ่าน LINE</p>
             ) : (

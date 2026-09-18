@@ -21,13 +21,25 @@ async function getTopNews(req, res, next) {
 
 async function getBroadcastHistory(req, res, next) {
   try {
-    const limit = Number(req.query.limit) || 10;
-    const history = await reportService.getBroadcastHistory(limit);
-    res.json({ success: true, data: history });
+    const page = Math.max(1, Number(req.query.page) || 1);
+    const limit = Math.max(1, Number(req.query.limit) || 10);
+    const search = req.query.search || req.query.q || '';
+    const result = await reportService.getBroadcastHistory({ page, limit, search });
+    res.json({
+      success: true,
+      data: result.rows,
+      pagination: {
+        total: result.total,
+        page: result.page,
+        limit: result.limit,
+        totalPages: result.totalPages,
+      },
+    });
   } catch (err) {
     next(err);
   }
 }
+
 
 async function getNewsViewCount(req, res, next) {
   try {

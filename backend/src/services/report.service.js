@@ -37,9 +37,14 @@ async function getTopNews(limit = 5) {
   return reportModel.getTopViewedNews(limit);
 }
 
-async function getBroadcastHistory(limit = 10) {
-  return reportModel.getRecentBroadcasts(limit);
+async function getBroadcastHistory(options = 10) {
+  if (typeof options === 'number') {
+    return reportModel.getBroadcastLogs({ page: 1, limit: options });
+  }
+  const { page = 1, limit = 10, search = '' } = options || {};
+  return reportModel.getBroadcastLogs({ page, limit, search });
 }
+
 
 async function getNewsViewCount(newsId) {
   const news = await newsModel.findById(newsId);

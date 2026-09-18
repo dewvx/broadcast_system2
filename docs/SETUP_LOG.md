@@ -136,6 +136,15 @@
     - อัปเดต `docs/ROLES.md` สิทธิ์ Read-only ของ Leader และเงื่อนไขการลบ User ของ Admin
     - ลบไฟล์ทดสอบตกค้างทั้งหมด (`dd.pdf`, `test.jpg`, `test.pdf`, `__tmp_old.jpg`, โฟลเดอร์ว่าง `uploads`)
     - รัน Automated Test ผ่านครบ 100% และ Vite Production Build สำเร็จสมบูรณ์
+98. **แก้ไข `ERR_ERL_UNEXPECTED_X_FORWARDED_FOR` ใน express-rate-limit**:
+    - เพิ่ม `app.set('trust proxy', 1)` ใน `server.js` เพื่อให้อ่าน client IP จาก header `X-Forwarded-For` ได้ถูกต้องเมื่อรันผ่าน ngrok หรือ reverse proxy
+    - เพิ่ม `validate: { xForwardedForHeader: false }` ใน `rateLimit.middleware.js` ป้องกัน express-rate-limit โยน ValidationError
+99. **ระบบประวัติการส่งข่าวสารย้อนหลังแบบเต็ม (Broadcast History)**:
+    - เพิ่ม pagination และ search ให้กับ API `GET /api/report/broadcast-history` (ค้นหาตามหัวข้อข่าว หรือชื่อผู้ส่ง)
+    - สร้างหน้า `BroadcastHistoryPage.jsx` (`/admin/broadcast-history`) พร้อมช่องค้นหา, สถิติสรุป KPI, ตารางข้อมูลผู้รับ และปุ่มแบ่งหน้า (Pagination)
+    - เพิ่มเมนู "ประวัติการส่งข่าว" ใน Sidebar Navigation และเพิ่มลิงก์ "ดูทั้งหมด →" ที่การ์ดประวัติการส่งข่าวล่าสุดบน Dashboard
+
+
 
 ---
 

@@ -25,6 +25,8 @@ import CategoryPage from '../pages/admin/CategoryPage';
 import ZonePage from '../pages/admin/ZonePage';
 import ChatbotFaqPage from '../pages/admin/ChatbotFaqPage';
 import ChatbotLogPage from '../pages/admin/ChatbotLogPage';
+import BroadcastHistoryPage from '../pages/admin/BroadcastHistoryPage';
+
 
 function LiffIndexRedirector() {
   const location = useLocation();
@@ -87,7 +89,9 @@ const router = createBrowserRouter([
               { path: 'users', element: <UserPage /> },
               { path: 'chatbot-faq', element: <ChatbotFaqPage /> },
               { path: 'chatbot-logs', element: <ChatbotLogPage /> },
+              { path: 'broadcast-history', element: <BroadcastHistoryPage /> },
             ],
+
           },
         ],
       },

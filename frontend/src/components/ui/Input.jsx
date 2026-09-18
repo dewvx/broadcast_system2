@@ -9,6 +9,7 @@ export const Input = forwardRef(function Input(
     className = '',
     containerClassName = '',
     id,
+    rightElement,
     ...props
   },
   ref
@@ -22,17 +23,24 @@ export const Input = forwardRef(function Input(
           {label} {required && <span className="text-error">*</span>}
         </label>
       )}
-      <input
-        ref={ref}
-        id={inputId}
-        aria-invalid={error ? true : undefined}
-        className={`w-full min-h-12 px-3.5 text-body bg-surface text-text-primary border rounded-sm transition-colors duration-fast placeholder:text-text-muted focus:outline-none focus:ring-2 ${
-          error
-            ? 'border-error focus:border-error focus:ring-error/20'
-            : 'border-border hover:border-border-strong focus:border-primary focus:ring-primary/25'
-        } ${className}`}
-        {...props}
-      />
+      <div className="relative flex items-center">
+        <input
+          ref={ref}
+          id={inputId}
+          aria-invalid={error ? true : undefined}
+          className={`w-full min-h-12 px-3.5 ${rightElement ? 'pr-11' : ''} text-body bg-surface text-text-primary border rounded-sm transition-colors duration-fast placeholder:text-text-muted focus:outline-none focus:ring-2 ${
+            error
+              ? 'border-error focus:border-error focus:ring-error/20'
+              : 'border-border hover:border-border-strong focus:border-primary focus:ring-primary/25'
+          } ${className}`}
+          {...props}
+        />
+        {rightElement && (
+          <div className="absolute right-2.5 flex items-center justify-center">
+            {rightElement}
+          </div>
+        )}
+      </div>
       {error ? (
         <p className="text-body-sm text-error font-medium" role="alert">
           {error}
@@ -43,5 +51,6 @@ export const Input = forwardRef(function Input(
     </div>
   );
 });
+
 
 export default Input;
