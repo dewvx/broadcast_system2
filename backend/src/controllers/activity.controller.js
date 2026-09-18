@@ -21,7 +21,11 @@ async function getOne(req, res, next) {
 async function create(req, res, next) {
   try {
     const activity = await activityService.createActivity(req.body, req.user);
-    res.status(201).json({ success: true, data: activity });
+    res.status(201).json({
+      success: true,
+      data: activity,
+      message: 'เพิ่มกิจกรรมใหม่เรียบร้อยแล้ว',
+    });
   } catch (err) {
     next(err);
   }
@@ -30,7 +34,7 @@ async function create(req, res, next) {
 async function update(req, res, next) {
   try {
     const activity = await activityService.updateActivity(req.params.id, req.body);
-    res.json({ success: true, data: activity });
+    res.json({ success: true, data: activity, message: 'บันทึกการแก้ไขเรียบร้อยแล้ว' });
   } catch (err) {
     next(err);
   }
@@ -45,4 +49,18 @@ async function remove(req, res, next) {
   }
 }
 
-module.exports = { getAll, getOne, create, update, remove };
+async function broadcast(req, res, next) {
+  try {
+    const { zoneName } = req.body;
+    const result = await activityService.broadcastActivity(req.params.id, zoneName, req.user);
+    res.json({
+      success: true,
+      message: `ส่งกิจกรรมผ่าน LINE ให้ลูกบ้าน ${result.totalReceived} คน (${result.zoneName}) เรียบร้อยแล้ว`,
+      data: result,
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { getAll, getOne, create, update, remove, broadcast };

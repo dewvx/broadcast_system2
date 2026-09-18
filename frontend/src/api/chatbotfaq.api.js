@@ -9,3 +9,7 @@ export const updateFaq = (id, data) => axiosClient.put(`/api/chatbot-faq/${id}`,
 export const deleteFaq = (id) => axiosClient.delete(`/api/chatbot-faq/${id}`);
 
 export const getChatbotLogs = (params) => axiosClient.get('/api/chatbot-faq/logs', { params });
+
+export const replyToChatbotLog = (id, replyText) =>
+  axiosClient.post(`/api/chatbot-faq/logs/${id}/reply`, { replyText });
+

@@ -89,6 +89,21 @@ function NewsViewPage() {
         <div className="text-text-primary leading-relaxed whitespace-pre-wrap text-base font-normal">
           {news.news_content}
         </div>
+
+        {/* Linked Activity Info Box */}
+        {news.act_id && news.act_title && (
+          <div className="p-4 bg-secondary-soft/80 border border-secondary/30 rounded-md space-y-2">
+            <div className="flex items-center gap-2 text-secondary font-bold text-sm">
+              <Calendar className="w-4 h-4 text-secondary shrink-0" />
+              <span>กิจกรรมชุมชนที่เชื่อมโยง:</span>
+            </div>
+            <p className="font-semibold text-text-primary text-base">{news.act_title}</p>
+            <div className="flex flex-wrap gap-4 text-xs text-text-secondary">
+              <span>🗓 วันที่: {new Date(news.act_date).toLocaleDateString('th-TH')}</span>
+              {news.act_location && <span>📍 สถานที่: {news.act_location}</span>}
+            </div>
+          </div>
+        )}
       </Card>
     </div>
   );

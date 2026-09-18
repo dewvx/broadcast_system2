@@ -9,3 +9,6 @@ export const createActivity = (data) => axiosClient.post('/api/activity', data);
 export const updateActivity = (id, data) => axiosClient.put(`/api/activity/${id}`, data);
 
 export const deleteActivity = (id) => axiosClient.delete(`/api/activity/${id}`);
+
+export const broadcastActivity = (id, zoneName) =>
+  axiosClient.post(`/api/activity/${id}/broadcast`, { zoneName });

@@ -81,6 +81,7 @@
 | news_title | varchar(255) | - | NOT NULL |
 | news_content | text | - | NOT NULL |
 | category_id | int | FK | อ้าง tb_category |
+| act_id | int | FK | อ้าง tb_activity (กิจกรรมที่เกี่ยวข้อง, NULL ได้) |
 | news_image | varchar(255) | - | path ไฟล์รูป, NULL ได้ |
 | news_status | enum | - | Pending / Approved / Rejected, default Pending |
 | created_by | int | FK | อ้าง tb_user (คนสร้างข่าว) |
@@ -123,6 +124,9 @@
 | message_text | text | - | ข้อความคำถามที่ลูกบ้านพิมพ์เข้ามา |
 | response_text | text | - | ข้อความตอบกลับที่ระบบส่งออกไป |
 | is_matched | tinyint(1) | - | 1 = ตอบตรง FAQ, 0 = ไม่ตรง (Fallback Quick Reply Menu) |
+| admin_reply | text | - | ข้อความที่ Admin ตอบกลับผ่านหน้าเว็บ (NULL ได้) |
+| replied_by | int | FK | อ้าง tb_user (ผู้ตอบกลับ) |
+| replied_at | datetime | - | เวลาที่ Admin ตอบกลับ (NULL ได้) |
 | created_at | timestamp | - | default CURRENT_TIMESTAMP |
 
 ### tb_broadcast_log

@@ -1,4 +1,5 @@
 const activityModel = require('../models/activity.model');
+const broadcastService = require('./broadcast.service');
 
 function throwError(message, statusCode) {
   const err = new Error(message);
@@ -47,4 +48,18 @@ async function deleteActivity(actId) {
   await activityModel.remove(actId);
 }
 
-module.exports = { getAllActivities, getActivityById, createActivity, updateActivity, deleteActivity };
+async function broadcastActivity(actId, zoneName, currentUser) {
+  const activity = await activityModel.findById(actId);
+  if (!activity) throwError('ไม่พบกิจกรรมนี้', 404);
+
+  return broadcastService.broadcastActivity(actId, zoneName, currentUser);
+}
+
+module.exports = {
+  getAllActivities,
+  getActivityById,
+  createActivity,
+  updateActivity,
+  deleteActivity,
+  broadcastActivity,
+};
