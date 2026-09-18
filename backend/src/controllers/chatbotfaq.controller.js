@@ -50,4 +50,17 @@ async function getLogs(req, res, next) {
   }
 }
 
-module.exports = { getAll, create, update, remove, getLogs };
+async function replyToLog(req, res, next) {
+  try {
+    const log = await chatbotService.replyToVillager(req.params.id, req.body.replyText, req.user);
+    res.json({
+      success: true,
+      message: 'ส่งข้อความตอบกลับไปยัง LINE เรียบร้อยแล้ว',
+      data: log,
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { getAll, create, update, remove, getLogs, replyToLog };

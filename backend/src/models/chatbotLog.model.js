@@ -18,14 +18,36 @@ async function create({ lineUserId, messageText, responseText, isMatched }) {
  */
 async function findAll({ limit = 100, offset = 0 } = {}) {
   const [rows] = await pool.query(
-    `SELECT l.*, v.first_name, v.last_name, v.display_name
+    `SELECT l.*, v.first_name, v.last_name, v.display_name, u.full_name as replied_by_name
      FROM tb_chatbot_log l
      LEFT JOIN tb_villager v ON l.line_user_id = v.line_user_id
+     LEFT JOIN tb_user u ON l.replied_by = u.user_id
      ORDER BY l.created_at DESC
      LIMIT ? OFFSET ?`,
     [Number(limit), Number(offset)]
   );
   return rows;
+}
+
+async function findById(logId) {
+  const [rows] = await pool.query(
+    `SELECT l.*, v.first_name, v.last_name, v.display_name, u.full_name as replied_by_name
+     FROM tb_chatbot_log l
+     LEFT JOIN tb_villager v ON l.line_user_id = v.line_user_id
+     LEFT JOIN tb_user u ON l.replied_by = u.user_id
+     WHERE l.log_id = ?`,
+    [logId]
+  );
+  return rows[0] || null;
+}
+
+async function updateReply(logId, { adminReply, repliedBy }) {
+  await pool.query(
+    `UPDATE tb_chatbot_log
+     SET admin_reply = ?, replied_by = ?, replied_at = NOW()
+     WHERE log_id = ?`,
+    [adminReply, repliedBy, logId]
+  );
 }
 
 /**
@@ -36,4 +58,4 @@ async function countAll() {
   return rows[0].total;
 }
 
-module.exports = { create, findAll, countAll };
+module.exports = { create, findAll, findById, updateReply, countAll };

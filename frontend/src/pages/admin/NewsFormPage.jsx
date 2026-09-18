@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { getNewsById, createNews, updateNews, uploadNewsImage } from '../../api/news.api';
 import { getCategories } from '../../api/category.api';
+import { getAllActivities } from '../../api/activity.api';
 import { Button, Input, Select, Textarea, Card, LoadingSpinner, toast } from '../../components/ui';
-import { ArrowLeft, Save, Upload, Image as ImageIcon, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Save, Upload, Image as ImageIcon, AlertCircle, Calendar } from 'lucide-react';
 
 function NewsFormPage() {
   const { id } = useParams();
@@ -11,9 +12,11 @@ function NewsFormPage() {
   const navigate = useNavigate();
 
   const [categories, setCategories] = useState([]);
+  const [activities, setActivities] = useState([]);
   const [newsTitle, setNewsTitle] = useState('');
   const [newsContent, setNewsContent] = useState('');
   const [categoryId, setCategoryId] = useState('');
+  const [actId, setActId] = useState('');
   const [imageFile, setImageFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState('');
   const [currentImage, setCurrentImage] = useState('');
@@ -24,6 +27,7 @@ function NewsFormPage() {
 
   useEffect(() => {
     fetchCategories();
+    fetchActivities();
     if (isEdit) {
       fetchNews();
     }
@@ -38,6 +42,15 @@ function NewsFormPage() {
     }
   }
 
+  async function fetchActivities() {
+    try {
+      const res = await getAllActivities();
+      setActivities(res.data.data || []);
+    } catch (err) {
+      console.error('Failed to fetch activities:', err);
+    }
+  }
+
   async function fetchNews() {
     try {
       setLoading(true);
@@ -46,6 +59,9 @@ function NewsFormPage() {
       setNewsTitle(data.news_title);
       setNewsContent(data.news_content);
       setCategoryId(data.category_id);
+      if (data.act_id) {
+        setActId(String(data.act_id));
+      }
       if (data.news_image) {
         setCurrentImage(data.news_image);
       }
@@ -76,12 +92,18 @@ function NewsFormPage() {
     try {
       setSubmitting(true);
       let targetNewsId = id;
+      const payload = {
+        newsTitle,
+        newsContent,
+        categoryId,
+        actId: actId ? Number(actId) : null,
+      };
 
       if (isEdit) {
-        await updateNews(id, { newsTitle, newsContent, categoryId });
+        await updateNews(id, payload);
         toast.success('บันทึกการแก้ไขข่าวสารเรียบร้อยแล้ว');
       } else {
-        const res = await createNews({ newsTitle, newsContent, categoryId });
+        const res = await createNews(payload);
         targetNewsId = res.data?.data?.news_id || res.data?.data?.newsId || res.data?.data;
         toast.success('เพิ่มข่าวสารใหม่เรียบร้อยแล้ว');
       }
@@ -102,6 +124,15 @@ function NewsFormPage() {
   }
 
   if (loading) return <LoadingSpinner text="กำลังโหลดข้อมูลข่าว..." />;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const availableActivities = activities.filter((a) => {
+    if (!a.act_date) return false;
+    const actDate = new Date(a.act_date);
+    actDate.setHours(0, 0, 0, 0);
+    return actDate >= today || (isEdit && String(a.act_id) === String(actId));
+  });
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -138,21 +169,43 @@ function NewsFormPage() {
             onChange={(e) => setNewsTitle(e.target.value)}
           />
 
-          <Select
-            label="หมวดหมู่ข่าวสาร"
-            required
-            value={categoryId}
-            onChange={(e) => setCategoryId(e.target.value)}
-          >
-            <option value="" disabled hidden>
-              -- เลือกหมวดหมู่ --
-            </option>
-            {categories.map((c) => (
-              <option key={c.category_id} value={c.category_id}>
-                {c.category_name}
+          <div className="grid sm:grid-cols-2 gap-4">
+            <Select
+              label="หมวดหมู่ข่าวสาร"
+              required
+              value={categoryId}
+              onChange={(e) => setCategoryId(e.target.value)}
+            >
+              <option value="" disabled hidden>
+                -- เลือกหมวดหมู่ --
               </option>
-            ))}
-          </Select>
+              {categories.map((c) => (
+                <option key={c.category_id} value={c.category_id}>
+                  {c.category_name}
+                </option>
+              ))}
+            </Select>
+
+            <div>
+              <Select
+                label="กิจกรรมชุมชนที่เกี่ยวข้อง (ถ้ามี)"
+                value={actId}
+                onChange={(e) => setActId(e.target.value)}
+              >
+                <option value="">-- ไม่ระบุ (ไม่ใช่ข่าวกิจกรรม) --</option>
+                {availableActivities.map((a) => (
+                  <option key={a.act_id} value={a.act_id}>
+                    {a.act_title} (วันที่ {a.act_date ? a.act_date.substring(0, 10) : ''})
+                  </option>
+                ))}
+              </Select>
+              {actId && (
+                <p className="text-meta text-secondary mt-1">
+                  * ข่าวนี้จะแสดงการ์ดรายละเอียดกิจกรรมเมื่อลูกบ้านเปิดอ่าน
+                </p>
+              )}
+            </div>
+          </div>
 
           {/* Cover Image Upload (Aspect Ratio 16:9 according to DESIGN_SYSTEM) */}
           <div className="space-y-2">

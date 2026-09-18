@@ -3,11 +3,13 @@ const pool = require('../config/db');
 async function findAll() {
   const [rows] = await pool.query(
     `SELECT n.news_id, n.news_title, n.news_content, n.category_id, c.category_name,
+            n.act_id, a.act_title, a.act_date, a.act_location,
             n.news_image, n.news_status, n.created_by, u.full_name AS created_by_name,
             n.approved_by, n.created_at,
             (SELECT COUNT(*) FROM tb_view_log WHERE news_id = n.news_id) AS view_count
      FROM tb_news n
      LEFT JOIN tb_category c ON n.category_id = c.category_id
+     LEFT JOIN tb_activity a ON n.act_id = a.act_id
      LEFT JOIN tb_user u ON n.created_by = u.user_id
      WHERE n.is_deleted = 0
      ORDER BY n.created_at DESC`
@@ -18,9 +20,11 @@ async function findAll() {
 async function findById(newsId) {
   const [rows] = await pool.query(
     `SELECT n.*, c.category_name, u.full_name AS created_by_name,
+            a.act_title, a.act_date, a.act_location, a.act_content,
             (SELECT COUNT(*) FROM tb_view_log WHERE news_id = n.news_id) AS view_count
      FROM tb_news n
      LEFT JOIN tb_category c ON n.category_id = c.category_id
+     LEFT JOIN tb_activity a ON n.act_id = a.act_id
      LEFT JOIN tb_user u ON n.created_by = u.user_id
      WHERE n.news_id = ? AND n.is_deleted = 0`,
     [newsId]
@@ -28,21 +32,21 @@ async function findById(newsId) {
   return rows[0] || null;
 }
 
-async function create({ newsTitle, newsContent, categoryId, newsImage, createdBy }) {
+async function create({ newsTitle, newsContent, categoryId, actId, newsImage, createdBy }) {
   const [result] = await pool.query(
-    `INSERT INTO tb_news (news_title, news_content, category_id, news_image, news_status, created_by, is_deleted)
-     VALUES (?, ?, ?, ?, 'Pending', ?, 0)`,
-    [newsTitle, newsContent, categoryId, newsImage || null, createdBy]
+    `INSERT INTO tb_news (news_title, news_content, category_id, act_id, news_image, news_status, created_by, is_deleted)
+     VALUES (?, ?, ?, ?, ?, 'Pending', ?, 0)`,
+    [newsTitle, newsContent, categoryId, actId || null, newsImage || null, createdBy]
   );
   return result.insertId;
 }
 
-async function update(newsId, { newsTitle, newsContent, categoryId, newsImage }) {
+async function update(newsId, { newsTitle, newsContent, categoryId, actId, newsImage }) {
   await pool.query(
     `UPDATE tb_news
-     SET news_title = ?, news_content = ?, category_id = ?, news_image = ?
+     SET news_title = ?, news_content = ?, category_id = ?, act_id = ?, news_image = ?
      WHERE news_id = ? AND is_deleted = 0`,
-    [newsTitle, newsContent, categoryId, newsImage || null, newsId]
+    [newsTitle, newsContent, categoryId, actId || null, newsImage || null, newsId]
   );
 }
 

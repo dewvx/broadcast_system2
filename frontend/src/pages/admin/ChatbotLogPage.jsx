@@ -1,6 +1,16 @@
 import { useState, useEffect, useMemo } from 'react';
-import { getChatbotLogs } from '../../api/chatbotfaq.api';
-import { EmptyState, LoadingSpinner, Pagination, Badge, Input, Select, Button } from '../../components/ui';
+import { getChatbotLogs, replyToChatbotLog } from '../../api/chatbotfaq.api';
+import {
+  EmptyState,
+  LoadingSpinner,
+  Pagination,
+  Badge,
+  Input,
+  Select,
+  Button,
+  Modal,
+  Textarea,
+} from '../../components/ui';
 import { FadeStagger, FadeItem } from '../../components/motion';
 import { toast } from '../../components/ui';
 import {
@@ -13,6 +23,7 @@ import {
   RefreshCw,
   Bot,
   User,
+  Send,
 } from 'lucide-react';
 
 function formatDate(dateStr) {
@@ -52,14 +63,15 @@ function StatCard({ label, hint, value, icon: Icon, colorClass, bgClass }) {
 }
 
 /* ---------- Log Item (conversation card) ---------- */
-function LogItem({ log }) {
+function LogItem({ log, onReply }) {
   const isMatched = Boolean(log.is_matched);
+  const isReplied = Boolean(log.admin_reply);
 
   return (
     <FadeItem>
       <div
         className={`bg-surface border rounded-md shadow-sm overflow-hidden transition-shadow duration-base hover:shadow-md ${
-          isMatched ? 'border-border' : 'border-warning/35'
+          isMatched ? 'border-border' : isReplied ? 'border-primary/40' : 'border-warning/50'
         }`}
       >
         {/* Header: villager identity + status + time */}
@@ -73,7 +85,7 @@ function LogItem({ log }) {
             <p className="font-semibold text-text-primary truncate">{getVillagerName(log)}</p>
             <p className="text-meta text-text-muted truncate">{log.line_user_id}</p>
           </div>
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="flex items-center gap-2 shrink-0">
             {isMatched ? (
               <Badge variant="success" withDot>
                 พบคำตอบ
@@ -83,7 +95,16 @@ function LogItem({ log }) {
                 ไม่พบ (Fallback)
               </Badge>
             )}
-            <span className="hidden sm:inline-flex items-center gap-1.5 text-meta text-text-muted whitespace-nowrap">
+            {isReplied ? (
+              <Badge variant="primary" withDot>
+                ตอบกลับแล้ว
+              </Badge>
+            ) : !isMatched ? (
+              <Badge variant="error" withDot>
+                รอการตอบกลับ
+              </Badge>
+            ) : null}
+            <span className="hidden sm:inline-flex items-center gap-1.5 text-meta text-text-muted whitespace-nowrap ml-1">
               <Clock className="w-3.5 h-3.5" />
               {formatDate(log.created_at)}
             </span>
@@ -126,6 +147,58 @@ function LogItem({ log }) {
             </div>
           </div>
         </div>
+
+        {/* Admin Reply Display (if replied) */}
+        {isReplied && (
+          <div className="mx-4 sm:mx-5 mb-4 p-3.5 bg-primary-soft/40 border border-primary/20 rounded-md">
+            <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
+              <p className="text-meta font-semibold text-primary-active flex items-center gap-1.5">
+                <Send className="w-3.5 h-3.5" />
+                ข้อความตอบกลับจากผู้ใหญ่บ้าน / เจ้าหน้าที่
+              </p>
+              <div className="flex items-center gap-2 text-meta text-text-muted">
+                {log.replied_by_name && (
+                  <span>
+                    ผู้ตอบ: <strong className="text-text-primary font-medium">{log.replied_by_name}</strong>
+                  </span>
+                )}
+                {log.replied_at && <span>({formatDate(log.replied_at)})</span>}
+              </div>
+            </div>
+            <div className="p-3 bg-surface rounded border border-border text-body-sm text-text-primary whitespace-pre-wrap leading-relaxed">
+              {log.admin_reply}
+            </div>
+            <div className="mt-2.5 flex justify-end">
+              <Button
+                size="sm"
+                variant="outline"
+                icon={Send}
+                onClick={() => onReply(log)}
+              >
+                ตอบกลับเพิ่มเติม
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Action Bar (if not replied yet) */}
+        {!isReplied && (
+          <div className="px-4 sm:px-5 py-3 bg-slate-50 border-t border-border flex items-center justify-between gap-3 flex-wrap">
+            <p className="text-body-sm text-text-secondary">
+              {!isMatched
+                ? '⚠️ บอทไม่พบคำตอบ ท่านสามารถส่งข้อความตอบกลับเข้า LINE ส่วนตัวของลูกบ้านได้ทันที'
+                : 'ส่งข้อความตอบกลับเพิ่มเติมเข้า LINE ของลูกบ้าน'}
+            </p>
+            <Button
+              size="sm"
+              variant={!isMatched ? 'primary' : 'outline'}
+              icon={Send}
+              onClick={() => onReply(log)}
+            >
+              ตอบกลับผ่าน LINE
+            </Button>
+          </div>
+        )}
       </div>
     </FadeItem>
   );
@@ -141,6 +214,12 @@ function ChatbotLogPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const limit = 20;
+
+  // Reply modal states
+  const [replyModalLog, setReplyModalLog] = useState(null);
+  const [replyText, setReplyText] = useState('');
+  const [submittingReply, setSubmittingReply] = useState(false);
+  const [replyError, setReplyError] = useState('');
 
   useEffect(() => {
     fetchLogs();
@@ -167,6 +246,46 @@ function ChatbotLogPage() {
     }
   }
 
+  function handleOpenReply(log) {
+    setReplyModalLog(log);
+    setReplyText(log.admin_reply || '');
+    setReplyError('');
+  }
+
+  function handleCloseReply() {
+    if (submittingReply) return;
+    setReplyModalLog(null);
+    setReplyText('');
+    setReplyError('');
+  }
+
+  async function handleSubmitReply(e) {
+    if (e) e.preventDefault();
+    if (!replyText.trim()) {
+      setReplyError('กรุณากรอกข้อความที่ต้องการตอบกลับ');
+      return;
+    }
+
+    try {
+      setSubmittingReply(true);
+      setReplyError('');
+      const res = await replyToChatbotLog(replyModalLog.log_id, replyText.trim());
+      toast.success('ส่งข้อความตอบกลับไปยัง LINE เรียบร้อยแล้ว');
+      const updatedLog = res.data.data;
+      setLogs((prev) =>
+        prev.map((l) => (l.log_id === updatedLog.log_id ? updatedLog : l))
+      );
+      handleCloseReply();
+    } catch (err) {
+      console.error('Failed to reply to villager:', err);
+      const errMsg = err.response?.data?.message || 'ไม่สามารถส่งข้อความได้ กรุณาลองใหม่อีกครั้ง';
+      setReplyError(errMsg);
+      toast.error(errMsg);
+    } finally {
+      setSubmittingReply(false);
+    }
+  }
+
   // filter/search ทำที่ client เฉพาะรายการในหน้าปัจจุบัน
   const filteredLogs = useMemo(() => {
     const keyword = search.trim().toLowerCase();
@@ -174,9 +293,11 @@ function ChatbotLogPage() {
     return logs.filter((log) => {
       if (statusFilter === 'matched' && !log.is_matched) return false;
       if (statusFilter === 'fallback' && log.is_matched) return false;
+      if (statusFilter === 'pending' && (log.is_matched || log.admin_reply)) return false;
+      if (statusFilter === 'replied' && !log.admin_reply) return false;
 
       if (!keyword) return true;
-      const haystack = [log.message_text, log.response_text, log.first_name, log.last_name, log.display_name]
+      const haystack = [log.message_text, log.response_text, log.admin_reply, log.first_name, log.last_name, log.display_name]
         .filter(Boolean)
         .join(' ')
         .toLowerCase();
@@ -188,6 +309,8 @@ function ChatbotLogPage() {
     () => ({
       matched: logs.filter((l) => l.is_matched).length,
       fallback: logs.filter((l) => !l.is_matched).length,
+      pendingReply: logs.filter((l) => !l.is_matched && !l.admin_reply).length,
+      replied: logs.filter((l) => Boolean(l.admin_reply)).length,
     }),
     [logs]
   );
@@ -208,7 +331,7 @@ function ChatbotLogPage() {
             <div className="min-w-0">
               <h1 className="text-h1 text-text-primary">ประวัติการสอบถามแชทบอท</h1>
               <p className="text-body-sm text-text-secondary mt-0.5">
-                ตรวจสอบย้อนหลังว่าลูกบ้านสอบถามอะไร และบอทตอบกลับด้วยข้อความใด
+                ตรวจสอบย้อนหลังว่าลูกบ้านสอบถามอะไร และตอบกลับข้อความตรงเข้าห้องแชท LINE ได้ทันที
               </p>
             </div>
           </div>
@@ -220,7 +343,7 @@ function ChatbotLogPage() {
 
       {/* Stats Summary */}
       <FadeItem>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
             label="สอบถามทั้งหมด"
             value={total}
@@ -229,7 +352,7 @@ function ChatbotLogPage() {
             bgClass="bg-primary-soft"
           />
           <StatCard
-            label="พบคำตอบ"
+            label="พบคำตอบอัตโนมัติ"
             hint="หน้านี้"
             value={pageStats.matched}
             icon={CheckCircle2}
@@ -237,12 +360,20 @@ function ChatbotLogPage() {
             bgClass="bg-success-soft"
           />
           <StatCard
-            label="ไม่พบคำตอบ"
+            label="รอการตอบกลับ"
             hint="หน้านี้"
-            value={pageStats.fallback}
-            icon={XCircle}
+            value={pageStats.pendingReply}
+            icon={Clock}
             colorClass="text-warning-hover"
             bgClass="bg-warning-soft"
+          />
+          <StatCard
+            label="ตอบกลับแล้ว"
+            hint="หน้านี้"
+            value={pageStats.replied}
+            icon={Send}
+            colorClass="text-secondary"
+            bgClass="bg-secondary-soft"
           />
         </div>
       </FadeItem>
@@ -257,13 +388,15 @@ function ChatbotLogPage() {
             onChange={(e) => setSearch(e.target.value)}
           />
           <Select
-            containerClassName="sm:w-56"
+            containerClassName="sm:w-64"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
             options={[
               { value: 'all', label: 'สถานะทั้งหมด' },
-              { value: 'matched', label: 'พบคำตอบ' },
-              { value: 'fallback', label: 'ไม่พบคำตอบ (Fallback)' },
+              { value: 'pending', label: 'รอการตอบกลับ (Fallback)' },
+              { value: 'replied', label: 'ตอบกลับแล้ว' },
+              { value: 'matched', label: 'พบคำตอบอัตโนมัติ' },
+              { value: 'fallback', label: 'ไม่พบคำตอบ (Fallback ทั้งหมด)' },
             ]}
           />
           <p className="text-body-sm text-text-muted sm:ml-auto whitespace-nowrap">
@@ -287,7 +420,7 @@ function ChatbotLogPage() {
         ) : (
           <>
             {filteredLogs.map((log) => (
-              <LogItem key={log.log_id} log={log} />
+              <LogItem key={log.log_id} log={log} onReply={handleOpenReply} />
             ))}
 
             {/* Pagination */}
@@ -306,6 +439,67 @@ function ChatbotLogPage() {
           </>
         )}
       </div>
+
+      {/* Reply Modal */}
+      <Modal
+        isOpen={Boolean(replyModalLog)}
+        onClose={handleCloseReply}
+        title="ตอบกลับลูกบ้านผ่าน LINE OA (1-on-1)"
+        footer={
+          <>
+            <Button variant="secondary" onClick={handleCloseReply} disabled={submittingReply}>
+              ยกเลิก
+            </Button>
+            <Button
+              variant="primary"
+              icon={Send}
+              loading={submittingReply}
+              onClick={handleSubmitReply}
+            >
+              ส่งข้อความไปยัง LINE
+            </Button>
+          </>
+        }
+      >
+        {replyModalLog && (
+          <form onSubmit={handleSubmitReply} className="space-y-4">
+            <div className="p-3.5 bg-slate-50 border border-border rounded-md space-y-2.5">
+              <div className="flex items-center justify-between flex-wrap gap-1">
+                <span className="text-body-sm font-semibold text-text-primary">
+                  ถึงคุณ: {getVillagerName(replyModalLog)}
+                </span>
+                <span className="text-meta text-text-muted">{formatDate(replyModalLog.created_at)}</span>
+              </div>
+              <div className="bg-surface p-2.5 rounded border border-border/80 text-body-sm">
+                <p className="text-meta font-medium text-text-muted mb-1 flex items-center gap-1">
+                  <User className="w-3.5 h-3.5" /> คำถามจากลูกบ้าน:
+                </p>
+                <p className="text-text-primary italic">"{replyModalLog.message_text}"</p>
+              </div>
+              {replyModalLog.admin_reply && (
+                <p className="text-meta text-text-secondary">
+                  เคยตอบกลับล่าสุดเมื่อ {formatDate(replyModalLog.replied_at)} โดย{' '}
+                  <strong className="text-text-primary font-medium">{replyModalLog.replied_by_name || 'เจ้าหน้าที่'}</strong>
+                </p>
+              )}
+            </div>
+
+            <Textarea
+              label="ข้อความที่ต้องการตอบกลับ"
+              required
+              rows={5}
+              placeholder="พิมพ์ข้อความตอบกลับลูกบ้านที่นี่..."
+              value={replyText}
+              onChange={(e) => {
+                setReplyText(e.target.value);
+                if (replyError) setReplyError('');
+              }}
+              error={replyError}
+              helperText="💡 ข้อความนี้จะถูกส่งตรงเข้าห้องแชท LINE ของลูกบ้านทันทีในนามของ LINE OA ชุมชน"
+            />
+          </form>
+        )}
+      </Modal>
     </FadeStagger>
   );
 }

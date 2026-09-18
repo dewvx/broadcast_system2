@@ -15,4 +15,7 @@ router.put('/:id', authMiddleware, roleMiddleware(['Admin', 'Leader']), activity
 // ลบ - Admin เท่านั้น
 router.delete('/:id', authMiddleware, roleMiddleware(['Admin']), activityController.remove);
 
+// ส่งแจ้งเตือนกิจกรรมผ่าน LINE OA
+router.post('/:id/broadcast', authMiddleware, roleMiddleware(['Admin', 'Leader']), activityController.broadcast);
+
 module.exports = router;

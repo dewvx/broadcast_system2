@@ -13,4 +13,7 @@ router.delete('/:id', authMiddleware, roleMiddleware(['Admin']), chatbotFaqContr
 // ดูประวัติการสอบถาม - Admin เท่านั้น
 router.get('/logs', authMiddleware, roleMiddleware(['Admin']), chatbotFaqController.getLogs);
 
+// ตอบกลับลูกบ้าน 1-on-1 ผ่าน LINE OA - Admin เท่านั้น
+router.post('/logs/:id/reply', authMiddleware, roleMiddleware(['Admin']), chatbotFaqController.replyToLog);
+
 module.exports = router;

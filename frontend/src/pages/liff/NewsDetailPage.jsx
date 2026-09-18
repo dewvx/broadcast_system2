@@ -5,7 +5,7 @@ import { getNewsDetailForVillager } from '../../api/villager.api';
 import axiosClient from '../../api/axiosClient';
 import { Badge, Card, LoadingSpinner, Button, toast } from '../../components/ui';
 import { PageTransition } from '../../components/motion';
-import { Calendar, Eye, AlertCircle, Home, Newspaper, ArrowLeft, Share2 } from 'lucide-react';
+import { Calendar, Eye, AlertCircle, Home, Newspaper, ArrowLeft, Share2, MapPin, ArrowRight } from 'lucide-react';
 
 function NewsDetailPage() {
   const { id } = useParams();
@@ -173,6 +173,55 @@ function NewsDetailPage() {
         <div className="text-text-primary text-body-lg leading-relaxed whitespace-pre-wrap">
           {news.news_content}
         </div>
+
+        {/* Related Community Activity Card */}
+        {news.act_id && news.act_title && (
+          <div className="p-4 bg-secondary-soft/70 border border-secondary/30 rounded-md space-y-3 shadow-xs">
+            <div className="flex items-center gap-2 text-secondary font-bold text-body">
+              <Calendar className="w-5 h-5 text-secondary shrink-0" />
+              <span>กิจกรรมชุมชนที่เกี่ยวข้อง</span>
+            </div>
+
+            <div className="space-y-1.5">
+              <h3 className="font-bold text-text-primary text-h3 leading-snug">
+                {news.act_title}
+              </h3>
+              <div className="text-body-sm text-text-secondary space-y-1 pt-1">
+                <p className="flex items-center gap-2 text-text-primary font-medium">
+                  <Calendar className="w-4 h-4 text-secondary shrink-0" />
+                  <span>
+                    {new Date(news.act_date).toLocaleDateString('th-TH', {
+                      weekday: 'long',
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                    })}
+                  </span>
+                </p>
+                {news.act_location && (
+                  <p className="flex items-center gap-2 text-text-secondary">
+                    <MapPin className="w-4 h-4 text-text-muted shrink-0" />
+                    <span>สถานที่: {news.act_location}</span>
+                  </p>
+                )}
+              </div>
+
+              {news.act_content && (
+                <div className="text-body-sm text-text-secondary pt-2 border-t border-secondary/20 line-clamp-3 leading-relaxed">
+                  {news.act_content}
+                </div>
+              )}
+            </div>
+
+            <div className="pt-2">
+              <Link to={`/liff/activities/${news.act_id}`} className="block w-full">
+                <Button variant="primary" fullWidth size="md" icon={ArrowRight}>
+                  ดูรายละเอียดกิจกรรมในปฏิทิน
+                </Button>
+              </Link>
+            </div>
+          </div>
+        )}
 
         {/* Bottom Back Actions */}
         <div className="pt-4 border-t border-border grid grid-cols-2 gap-2.5">

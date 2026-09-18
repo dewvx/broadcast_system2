@@ -81,23 +81,6 @@ CREATE TABLE tb_category (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- ตารางที่ 3.4 ข้อมูลข่าวสารชุมชน
-CREATE TABLE tb_news (
-  news_id INT AUTO_INCREMENT PRIMARY KEY,
-  news_title VARCHAR(255) NOT NULL,
-  news_content TEXT NOT NULL,
-  category_id INT NOT NULL,
-  news_image VARCHAR(255) NULL,
-  news_status ENUM('Pending', 'Approved', 'Rejected') DEFAULT 'Pending',
-  created_by INT NOT NULL,
-  approved_by INT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  is_deleted TINYINT(1) NOT NULL DEFAULT 0,
-  FOREIGN KEY (category_id) REFERENCES tb_category(category_id),
-  FOREIGN KEY (created_by) REFERENCES tb_user(user_id),
-  FOREIGN KEY (approved_by) REFERENCES tb_user(user_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
 -- ตารางที่ 3.5 ข้อมูลกิจกรรมชุมชน
 CREATE TABLE tb_activity (
   act_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -107,6 +90,25 @@ CREATE TABLE tb_activity (
   act_location VARCHAR(255) NOT NULL,
   created_by INT NOT NULL,
   FOREIGN KEY (created_by) REFERENCES tb_user(user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ตารางที่ 3.4 ข้อมูลข่าวสารชุมชน
+CREATE TABLE tb_news (
+  news_id INT AUTO_INCREMENT PRIMARY KEY,
+  news_title VARCHAR(255) NOT NULL,
+  news_content TEXT NOT NULL,
+  category_id INT NOT NULL,
+  act_id INT NULL DEFAULT NULL,
+  news_image VARCHAR(255) NULL,
+  news_status ENUM('Pending', 'Approved', 'Rejected') DEFAULT 'Pending',
+  created_by INT NOT NULL,
+  approved_by INT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  is_deleted TINYINT(1) NOT NULL DEFAULT 0,
+  FOREIGN KEY (category_id) REFERENCES tb_category(category_id),
+  FOREIGN KEY (act_id) REFERENCES tb_activity(act_id) ON DELETE SET NULL,
+  FOREIGN KEY (created_by) REFERENCES tb_user(user_id),
+  FOREIGN KEY (approved_by) REFERENCES tb_user(user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ตารางที่ 3.6 ข้อมูลแบบฟอร์มราชการ
@@ -171,5 +173,9 @@ CREATE TABLE tb_chatbot_log (
   message_text TEXT NOT NULL,
   response_text TEXT NOT NULL,
   is_matched TINYINT(1) DEFAULT 0,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  admin_reply TEXT NULL DEFAULT NULL,
+  replied_by INT NULL DEFAULT NULL,
+  replied_at DATETIME NULL DEFAULT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (replied_by) REFERENCES tb_user(user_id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

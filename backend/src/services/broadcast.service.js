@@ -1,5 +1,6 @@
 const broadcastModel = require('../models/broadcast.model');
 const newsModel = require('../models/news.model');
+const activityModel = require('../models/activity.model');
 const { lineClient } = require('../config/line');
 
 function throwError(message, statusCode) {
@@ -28,15 +29,47 @@ function buildNewsFlexMessage(news) {
     ? `https://liff.line.me/${process.env.LIFF_ID}/news/${news.news_id}`
     : `${baseUrl}/liff/news/${news.news_id}`;
 
+  const bodyContents = [
+    { type: 'text', text: news.news_title, weight: 'bold', size: 'lg', wrap: true },
+    { type: 'text', text: previewText, size: 'sm', color: '#666666', wrap: true, margin: 'md' },
+  ];
+
+  if (news.act_title) {
+    const actDateThai = formatThaiDate(news.act_date);
+    bodyContents.push({
+      type: 'box',
+      layout: 'vertical',
+      margin: 'md',
+      paddingAll: '10px',
+      backgroundColor: '#f0fdfa',
+      cornerRadius: 'md',
+      contents: [
+        {
+          type: 'text',
+          text: `📅 กิจกรรม: ${news.act_title}`,
+          weight: 'bold',
+          size: 'xs',
+          color: '#0f766e',
+          wrap: true,
+        },
+        {
+          type: 'text',
+          text: `🗓 ${actDateThai}${news.act_location ? ` | 📍 ${news.act_location}` : ''}`,
+          size: 'xxs',
+          color: '#0f766e',
+          wrap: true,
+          margin: 'xs',
+        },
+      ],
+    });
+  }
+
   const bubble = {
     type: 'bubble',
     body: {
       type: 'box',
       layout: 'vertical',
-      contents: [
-        { type: 'text', text: news.news_title, weight: 'bold', size: 'lg', wrap: true },
-        { type: 'text', text: previewText, size: 'sm', color: '#666666', wrap: true, margin: 'md' },
-      ],
+      contents: bodyContents,
     },
     footer: {
       type: 'box',
@@ -121,8 +154,198 @@ async function broadcastNews(newsId, zoneName, currentUser) {
   return { ...result, zoneName: zoneName || 'ทั้งหมด' };
 }
 
+function formatThaiDate(dateStr) {
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return String(dateStr);
+    const day = d.getDate();
+    const months = [
+      'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+      'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
+    ];
+    const month = months[d.getMonth()];
+    const year = d.getFullYear() + 543;
+    return `${day} ${month} ${year}`;
+  } catch {
+    return String(dateStr);
+  }
+}
+
+/**
+ * ประกอบข้อความกิจกรรมเป็น LINE Flex Message
+ */
+function buildActivityFlexMessage(activity) {
+  const baseUrl = process.env.PUBLIC_APP_URL || 'http://localhost:5000';
+  const thaiDate = formatThaiDate(activity.act_date);
+
+  const previewText = activity.act_content
+    ? (activity.act_content.length > 90 ? activity.act_content.slice(0, 90) + '...' : activity.act_content)
+    : 'ขอเชิญลูกบ้านเข้าร่วมกิจกรรมชุมชนตามวันและเวลาดังกล่าว';
+
+  const targetUri = process.env.LIFF_ID
+    ? `https://liff.line.me/${process.env.LIFF_ID}/activities/${activity.act_id}`
+    : `${baseUrl}/liff/activities/${activity.act_id}`;
+
+  const bubble = {
+    type: 'bubble',
+    header: {
+      type: 'box',
+      layout: 'vertical',
+      backgroundColor: '#0f766e',
+      paddingAll: '16px',
+      contents: [
+        {
+          type: 'text',
+          text: '📅 ปฏิทินกิจกรรมชุมชน',
+          weight: 'bold',
+          color: '#ffffff',
+          size: 'sm',
+        },
+      ],
+    },
+    body: {
+      type: 'box',
+      layout: 'vertical',
+      contents: [
+        {
+          type: 'text',
+          text: activity.act_title,
+          weight: 'bold',
+          size: 'lg',
+          wrap: true,
+          color: '#0f172a',
+        },
+        {
+          type: 'box',
+          layout: 'vertical',
+          margin: 'lg',
+          spacing: 'sm',
+          contents: [
+            {
+              type: 'box',
+              layout: 'baseline',
+              spacing: 'sm',
+              contents: [
+                {
+                  type: 'text',
+                  text: '🗓 วันที่:',
+                  color: '#64748b',
+                  size: 'sm',
+                  flex: 2,
+                },
+                {
+                  type: 'text',
+                  text: thaiDate,
+                  wrap: true,
+                  color: '#0f172a',
+                  size: 'sm',
+                  weight: 'bold',
+                  flex: 5,
+                },
+              ],
+            },
+            {
+              type: 'box',
+              layout: 'baseline',
+              spacing: 'sm',
+              contents: [
+                {
+                  type: 'text',
+                  text: '📍 สถานที่:',
+                  color: '#64748b',
+                  size: 'sm',
+                  flex: 2,
+                },
+                {
+                  type: 'text',
+                  text: activity.act_location || 'ไม่ระบุ',
+                  wrap: true,
+                  color: '#0f172a',
+                  size: 'sm',
+                  weight: 'bold',
+                  flex: 5,
+                },
+              ],
+            },
+          ],
+        },
+        {
+          type: 'text',
+          text: previewText,
+          size: 'xs',
+          color: '#64748b',
+          wrap: true,
+          margin: 'lg',
+        },
+      ],
+    },
+    footer: {
+      type: 'box',
+      layout: 'vertical',
+      contents: [
+        {
+          type: 'button',
+          style: 'primary',
+          color: '#0f766e',
+          action: {
+            type: 'uri',
+            label: 'ดูรายละเอียดกิจกรรม',
+            uri: targetUri,
+          },
+        },
+      ],
+    },
+  };
+
+  return {
+    type: 'flex',
+    altText: `📅 กิจกรรมชุมชน: ${activity.act_title} (${thaiDate})`,
+    contents: bubble,
+  };
+}
+
+/**
+ * Core logic ส่งกิจกรรมไปยัง LINE ลูกบ้าน
+ */
+async function executeActivityBroadcast(actId, zoneName) {
+  if (!process.env.PUBLIC_APP_URL) {
+    throwError('ยังไม่ได้ตั้งค่า PUBLIC_APP_URL ใน .env กรุณาตั้งค่าก่อนส่งกิจกรรม', 500);
+  }
+
+  const activity = await activityModel.findById(actId);
+  if (!activity) throwError('ไม่พบกิจกรรมนี้', 404);
+
+  const lineIds = await broadcastModel.getVillagerLineIds(zoneName);
+  if (lineIds.length === 0) {
+    const scope = zoneName ? `ในโซน "${zoneName}"` : 'ในระบบเลย';
+    throwError(`ยังไม่มีลูกบ้านลงทะเบียน${scope} ไม่สามารถส่งกิจกรรมได้`, 400);
+  }
+
+  await lineClient.multicast({
+    to: lineIds,
+    messages: [buildActivityFlexMessage(activity)],
+  });
+
+  return { totalReceived: lineIds.length, zoneName: zoneName || 'ทั้งหมด' };
+}
+
+async function broadcastActivity(actId, zoneName, currentUser) {
+  if (currentUser.roleName !== 'Admin' && currentUser.roleName !== 'Leader') {
+    throwError('ไม่มีสิทธิ์ส่งกิจกรรม', 403);
+  }
+
+  return executeActivityBroadcast(actId, zoneName);
+}
+
 async function getZones() {
   return broadcastModel.getAllZones();
 }
 
-module.exports = { broadcastNews, getZones, executeBroadcast };
+module.exports = {
+  broadcastNews,
+  getZones,
+  executeBroadcast,
+  buildActivityFlexMessage,
+  executeActivityBroadcast,
+  broadcastActivity,
+};

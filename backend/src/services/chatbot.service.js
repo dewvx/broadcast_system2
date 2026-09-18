@@ -1,5 +1,6 @@
 const chatbotFaqModel = require('../models/chatbotFaq.model');
 const chatbotLogModel = require('../models/chatbotLog.model');
+const { lineClient } = require('../config/line');
 
 function throwError(message, statusCode) {
   const err = new Error(message);
@@ -65,7 +66,11 @@ function buildFlexMessage(text) {
  */
 async function findAnswer(messageText, lineUserId) {
   const faq = await chatbotFaqModel.findMatchByMessage(messageText);
-  let answerText = 'ขออภัย ไม่พบข้อมูลที่ค้นหา กรุณาติดต่อผู้ใหญ่บ้านโดยตรง หรือลองพิมพ์คำถามด้วยคำอื่น';
+  let answerText =
+    'ขออภัยครับ ระบบไม่พบข้อมูลที่ตรงกับคำถามของท่าน 🙏\n\n' +
+    '📌 สิ่งที่ท่านสามารถทำได้:\n' +
+    '1. พิมพ์คำถามทิ้งไว้ในแชทนี้ เพื่อให้ผู้ใหญ่บ้านหรือเจ้าหน้าที่เข้ามาตอบกลับโดยตรง\n' +
+    '2. ลองพิมพ์คำถามใหม่โดยใช้คำสำคัญสั้นๆ (เช่น เวลาเปิดทำการ, ขยะ, ติดต่อ)';
   let isMatched = false;
 
   if (faq) {
@@ -141,4 +146,51 @@ async function getInquiryLogs({ limit = 100, offset = 0 } = {}) {
   return { logs, total };
 }
 
-module.exports = { findAnswer, getAllFaqs, createFaq, updateFaq, deleteFaq, getInquiryLogs };
+async function replyToVillager(logId, adminReplyText, currentUser) {
+  if (!adminReplyText || !adminReplyText.trim()) {
+    throwError('กรุณากรอกข้อความที่จะตอบกลับ', 400);
+  }
+
+  const log = await chatbotLogModel.findById(logId);
+  if (!log) {
+    throwError('ไม่พบประวัติการสอบถามนี้', 404);
+  }
+
+  if (!log.line_user_id) {
+    throwError('ไม่พบบัญชี LINE ของผู้สอบถาม ไม่สามารถส่งข้อความได้', 400);
+  }
+
+  const replyClean = adminReplyText.trim();
+  const questionPreview = log.message_text
+    ? (log.message_text.length > 60 ? log.message_text.slice(0, 60) + '...' : log.message_text)
+    : '';
+
+  const pushMessageText =
+    `💬 [ตอบกลับจากผู้ใหญ่บ้าน/เจ้าหน้าที่]\n\n` +
+    (questionPreview ? `อ้างถึงคำถาม: "${questionPreview}"\n\n` : '') +
+    `${replyClean}`;
+
+  try {
+    await lineClient.pushMessage({
+      to: log.line_user_id,
+      messages: [
+        {
+          type: 'text',
+          text: pushMessageText,
+        },
+      ],
+    });
+  } catch (err) {
+    console.error('Failed to send LINE push reply:', err);
+    throwError('ไม่สามารถส่งข้อความเข้า LINE ได้ กรุณาตรวจสอบว่าผู้ใช้ได้บล็อก LINE OA หรือไม่', 500);
+  }
+
+  await chatbotLogModel.updateReply(logId, {
+    adminReply: replyClean,
+    repliedBy: currentUser.userId,
+  });
+
+  return chatbotLogModel.findById(logId);
+}
+
+module.exports = { findAnswer, getAllFaqs, createFaq, updateFaq, deleteFaq, getInquiryLogs, replyToVillager };
