@@ -36,6 +36,19 @@ async function create(req, res, next) {
   }
 }
 
+async function update(req, res, next) {
+  try {
+    const doc = await documentService.updateDocument(req.params.id, {
+      docName: req.body.docName,
+      file: req.file,
+      currentUser: req.user,
+    });
+    res.json({ success: true, data: doc, message: 'แก้ไขเอกสารสำเร็จ' });
+  } catch (err) {
+    next(err);
+  }
+}
+
 async function remove(req, res, next) {
   try {
     await documentService.deleteDocument(req.params.id);
@@ -45,4 +58,4 @@ async function remove(req, res, next) {
   }
 }
 
-module.exports = { getAll, getOne, create, remove };
+module.exports = { getAll, getOne, create, update, remove };

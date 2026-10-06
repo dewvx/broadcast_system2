@@ -34,6 +34,30 @@ async function createDocument({ docName, file, currentUser }) {
   return documentModel.findById(docId);
 }
 
+async function updateDocument(docId, { docName, file, currentUser }) {
+  const doc = await documentModel.findById(docId);
+  if (!doc) throwError('ไม่พบเอกสารนี้', 404);
+
+  if (currentUser.roleName !== 'Admin' && doc.created_by !== currentUser.userId) {
+    throwError('คุณไม่มีสิทธิ์แก้ไขเอกสารนี้', 403);
+  }
+
+  if (!docName || !docName.trim()) {
+    throwError('กรุณาระบุชื่อเอกสาร', 400);
+  }
+
+  const updateData = {
+    docName: docName.trim(),
+  };
+
+  if (file) {
+    updateData.docFilePath = `/uploads/${file.filename}`;
+  }
+
+  await documentModel.update(docId, updateData);
+  return documentModel.findById(docId);
+}
+
 async function deleteDocument(docId) {
   const doc = await documentModel.findById(docId);
   if (!doc) throwError('ไม่พบเอกสารนี้', 404);
@@ -43,4 +67,4 @@ async function deleteDocument(docId) {
   // ทำแบบ "soft" ไว้ก่อน กันเผลอลบไฟล์ผิด - ถ้าจะลบไฟล์จริงด้วย ต้องเพิ่ม fs.unlink() ทีหลัง
 }
 
-module.exports = { getAllDocuments, getDocumentById, createDocument, deleteDocument };
+module.exports = { getAllDocuments, getDocumentById, createDocument, updateDocument, deleteDocument };
