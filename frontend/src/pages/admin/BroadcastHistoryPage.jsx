@@ -15,6 +15,7 @@ import {
   User,
   Calendar,
   X,
+  Download,
 } from 'lucide-react';
 
 function formatDateTime(dateStr) {
@@ -88,6 +89,32 @@ function BroadcastHistoryPage() {
     setPage(1);
   };
 
+  const handleExportCSV = () => {
+    if (logs.length === 0) return;
+
+    const headers = ['ลำดับ', 'วันและเวลาที่ส่ง', 'หัวข้อข่าวสาร', 'หมวดหมู่', 'ผู้ส่งข่าว', 'ชื่อผู้ใช้', 'จำนวนผู้รับ (คน)'];
+    const rows = logs.map((item, index) => [
+      (page - 1) * limit + index + 1,
+      `"${formatDateTime(item.sent_at)}"`,
+      `"${(item.news_title || '').replace(/"/g, '""')}"`,
+      `"${(item.category_name || 'ทั่วไป').replace(/"/g, '""')}"`,
+      `"${(item.sent_by_name || '').replace(/"/g, '""')}"`,
+      `"${(item.sent_by_username || '').replace(/"/g, '""')}"`,
+      Number(item.total_received || 0),
+    ]);
+
+    const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `ประวัติการส่งข่าวสาร_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       {/* Page Header */}
@@ -112,6 +139,16 @@ function BroadcastHistoryPage() {
           >
             <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin text-primary' : ''}`} />
             <span>รีเฟรช</span>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            icon={Download}
+            onClick={handleExportCSV}
+            disabled={logs.length === 0}
+            className="shrink-0"
+          >
+            ส่งออก CSV
           </Button>
           <Link to="/admin/news">
             <Button variant="primary" size="sm" icon={Send} className="shrink-0">

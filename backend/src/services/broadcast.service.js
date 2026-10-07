@@ -345,6 +345,7 @@ module.exports = {
   broadcastNews,
   getZones,
   executeBroadcast,
+  buildNewsFlexMessage,
   buildActivityFlexMessage,
   executeActivityBroadcast,
   broadcastActivity,

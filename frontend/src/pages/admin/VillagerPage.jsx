@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { getAllVillagers, updateVillager, deleteVillager } from '../../api/admin-villager.api';
 import { getAllZones } from '../../api/zone.api';
 import { Button, Select, Badge, EmptyState, LoadingSpinner, Pagination, toast } from '../../components/ui';
-import { Users, Search, ShieldAlert, Pencil, Trash2, X, UserCheck, UserX } from 'lucide-react';
+import { Users, Search, ShieldAlert, Pencil, Trash2, X, UserCheck, UserX, Download } from 'lucide-react';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -273,6 +273,34 @@ function VillagerPage() {
     setDeleteTarget(null);
   }
 
+  function handleExportCSV() {
+    if (filtered.length === 0) return;
+
+    const headers = ['ลำดับ', 'ชื่อ', 'นามสกุล', 'ชื่อแสดง LINE', 'บ้านเลขที่', 'ซอย/คุ้ม', 'สถานะ', 'วันที่ลงทะเบียน'];
+    const rows = filtered.map((v, index) => [
+      index + 1,
+      `"${(v.first_name || '').replace(/"/g, '""')}"`,
+      `"${(v.last_name || '').replace(/"/g, '""')}"`,
+      `"${(v.display_name || '').replace(/"/g, '""')}"`,
+      `"${(v.house_number || '').replace(/"/g, '""')}"`,
+      `"${(v.zone_name || 'ยังไม่ระบุ').replace(/"/g, '""')}"`,
+      v.is_active ? 'Active' : 'Inactive',
+      `"${v.join_date ? new Date(v.join_date).toLocaleDateString('th-TH') : '-'}"`
+    ]);
+
+    const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `รายชื่อลูกบ้าน_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success(`ส่งออกข้อมูลลูกบ้าน ${filtered.length} รายการเรียบร้อยแล้ว`);
+  }
+
   if (loading) return <LoadingSpinner text="กำลังโหลดข้อมูลลูกบ้าน..." />;
 
   if (errorMsg) {
@@ -325,6 +353,14 @@ function VillagerPage() {
               )}
             </p>
           </div>
+          <Button
+            variant="outline"
+            icon={Download}
+            onClick={handleExportCSV}
+            disabled={filtered.length === 0}
+          >
+            ส่งออก CSV
+          </Button>
         </div>
 
         {/* Filter & Search Bar */}

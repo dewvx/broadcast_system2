@@ -192,6 +192,8 @@ function NewsManagementPage() {
     return item.created_by === user.userId && item.news_status !== 'Approved';
   }
 
+  const pendingCount = news.filter((n) => n.news_status === 'Pending').length;
+
   const filteredNews = news.filter((item) => {
     const matchFilter = filter === 'All' || item.news_status === filter;
     const matchSearch =
@@ -224,6 +226,27 @@ function NewsManagementPage() {
         </Link>
       </div>
 
+      {/* Alert banner if pending news exists for Admin */}
+      {user.roleName === 'Admin' && pendingCount > 0 && filter !== 'Pending' && (
+        <div className="p-3.5 bg-warning-soft border border-warning/30 rounded-md text-warning-active text-sm flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-xs">
+          <div className="flex items-center gap-2">
+            <Clock className="w-4 h-4 text-warning shrink-0" />
+            <span>
+              มีข่าวสารจากผู้นำชุมชนรอการตรวจสอบและอนุมัติจำนวน{' '}
+              <strong>{pendingCount}</strong> รายการ
+            </span>
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            className="border-warning/40 text-warning hover:bg-warning/10 shrink-0 self-start sm:self-auto"
+            onClick={() => setFilter('Pending')}
+          >
+            ดูข่าวรออนุมัติ
+          </Button>
+        </div>
+      )}
+
       {/* Filter & Search Bar */}
       <div className="bg-surface border border-border p-4 rounded-md shadow-xs flex flex-col sm:flex-row gap-3 items-center justify-between">
         <div className="relative flex-1 w-full">
@@ -236,13 +259,16 @@ function NewsManagementPage() {
             className="w-full h-10 pl-10 pr-4 text-sm bg-surface border border-border rounded-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
           />
         </div>
-        <div className="w-full sm:w-48">
+        <div className="w-full sm:w-52">
           <Select
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
             options={[
               { label: 'สถานะทั้งหมด', value: 'All' },
-              { label: 'รออนุมัติ (Pending)', value: 'Pending' },
+              {
+                label: `รออนุมัติ (Pending)${pendingCount > 0 ? ` (${pendingCount})` : ''}`,
+                value: 'Pending',
+              },
               { label: 'อนุมัติแล้ว (Approved)', value: 'Approved' },
               { label: 'ถูกปฏิเสธ (Rejected)', value: 'Rejected' },
             ]}

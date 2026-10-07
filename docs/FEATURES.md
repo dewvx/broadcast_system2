@@ -74,6 +74,7 @@
 - [x] คอลัมน์ `is_active` ใน `tb_villager` (1 = ปกติ, 0 = เลิกติดตาม/บล็อก) แยกจาก `is_deleted` (0 = ปกติ, 1 = Admin ลบ)
 - [x] Webhook Event `unfollow` → mark `is_active = 0` (ไม่ลบ record เก็บประวัติไว้)
 - [x] Webhook Event `follow` → mark `is_active = 1` (เมื่อแอดกลับมา restore สถานะทันที)
+- [x] ส่งข้อความต้อนรับและข่าวสารล่าสุดเข้า LINE อัตโนมัติทันทีหลังลงทะเบียนเสร็จ (Welcome & Latest News Auto Push)
 
 ## 3.12 ระบบคุ้มครองข้อมูลส่วนบุคคล (PDPA / Compliance)
 - [x] แสดงข้อความขอความยินยอมเก็บข้อมูลส่วนบุคคล (ชื่อ-นามสกุล, บ้านเลขที่, ซอย/คุ้ม) บนหน้าลงทะเบียน LIFF

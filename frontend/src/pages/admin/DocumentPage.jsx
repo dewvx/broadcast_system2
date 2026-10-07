@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { getAllDocuments, uploadDocument, updateDocument, deleteDocument } from '../../api/document.api';
 import { Button, Input, Modal, Badge, EmptyState, LoadingSpinner, Pagination, toast, useConfirm } from '../../components/ui';
-import { FileText, Upload, Download, Trash2, Edit2, FileCode, File, AlertCircle } from 'lucide-react';
+import { FileText, Upload, Download, Trash2, Edit2, FileCode, File, AlertCircle, Search } from 'lucide-react';
 
 const ITEMS_PER_PAGE = 8;
 
@@ -17,6 +17,7 @@ function DocumentPage() {
   const [uploadError, setUploadError] = useState('');
   const [docName, setDocName] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [searchTerm, setSearchTerm] = useState('');
   const fileRef = useRef(null);
   const [showUploadModal, setShowUploadModal] = useState(false);
 
@@ -27,6 +28,10 @@ function DocumentPage() {
   const [updating, setUpdating] = useState(false);
   const [editError, setEditError] = useState('');
   const editFileRef = useRef(null);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
 
   useEffect(() => {
     fetchDocuments();
@@ -150,7 +155,11 @@ function DocumentPage() {
     return filePath.split('.').pop()?.toUpperCase() || 'FILE';
   }
 
-  const paginatedDocs = documents.slice(
+  const filteredDocs = documents.filter((doc) =>
+    (doc.doc_name || '').toLowerCase().includes(searchTerm.toLowerCase().trim())
+  );
+
+  const paginatedDocs = filteredDocs.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   );
@@ -188,13 +197,42 @@ function DocumentPage() {
         </Button>
       </div>
 
+      {/* Search Bar */}
+      {documents.length > 0 && (
+        <div className="bg-surface border border-border p-3 sm:p-4 rounded-md shadow-xs flex items-center gap-3">
+          <div className="relative flex-1">
+            <Search className="w-4 h-4 text-text-muted absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <input
+              type="text"
+              placeholder="ค้นหาชื่อแบบฟอร์มหรือเอกสารราชการ..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full h-10 pl-10 pr-4 text-sm bg-surface border border-border rounded-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            />
+          </div>
+          {searchTerm && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSearchTerm('')}
+            >
+              ล้างค่า
+            </Button>
+          )}
+        </div>
+      )}
+
       {/* Document List Table */}
       <div className="bg-surface border border-border rounded-md shadow-xs overflow-hidden">
-        {documents.length === 0 ? (
+        {filteredDocs.length === 0 ? (
           <EmptyState
             icon={FileText}
-            title="ยังไม่มีเอกสารในระบบ"
-            description="กดปุ่มอัปโหลดเอกสารด้านบนเพื่อเพิ่มแบบฟอร์มราชการในระบบ"
+            title={searchTerm ? 'ไม่พบเอกสารที่ค้นหา' : 'ยังไม่มีเอกสารในระบบ'}
+            description={
+              searchTerm
+                ? `ไม่พบแบบฟอร์มเอกสารที่ตรงกับ "${searchTerm}"`
+                : 'กดปุ่มอัปโหลดเอกสารด้านบนเพื่อเพิ่มแบบฟอร์มราชการในระบบ'
+            }
           />
         ) : (
           <div>
@@ -263,7 +301,7 @@ function DocumentPage() {
             {/* Pagination */}
             <Pagination
               currentPage={currentPage}
-              totalItems={documents.length}
+              totalItems={filteredDocs.length}
               itemsPerPage={ITEMS_PER_PAGE}
               onPageChange={setCurrentPage}
             />
