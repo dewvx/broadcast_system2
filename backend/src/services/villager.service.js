@@ -2,8 +2,10 @@ const crypto = require('crypto');
 const villagerModel = require('../models/villager.model');
 const zoneModel = require('../models/zone.model');
 const villagerOtpModel = require('../models/villagerOtp.model');
+const newsModel = require('../models/news.model');
 const { lineClient } = require('../config/line');
 const { verifyLiffIdToken } = require('./liffAuth.service');
+const { buildNewsFlexMessage } = require('./broadcast.service');
 
 const RESEND_COOLDOWN_SECONDS = 60;
 const OTP_EXPIRATION_MINUTES = 5;
@@ -152,7 +154,44 @@ async function registerVillager(idToken, { firstName, lastName, houseNumber, zon
     pdpaConsentAt: new Date(), // บันทึก server-side timestamp เพื่อกันปลอม
   });
 
-  return villagerModel.findById(villagerId);
+  const newVillager = await villagerModel.findById(villagerId);
+
+  // ส่งข้อความต้อนรับและข่าวสารล่าสุดเข้า LINE อัตโนมัติ (non-blocking)
+  sendWelcomeAndLatestNews(lineUserId, newVillager).catch((err) => {
+    console.error('Background welcome push error:', err);
+  });
+
+  return newVillager;
+}
+
+/**
+ * ส่งข้อความต้อนรับและข่าวสารล่าสุดไปยัง LINE ของลูกบ้านที่ลงทะเบียนใหม่
+ * - ทำงานแบบ asynchronous (non-blocking) ไม่หน่วง request การลงทะเบียน
+ */
+async function sendWelcomeAndLatestNews(lineUserId, villager) {
+  try {
+    const welcomeText = `🎉 ยินดีต้อนรับคุณ ${villager.first_name} ${villager.last_name}\nเข้าสู่ระบบหอกระจายข่าวชุมชนบ้านสี่แยกอย่างเป็นทางการครับ!\n\n📍 ข้อมูลของท่าน:\n• บ้านเลขที่: ${villager.house_number}\n• ซอย/คุ้ม: ${villager.zone_name || 'ยังไม่ระบุ'}\n\nท่านจะได้รับการแจ้งเตือนข่าวสารและประกาศสำคัญของหมู่บ้านผ่าน LINE นี้ครับ`;
+
+    const messages = [
+      {
+        type: 'text',
+        text: welcomeText,
+      },
+    ];
+
+    // ดึงข่าวล่าสุดที่อนุมัติแล้วในระบบ (Approved)
+    const latestNews = await newsModel.findLatestApproved();
+    if (latestNews) {
+      messages.push(buildNewsFlexMessage(latestNews));
+    }
+
+    await lineClient.pushMessage({
+      to: lineUserId,
+      messages,
+    });
+  } catch (err) {
+    console.error('Failed to send welcome message / latest news on registration:', err.message);
+  }
 }
 
 /**

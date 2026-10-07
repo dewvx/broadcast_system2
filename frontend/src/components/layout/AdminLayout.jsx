@@ -63,7 +63,7 @@ function SidebarContent({ user, pendingNewsCount, onEditProfile, onLogout }) {
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
         {visibleNav.map((item) => {
           const Icon = item.icon;
-          const hasPendingBadge = item.badgeKey === 'pendingNews' && pendingNewsCount > 0;
+          const hasPendingBadge = item.badgeKey === 'pendingNews' && pendingNewsCount > 0 && user?.roleName === 'Admin';
           return (
             <NavLink
               key={item.to}
@@ -90,7 +90,7 @@ function SidebarContent({ user, pendingNewsCount, onEditProfile, onLogout }) {
                   <span className="relative flex-1 truncate">{item.label}</span>
                   {hasPendingBadge && (
                     <span
-                      className="relative px-2 py-0.5 text-meta font-bold bg-warning text-white rounded-full leading-none shrink-0"
+                      className="relative px-2 py-0.5 text-meta font-bold bg-warning text-white rounded-full leading-none shrink-0 shadow-xs"
                       title={`มีข่าวรออนุมัติ ${pendingNewsCount} ข่าว`}
                     >
                       {pendingNewsCount}
@@ -204,15 +204,28 @@ function AdminLayout() {
           <button
             onClick={() => setShowMobileNav(true)}
             aria-label="เปิดเมนู"
-            className="w-10 h-10 -ml-2 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors cursor-pointer"
+            className="relative w-10 h-10 -ml-2 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors cursor-pointer"
           >
             <Menu className="w-5 h-5" />
+            {pendingNewsCount > 0 && user?.roleName === 'Admin' && (
+              <span className="absolute top-2.5 right-2.5 w-2.5 h-2.5 bg-warning rounded-full border-2 border-slate-900" />
+            )}
           </button>
           <span className="text-body font-bold truncate">หอกระจายข่าวบ้านสี่แยก</span>
         </div>
-        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-meta font-medium bg-white/10 text-white border border-white/15 shrink-0">
-          {user?.roleName || 'Admin'}
-        </span>
+        <div className="flex items-center gap-2">
+          {pendingNewsCount > 0 && user?.roleName === 'Admin' && (
+            <NavLink
+              to="/admin/news"
+              className="inline-flex items-center px-2 py-0.5 rounded-full text-meta font-bold bg-warning text-white"
+            >
+              รออนุมัติ {pendingNewsCount}
+            </NavLink>
+          )}
+          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-meta font-medium bg-white/10 text-white border border-white/15 shrink-0">
+            {user?.roleName || 'Admin'}
+          </span>
+        </div>
       </div>
 
       {/* Mobile Drawer */}
@@ -263,9 +276,20 @@ function AdminLayout() {
                 สวัสดีคุณ <strong className="font-semibold text-text-primary">{user?.fullName || 'ผู้ใช้งาน'}</strong>
               </span>
             </div>
-            <span className="inline-flex items-center px-3 py-1 rounded-full text-body-sm font-medium bg-primary-soft text-primary-active border border-primary/15">
-              {user?.roleName || 'Admin'}
-            </span>
+            <div className="flex items-center gap-3">
+              {pendingNewsCount > 0 && user?.roleName === 'Admin' && (
+                <NavLink
+                  to="/admin/news"
+                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-meta font-medium bg-warning-soft text-warning border border-warning/20 hover:bg-warning/10 transition-colors"
+                >
+                  <span className="w-2 h-2 rounded-full bg-warning animate-pulse" />
+                  <span>มีข่าวรออนุมัติ {pendingNewsCount} รายการ</span>
+                </NavLink>
+              )}
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-body-sm font-medium bg-primary-soft text-primary-active border border-primary/15">
+                {user?.roleName || 'Admin'}
+              </span>
+            </div>
           </header>
 
           {/* Page Container */}

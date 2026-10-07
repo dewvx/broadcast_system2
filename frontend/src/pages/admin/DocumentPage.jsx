@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { getAllDocuments, uploadDocument, deleteDocument } from '../../api/document.api';
+import { getAllDocuments, uploadDocument, updateDocument, deleteDocument } from '../../api/document.api';
 import { Button, Input, Modal, Badge, EmptyState, LoadingSpinner, Pagination, toast, useConfirm } from '../../components/ui';
-import { FileText, Upload, Download, Trash2, FileCode, File, AlertCircle } from 'lucide-react';
+import { FileText, Upload, Download, Trash2, Edit2, FileCode, File, AlertCircle, Search } from 'lucide-react';
 
 const ITEMS_PER_PAGE = 8;
 
@@ -17,8 +17,21 @@ function DocumentPage() {
   const [uploadError, setUploadError] = useState('');
   const [docName, setDocName] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [searchTerm, setSearchTerm] = useState('');
   const fileRef = useRef(null);
   const [showUploadModal, setShowUploadModal] = useState(false);
+
+  // Edit states
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingDoc, setEditingDoc] = useState(null);
+  const [editDocName, setEditDocName] = useState('');
+  const [updating, setUpdating] = useState(false);
+  const [editError, setEditError] = useState('');
+  const editFileRef = useRef(null);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
 
   useEffect(() => {
     fetchDocuments();
@@ -89,6 +102,47 @@ function DocumentPage() {
     }
   }
 
+  function handleOpenEdit(doc) {
+    setEditingDoc(doc);
+    setEditDocName(doc.doc_name);
+    setEditError('');
+    if (editFileRef.current) editFileRef.current.value = '';
+    setShowEditModal(true);
+  }
+
+  async function handleUpdate(e) {
+    e.preventDefault();
+    if (!editDocName.trim()) {
+      setEditError('กรุณาระบุชื่อเอกสาร');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('docName', editDocName.trim());
+    const file = editFileRef.current?.files?.[0];
+    if (file) {
+      formData.append('document', file);
+    }
+
+    try {
+      setUpdating(true);
+      setEditError('');
+      await updateDocument(editingDoc.doc_id, formData);
+      toast.success('แก้ไขข้อมูลเอกสารเรียบร้อยแล้ว');
+      setShowEditModal(false);
+      setEditingDoc(null);
+      setEditDocName('');
+      if (editFileRef.current) editFileRef.current.value = '';
+      fetchDocuments();
+    } catch (err) {
+      const msg = err.response?.data?.message || 'แก้ไขเอกสารไม่สำเร็จ';
+      setEditError(msg);
+      toast.error(msg);
+    } finally {
+      setUpdating(false);
+    }
+  }
+
 
   function getFileIcon(filePath = '') {
     const ext = filePath.split('.').pop()?.toLowerCase();
@@ -101,7 +155,11 @@ function DocumentPage() {
     return filePath.split('.').pop()?.toUpperCase() || 'FILE';
   }
 
-  const paginatedDocs = documents.slice(
+  const filteredDocs = documents.filter((doc) =>
+    (doc.doc_name || '').toLowerCase().includes(searchTerm.toLowerCase().trim())
+  );
+
+  const paginatedDocs = filteredDocs.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   );
@@ -139,13 +197,42 @@ function DocumentPage() {
         </Button>
       </div>
 
+      {/* Search Bar */}
+      {documents.length > 0 && (
+        <div className="bg-surface border border-border p-3 sm:p-4 rounded-md shadow-xs flex items-center gap-3">
+          <div className="relative flex-1">
+            <Search className="w-4 h-4 text-text-muted absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <input
+              type="text"
+              placeholder="ค้นหาชื่อแบบฟอร์มหรือเอกสารราชการ..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full h-10 pl-10 pr-4 text-sm bg-surface border border-border rounded-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            />
+          </div>
+          {searchTerm && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSearchTerm('')}
+            >
+              ล้างค่า
+            </Button>
+          )}
+        </div>
+      )}
+
       {/* Document List Table */}
       <div className="bg-surface border border-border rounded-md shadow-xs overflow-hidden">
-        {documents.length === 0 ? (
+        {filteredDocs.length === 0 ? (
           <EmptyState
             icon={FileText}
-            title="ยังไม่มีเอกสารในระบบ"
-            description="กดปุ่มอัปโหลดเอกสารด้านบนเพื่อเพิ่มแบบฟอร์มราชการในระบบ"
+            title={searchTerm ? 'ไม่พบเอกสารที่ค้นหา' : 'ยังไม่มีเอกสารในระบบ'}
+            description={
+              searchTerm
+                ? `ไม่พบแบบฟอร์มเอกสารที่ตรงกับ "${searchTerm}"`
+                : 'กดปุ่มอัปโหลดเอกสารด้านบนเพื่อเพิ่มแบบฟอร์มราชการในระบบ'
+            }
           />
         ) : (
           <div>
@@ -184,6 +271,16 @@ function DocumentPage() {
                             ดาวน์โหลด
                           </Button>
                         </a>
+                        {(user?.roleName === 'Admin' || user?.userId === doc.created_by) && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleOpenEdit(doc)}
+                            title="แก้ไข"
+                          >
+                            <Edit2 className="w-4 h-4 text-text-muted hover:text-primary" />
+                          </Button>
+                        )}
                         {user?.roleName === 'Admin' && (
                           <Button
                             size="sm"
@@ -204,7 +301,7 @@ function DocumentPage() {
             {/* Pagination */}
             <Pagination
               currentPage={currentPage}
-              totalItems={documents.length}
+              totalItems={filteredDocs.length}
               itemsPerPage={ITEMS_PER_PAGE}
               onPageChange={setCurrentPage}
             />
@@ -252,6 +349,55 @@ function DocumentPage() {
               className="w-full text-body-sm text-text-secondary file:mr-3 file:py-2.5 file:px-4 file:rounded-sm file:border-0 file:text-body-sm file:font-medium file:bg-primary-soft file:text-primary-active hover:file:bg-primary/20 border border-border rounded-sm p-1.5 cursor-pointer"
             />
             <p className="text-body-sm text-text-muted">รองรับไฟล์ .pdf, .doc, .docx ขนาดไม่เกิน 10MB</p>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Edit Modal */}
+      <Modal
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        title="แก้ไขแบบฟอร์มเอกสาร"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setShowEditModal(false)}>
+              ยกเลิก
+            </Button>
+            <Button variant="primary" loading={updating} onClick={handleUpdate}>
+              บันทึกการแก้ไข
+            </Button>
+          </>
+        }
+      >
+        <form onSubmit={handleUpdate} className="space-y-4">
+          {editError && (
+            <div className="p-3 bg-error-soft border border-error/20 rounded-sm text-error text-body-sm">
+              {editError}
+            </div>
+          )}
+          <Input
+            label="ชื่อเอกสาร"
+            required
+            placeholder="เช่น แบบฟอร์มคำร้องขอลงทะเบียนสวัสดิการ"
+            value={editDocName}
+            onChange={(e) => setEditDocName(e.target.value)}
+          />
+          <div className="space-y-1.5">
+            <label className="block text-sm font-medium text-text-primary">
+              เปลี่ยนไฟล์เอกสาร (ถ้าต้องการ)
+            </label>
+            {editingDoc && (
+              <p className="text-body-sm text-text-muted">
+                ไฟล์ปัจจุบัน: <span className="font-mono text-text-secondary">{editingDoc.doc_file_path?.split('/').pop()}</span>
+              </p>
+            )}
+            <input
+              type="file"
+              ref={editFileRef}
+              accept=".pdf,.doc,.docx"
+              className="w-full text-body-sm text-text-secondary file:mr-3 file:py-2.5 file:px-4 file:rounded-sm file:border-0 file:text-body-sm file:font-medium file:bg-primary-soft file:text-primary-active hover:file:bg-primary/20 border border-border rounded-sm p-1.5 cursor-pointer"
+            />
+            <p className="text-body-sm text-text-muted">เว้นว่างไว้หากไม่ต้องการเปลี่ยนไฟล์เดิม (รองรับ .pdf, .doc, .docx ขนาดไม่เกิน 10MB)</p>
           </div>
         </form>
       </Modal>

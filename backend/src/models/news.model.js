@@ -65,4 +65,21 @@ async function setImage(newsId, imagePath) {
   await pool.query(`UPDATE tb_news SET news_image = ? WHERE news_id = ?`, [imagePath, newsId]);
 }
 
-module.exports = { findAll, findById, create, update, remove, updateStatus, setImage };
+async function findLatestApproved() {
+  const [rows] = await pool.query(
+    `SELECT n.news_id, n.news_title, n.news_content, n.category_id, c.category_name,
+            n.act_id, a.act_title, a.act_date, a.act_location,
+            n.news_image, n.news_status, n.created_by, u.full_name AS created_by_name,
+            n.approved_by, n.created_at
+     FROM tb_news n
+     LEFT JOIN tb_category c ON n.category_id = c.category_id
+     LEFT JOIN tb_activity a ON n.act_id = a.act_id
+     LEFT JOIN tb_user u ON n.created_by = u.user_id
+     WHERE n.is_deleted = 0 AND n.news_status = 'Approved'
+     ORDER BY n.created_at DESC
+     LIMIT 1`
+  );
+  return rows[0] || null;
+}
+
+module.exports = { findAll, findById, findLatestApproved, create, update, remove, updateStatus, setImage };

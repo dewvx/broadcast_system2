@@ -3,7 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import { getUsers, getRoles, createUser, updateUser, deleteUser } from '../../api/user.api';
 import { getAllVillagers } from '../../api/admin-villager.api';
 import { Button, Input, Select, Modal, Badge, EmptyState, LoadingSpinner, toast, useConfirm } from '../../components/ui';
-import { Users, Plus, Edit2, Trash2, Key, AlertCircle, Phone, Award, Check } from 'lucide-react';
+import { Users, Plus, Edit2, Trash2, Key, AlertCircle, Phone, Award, Check, Search } from 'lucide-react';
 
 const EMPTY_FORM = {
   username: '',
@@ -144,6 +144,25 @@ function UserPage() {
   }
 
 
+  const [searchTerm, setSearchTerm] = useState('');
+  const [roleFilter, setRoleFilter] = useState('All');
+
+  const filteredUsers = users.filter((item) => {
+    const matchRole =
+      roleFilter === 'All' ||
+      item.role_name === roleFilter;
+
+    const term = searchTerm.toLowerCase().trim();
+    const matchSearch =
+      !term ||
+      (item.full_name && item.full_name.toLowerCase().includes(term)) ||
+      (item.username && item.username.toLowerCase().includes(term)) ||
+      (item.position_title && item.position_title.toLowerCase().includes(term)) ||
+      (item.phone_number && item.phone_number.includes(term));
+
+    return matchRole && matchSearch;
+  });
+
   if (loading) return <LoadingSpinner text="กำลังโหลดรายการผู้ใช้งานระบบ..." />;
 
   return (
@@ -153,7 +172,7 @@ function UserPage() {
         <div>
           <h1 className="text-h1 text-text-primary">จัดการบัญชีผู้ใช้งาน</h1>
           <p className="text-sm text-text-secondary mt-1">
-            บัญชีผู้ใหญ่บ้าน (Admin) และ ผู้นำชุมชน/อสม. (Leader) ที่มีสิทธิ์เข้าใช้งานระบบ
+            บัญชีผู้ใหญ่บ้าน (Admin) และ ผู้นำชุมชน/อสม. (Leader) ที่มีสิทธิ์เข้าใช้งานระบบ ({users.length} บัญชี)
           </p>
         </div>
         {currentUser?.roleName === 'Admin' && (
@@ -170,13 +189,59 @@ function UserPage() {
         </div>
       )}
 
+      {/* Filter & Search Bar */}
+      {users.length > 0 && (
+        <div className="bg-surface border border-border p-3.5 sm:p-4 rounded-md shadow-xs flex flex-col sm:flex-row gap-3 items-center justify-between">
+          <div className="relative flex-1 w-full">
+            <Search className="w-4 h-4 text-text-muted absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <input
+              type="text"
+              placeholder="ค้นหาชื่อ-นามสกุล, ตำแหน่ง, เบอร์โทร, หรือ Username..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full h-10 pl-10 pr-4 text-sm bg-surface border border-border rounded-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            />
+          </div>
+          <div className="w-full sm:w-64 flex items-center gap-2">
+            <div className="flex-1">
+              <Select
+                value={roleFilter}
+                onChange={(e) => setRoleFilter(e.target.value)}
+                options={[
+                  { label: 'ทุกสิทธิ์การใช้งาน', value: 'All' },
+                  { label: 'ผู้ใหญ่บ้าน (Admin)', value: 'Admin' },
+                  { label: 'ผู้นำชุมชน (Leader)', value: 'Leader' },
+                ]}
+              />
+            </div>
+            {(searchTerm || roleFilter !== 'All') && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setSearchTerm('');
+                  setRoleFilter('All');
+                }}
+                className="shrink-0 text-text-muted hover:text-text-primary text-xs"
+              >
+                ล้างค่า
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Users Table */}
       <div className="bg-surface border border-border rounded-md shadow-xs overflow-hidden">
-        {users.length === 0 ? (
+        {filteredUsers.length === 0 ? (
           <EmptyState
             icon={Users}
-            title="ไม่พบข้อมูลผู้ใช้งาน"
-            description="ยังไม่มีผู้ใช้งานระบบคนอื่นในขณะนี้"
+            title={searchTerm || roleFilter !== 'All' ? 'ไม่พบผู้ใช้งานที่ตรงกับเงื่อนไข' : 'ไม่พบข้อมูลผู้ใช้งาน'}
+            description={
+              searchTerm || roleFilter !== 'All'
+                ? 'ลองปรับเปลี่ยนคำค้นหาหรือตัวกรองสิทธิ์การใช้งาน'
+                : 'ยังไม่มีผู้ใช้งานระบบคนอื่นในขณะนี้'
+            }
           />
         ) : (
           <div className="overflow-x-auto">
@@ -192,7 +257,7 @@ function UserPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {users.map((item) => {
+                {filteredUsers.map((item) => {
                   const isSelf = currentUser?.userId === item.user_id;
                   const matchedVillager = villagers.find((v) => v.line_user_id === item.line_user_id);
                   return (

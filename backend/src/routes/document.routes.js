@@ -17,6 +17,15 @@ router.post(
   documentController.create
 );
 
+// แก้ไข - Admin และ Leader
+router.put(
+  '/:id',
+  authMiddleware,
+  roleMiddleware(['Admin', 'Leader']),
+  uploadDocument.single('document'),
+  documentController.update
+);
+
 // ลบ - Admin เท่านั้น
 router.delete('/:id', authMiddleware, roleMiddleware(['Admin']), documentController.remove);
 

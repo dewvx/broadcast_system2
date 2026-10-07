@@ -29,8 +29,22 @@ async function create({ docName, docFilePath, createdBy }) {
   return result.insertId;
 }
 
+async function update(docId, { docName, docFilePath }) {
+  if (docFilePath) {
+    await pool.query(
+      `UPDATE tb_document SET doc_name = ?, doc_file_path = ? WHERE doc_id = ?`,
+      [docName, docFilePath, docId]
+    );
+  } else {
+    await pool.query(
+      `UPDATE tb_document SET doc_name = ? WHERE doc_id = ?`,
+      [docName, docId]
+    );
+  }
+}
+
 async function remove(docId) {
   await pool.query(`DELETE FROM tb_document WHERE doc_id = ?`, [docId]);
 }
 
-module.exports = { findAll, findById, create, remove };
+module.exports = { findAll, findById, create, update, remove };
